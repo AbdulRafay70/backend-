@@ -4,6 +4,9 @@ from .models import City
 from booking.models import VehicleType
 from users.serializers import UserSerializer
 from .models import (
+    Visa,
+    PackageInclusion,
+    PackageExclusion,
     RiyalRate,
     Shirka,
     UmrahVisaPrice,
@@ -32,6 +35,62 @@ from .models import (
 from rest_framework import serializers
 from tickets.serializers import HotelsSerializer, TicketSerializer
 from django.db import models
+
+
+class VisaSerializer(serializers.ModelSerializer):
+    """
+    Serializer for Visa model with full CRUD support.
+    Includes validation for status transitions and date validation.
+    """
+    organization_name = serializers.CharField(source='organization.name', read_only=True)
+    created_by_name = serializers.SerializerMethodField()
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    visa_type_display = serializers.CharField(source='get_visa_type_display', read_only=True)
+    country_display = serializers.CharField(source='get_country_display', read_only=True)
+    
+    class Meta:
+        model = Visa
+        fields = '__all__'
+        read_only_fields = ('visa_id', 'created_at', 'updated_at', 'application_date')
+    
+    def get_created_by_name(self, obj):
+        if obj.created_by:
+            return f"{obj.created_by.first_name} {obj.created_by.last_name}".strip() or obj.created_by.username
+        return None
+    
+    def validate(self, data):
+        """Validate visa dates and status transitions"""
+        # Validate expiry_date is after issue_date
+        if data.get('issue_date') and data.get('expiry_date'):
+            if data['expiry_date'] <= data['issue_date']:
+                raise serializers.ValidationError({
+                    'expiry_date': 'Expiry date must be after issue date.'
+                })
+        
+        # Validate status transitions
+        if self.instance:  # Update operation
+            old_status = self.instance.status
+            new_status = data.get('status', old_status)
+            
+            # Prevent changing from 'used' or 'expired' to active statuses
+            if old_status in ['used', 'expired'] and new_status in ['pending', 'processing', 'issued']:
+                raise serializers.ValidationError({
+                    'status': f'Cannot change status from {old_status} to {new_status}.'
+                })
+        
+        return data
+
+
+class PackageInclusionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PackageInclusion
+        exclude = ['package']
+
+
+class PackageExclusionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PackageExclusion
+        exclude = ['package']
 
 
 class RiyalRateSerializer(ModelSerializer):
@@ -135,6 +194,22 @@ class AirlinesSerializer(ModelSerializer):
         model = Airlines
         fields = "__all__"
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get('request')
+        # Provide full URL for logo if available
+        try:
+            if instance.logo and hasattr(instance.logo, 'url'):
+                if request:
+                    data['logo'] = request.build_absolute_uri(instance.logo.url)
+                else:
+                    data['logo'] = instance.logo.url
+            else:
+                data['logo'] = None
+        except Exception:
+            data['logo'] = None
+        return data
+
 
 class CitySerializer(ModelSerializer):
     class Meta:
@@ -198,7 +273,18 @@ class UmrahPackageHotelDetailsSerializer(ModelSerializer):
 
     class Meta:
         model = UmrahPackageHotelDetails
-        exclude = ["package"]
+        # Exclude the raw/base bed price fields from API output and keep only
+        # the explicit selling/purchase fields (selling/purchase are useful
+        # for financial calculations while base display prices may be redundant).
+        exclude = [
+            "package",
+            # base bed prices (we keep selling/purchase fields only)
+            "quaint_bed_price",
+            "sharing_bed_price",
+            "quad_bed_price",
+            "triple_bed_price",
+            "double_bed_price",
+        ]
 
 
 class UmrahPackageTransportDetailsSerializer(ModelSerializer):
@@ -226,12 +312,31 @@ class UmrahPackageDiscountDetailsSerializer(ModelSerializer):
 
 
 class UmrahPackageSerializer(ModelSerializer):
+    """
+    Enhanced serializer for UmrahPackage with complete package details including
+    hotels, transport, flights, visa, inclusions, and exclusions.
+    """
+    # Nested relationships
     hotel_details = UmrahPackageHotelDetailsSerializer(many=True, required=False)
     transport_details = UmrahPackageTransportDetailsSerializer(
         many=True, required=False
     )
     ticket_details = UmrahPackageTicketDetailsSerializer(many=True, required=False)
     discount_details = UmrahPackageDiscountDetailsSerializer(many=True, required=False)
+    # These nested fields are intentionally disabled for the public package list
+    # to avoid returning large nested inclusion/exclusion arrays. They are
+    # excluded by Meta.exclude below; setting to None prevents DRF assert.
+    inclusions = None
+    exclusions = None
+    
+    # Display fields
+    organization_name = serializers.CharField(source='organization.name', read_only=True)
+    created_by_name = serializers.SerializerMethodField()
+    package_type_display = serializers.CharField(source='get_package_type_display', read_only=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+    available_slots = serializers.IntegerField(source='get_available_slots', read_only=True)
+    
+    # Existing calculated fields
     excluded_tickets = serializers.SerializerMethodField(read_only=True)
     adult_price = serializers.SerializerMethodField(read_only=True)
     infant_price = serializers.SerializerMethodField(read_only=True)
@@ -241,16 +346,60 @@ class UmrahPackageSerializer(ModelSerializer):
     triple_room_price = serializers.SerializerMethodField(read_only=True)
     double_room_price = serializers.SerializerMethodField(read_only=True)
     sharing_bed_price = serializers.SerializerMethodField(read_only=True)
+    
+    # New pricing breakdown
+    total_price_breakdown = serializers.SerializerMethodField()
 
     class Meta:
         model = UmrahPackage
-        fields = "__all__"
+        # Exclude a number of detailed/internal fields from the public package list
+        # to avoid returning duplicate / unnecessary information in the list endpoint.
+        exclude = [
+            # The following fields were previously excluded from public list
+            # responses to reduce payload size. They are now exposed so create/
+            # update requests can set selling & purchase prices for extras.
+            # (Keep other internal fields excluded below.)
+
+            # activation flags / service & partial payment internals
+            'is_active', 'is_quaint_active', 'is_sharing_active', 'is_quad_active',
+            'is_triple_active', 'is_double_active',
+            'adault_service_charge', 'child_service_charge', 'infant_service_charge',
+            'is_service_charge_active',
+            'adault_partial_payment', 'child_partial_payment', 'infant_partial_payment',
+            'is_partial_payment_active', 'min_partial_percent', 'min_partial_amount',
+
+            # age/restriction & organisation internals
+            'filght_min_adault_age', 'filght_max_adault_age', 'max_chilld_allowed', 'max_infant_allowed',
+            'inventory_owner_organization_id', 'reselling_allowed',
+            # nested inclusions/exclusions are disabled separately by setting
+            # the declared fields to None (see above). Do NOT include them
+            # in Meta.exclude because they are not direct model fields.
+        ]
+
+        # Keep a few fields read-only as before
+        read_only_fields = ('package_code', 'created_at', 'updated_at', 'left_seats')
+    
+    def get_created_by_name(self, obj):
+        if obj.created_by:
+            return f"{obj.created_by.first_name} {obj.created_by.last_name}".strip() or obj.created_by.username
+        return None
+    
+    def get_total_price_breakdown(self, obj):
+        """Return complete pricing breakdown for different passenger counts"""
+        return {
+            '1_adult': obj.calculate_total_price(adults=1, children=0, infants=0),
+            '2_adults': obj.calculate_total_price(adults=2, children=0, infants=0),
+            '1_adult_1_child': obj.calculate_total_price(adults=1, children=1, infants=0),
+            '1_adult_1_infant': obj.calculate_total_price(adults=1, children=0, infants=1),
+        }
 
     def create(self, validated_data):
         hotel_data = validated_data.pop("hotel_details", [])
         transport_data = validated_data.pop("transport_details", [])
         ticket_data = validated_data.pop("ticket_details", [])
         discount_data = validated_data.pop("discount_details", [])
+        inclusions_data = validated_data.pop("inclusions", [])
+        exclusions_data = validated_data.pop("exclusions", [])
 
         package = UmrahPackage.objects.create(**validated_data)
 
@@ -262,8 +411,15 @@ class UmrahPackageSerializer(ModelSerializer):
 
         for ticket in ticket_data:
             UmrahPackageTicketDetails.objects.create(package=package, **ticket)
+            
         for discount in discount_data:
             UmrahPackageDiscountDetails.objects.create(package=package, **discount)
+        
+        for inclusion in inclusions_data:
+            PackageInclusion.objects.create(package=package, **inclusion)
+        
+        for exclusion in exclusions_data:
+            PackageExclusion.objects.create(package=package, **exclusion)
 
         return package
 
@@ -272,6 +428,8 @@ class UmrahPackageSerializer(ModelSerializer):
         transport_data = validated_data.pop("transport_details", [])
         ticket_data = validated_data.pop("ticket_details", [])
         discount_data = validated_data.pop("discount_details", [])
+        inclusions_data = validated_data.pop("inclusions", [])
+        exclusions_data = validated_data.pop("exclusions", [])
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
@@ -282,6 +440,8 @@ class UmrahPackageSerializer(ModelSerializer):
         instance.transport_details.all().delete()
         instance.ticket_details.all().delete()
         instance.discount_details.all().delete()
+        instance.inclusions.all().delete()
+        instance.exclusions.all().delete()
 
         # Recreate new nested data
         for hotel in hotel_data:
@@ -295,6 +455,12 @@ class UmrahPackageSerializer(ModelSerializer):
 
         for discount in discount_data:
             UmrahPackageDiscountDetails.objects.create(package=instance, **discount)
+        
+        for inclusion in inclusions_data:
+            PackageInclusion.objects.create(package=instance, **inclusion)
+        
+        for exclusion in exclusions_data:
+            PackageExclusion.objects.create(package=instance, **exclusion)
 
         return instance
 
@@ -317,6 +483,126 @@ class UmrahPackageSerializer(ModelSerializer):
         ).exclude(id__in=included_ids)
 
         return TicketSerializer(qs, many=True).data
+
+    def get_adult_price(self, obj):
+        """Get adult price from adault_visa_price field"""
+        return getattr(obj, "adault_visa_price", None)
+
+    def get_infant_price(self, obj):
+        """Get infant price: infant_visa_price + ticket price"""
+        base = getattr(obj, "infant_visa_price", 0) or 0
+        first_ticket = obj.ticket_details.first()
+        ticket_price = 0
+        if first_ticket and getattr(first_ticket, "ticket", None):
+            ticket_obj = first_ticket.ticket
+            ticket_price = getattr(ticket_obj, "adult_price", 0) or 0
+        return base + ticket_price
+
+    def get_child_discount(self, obj):
+        """Get child discount/price from child_visa_price"""
+        return getattr(obj, "child_visa_price", None)
+
+    def _first_hotel_field(self, obj, field_name):
+        """Helper to get field from first hotel detail"""
+        first = obj.hotel_details.first()
+        if not first:
+            return None
+        return getattr(first, field_name, None)
+
+    def get_quint_room_price(self, obj):
+        return self._first_hotel_field(obj, "quaint_bed_price")
+
+    def get_quad_room_price(self, obj):
+        return self._first_hotel_field(obj, "quad_bed_price")
+
+    def get_triple_room_price(self, obj):
+        return self._first_hotel_field(obj, "triple_bed_price")
+
+    def get_double_room_price(self, obj):
+        return self._first_hotel_field(obj, "double_bed_price")
+
+    def get_sharing_bed_price(self, obj):
+        return self._first_hotel_field(obj, "sharing_bed_price")
+
+
+class PublicUmrahPackageHotelSummarySerializer(serializers.ModelSerializer):
+    hotel_name = serializers.CharField(source="hotel.name", read_only=True)
+
+    class Meta:
+        model = UmrahPackageHotelDetails
+        fields = ["hotel_name", "check_in_date", "check_out_date", "number_of_nights"]
+
+
+class PublicUmrahPackageListSerializer(serializers.ModelSerializer):
+    price = serializers.SerializerMethodField()
+    hotels = PublicUmrahPackageHotelSummarySerializer(source="hotel_details", many=True, read_only=True)
+
+    class Meta:
+        model = UmrahPackage
+        fields = [
+            "id",
+            "title",
+            "price",
+            "total_seats",
+            "left_seats",
+            "booked_seats",
+            "confirmed_seats",
+            "available_start_date",
+            "available_end_date",
+            "reselling_allowed",
+            "is_public",
+            "hotels",
+        ]
+
+    def get_price(self, obj):
+        # prefer explicit price_per_person, fallback to adult visa price + service charge
+        if getattr(obj, "price_per_person", None):
+            return obj.price_per_person
+        # try adult price fields
+        try:
+            return obj.adault_visa_price + (obj.adault_service_charge or 0)
+        except Exception:
+            return None
+
+
+class PublicUmrahPackageDetailSerializer(ModelSerializer):
+    hotels = PublicUmrahPackageHotelSummarySerializer(source="hotel_details", many=True, read_only=True)
+    transport = UmrahPackageTransportDetailsSerializer(source="transport_details", many=True, read_only=True)
+    tickets = UmrahPackageTicketDetailsSerializer(source="ticket_details", many=True, read_only=True)
+
+    class Meta:
+        model = UmrahPackage
+        fields = [
+            "id",
+            "title",
+            "rules",
+            "price",
+            "price_per_person",
+            "adault_visa_price",
+            "child_visa_price",
+            "infant_visa_price",
+            "total_seats",
+            "left_seats",
+            "booked_seats",
+            "confirmed_seats",
+            "available_start_date",
+            "available_end_date",
+            "reselling_allowed",
+            "is_public",
+            "hotels",
+            "transport",
+            "tickets",
+        ]
+
+    price = serializers.SerializerMethodField()
+
+    def get_price(self, obj):
+        if getattr(obj, "price_per_person", None):
+            return obj.price_per_person
+        try:
+            return obj.adault_visa_price + (obj.adault_service_charge or 0)
+        except Exception:
+            return None
 
     def get_adult_price(self, obj):
         # keep the original (typo'd) field name as the source

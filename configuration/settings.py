@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     # Third-party apps
     "rest_framework",
     "rest_framework_simplejwt",
+    "rest_framework_simplejwt.token_blacklist",  # For logout/token invalidation
     "corsheaders",
     "debug_toolbar",
     "drf_spectacular",
@@ -49,7 +50,21 @@ INSTALLED_APPS = [
     "organization",
     "packages",
     "tickets",
+    "universal",  
     "booking",
+    "blog",
+    "ledger",
+    "finance",  # Finance & Reports Module
+    "operations",  # Hotel, Transport, Food, Airport, Ziyarat Operations
+    "commissions",
+    "area_leads",
+    "leads",
+    "logs",
+    "promotion_center",
+    "pax_movements",
+    "passport_leads",  # Passport Leads & Follow-up Management
+    "customers",  # Customer Auto-Collection & Lead Management
+    "forms",  # Dynamic Forms for Lead Generation
 ]
 
 # ----------------------------------------------------
@@ -59,10 +74,13 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
+    "debug_toolbar.middleware.DebugToolbarMiddle"
+    "ware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    # System logging middleware: captures POST/PUT/PATCH/DELETE actions
+    "logs.middleware.SystemLogMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -103,6 +121,7 @@ DATABASES = {
         'PORT': '3306',
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            'charset': 'utf8mb4',  # Use utf8mb4 for full Unicode support (emojis, arrows, etc.)
         },
     }
 }
@@ -156,11 +175,23 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
     ),
+    # Custom exception handler for better error messages
+    "EXCEPTION_HANDLER": "pax_movements.exception_handlers.custom_exception_handler",
+    # Throttling: central config for named scopes (used by custom throttles)
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        # named scope used by PublicBookingRateThrottle (if you prefer central config)
+        "public_booking": "10/min",
+        # default anonymous throttle if applied globally
+        "anon": "100/min",
+    },
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ACCESS_TOKEN_LIFETIME": timedelta(days=365),  # Token valid for 1 year (won't expire until user logs out)
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=365),  # Refresh token also valid for 1 year
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": True,
     "AUTH_HEADER_TYPES": ("Bearer",),

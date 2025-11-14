@@ -1,0 +1,54 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 50px auto; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    <h1 style="margin-bottom: 20px;">Bulk Upload Tickets</h1>
+    
+    <div style="margin-bottom: 30px; padding: 15px; background: #f8f9fa; border-left: 4px solid #17a2b8; border-radius: 4px;">
+        <h3 style="margin-top: 0;">Instructions:</h3>
+        <ul style="line-height: 1.8;">
+            <li>Upload a CSV file with ticket information</li>
+            <li>CSV should include columns: flight_number, airline_id, origin_id, destination_id, departure_date, departure_time, arrival_date, arrival_time, seat_type, adult_fare, child_fare, infant_fare, total_seats, pnr</li>
+            <li>Make sure all required fields are filled</li>
+            <li>Date format: YYYY-MM-DD, Time format: HH:MM:SS</li>
+        </ul>
+    </div>
+
+    <div style="margin-bottom: 20px; padding: 15px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+        <h4 style="margin-top: 0;">Sample CSV Format:</h4>
+        <pre style="background: white; padding: 10px; border-radius: 4px; overflow-x: auto;">flight_number,airline_id,origin_id,destination_id,departure_date,departure_time,arrival_date,arrival_time,seat_type,adult_fare,child_fare,infant_fare,total_seats,pnr,organization_id
+EK-502,1,1,2,2025-11-15,10:30:00,2025-11-15,14:45:00,economy,25000,18000,5000,180,ABC123,1
+SV-720,2,2,3,2025-11-20,08:15:00,2025-11-20,12:30:00,business,75000,55000,15000,50,XYZ789,1</pre>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" style="margin-top: 30px;">
+        {% csrf_token %}
+        
+        <div style="margin-bottom: 20px;">
+            <label for="csv_file" style="display: block; font-weight: bold; margin-bottom: 8px;">Select CSV File:</label>
+            <input type="file" name="csv_file" id="csv_file" accept=".csv" required 
+                   style="padding: 10px; border: 2px solid #ddd; border-radius: 4px; width: 100%; max-width: 500px;">
+        </div>
+
+        <div style="margin-top: 30px;">
+            <button type="submit" style="background: #417690; color: white; padding: 12px 30px; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; margin-right: 10px;">
+                Upload Tickets
+            </button>
+            <a href="{% url 'admin:tickets_ticket_changelist' %}" style="background: #6c757d; color: white; padding: 12px 30px; border-radius: 4px; text-decoration: none; display: inline-block;">
+                Cancel
+            </a>
+        </div>
+    </form>
+
+    <div style="margin-top: 40px; padding: 15px; background: #d1ecf1; border-left: 4px solid #17a2b8; border-radius: 4px;">
+        <h4 style="margin-top: 0;">Tips:</h4>
+        <ul style="line-height: 1.8;">
+            <li>Ensure airline_id, origin_id, destination_id, and organization_id correspond to existing IDs in the database</li>
+            <li>Use seat_type values: economy, premium_economy, business, first_class</li>
+            <li>Verify that all dates and times are in the correct format</li>
+            <li>The system will automatically calculate left_seats based on total_seats</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}

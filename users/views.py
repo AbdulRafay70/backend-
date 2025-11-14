@@ -15,9 +15,44 @@ from .models import PermissionExtension
 class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
 
+    # Allow creating a user while providing organization via query param
+    # e.g. POST /api/users/?organization=8
+    def create(self, request, *args, **kwargs):
+        # Make a mutable copy of incoming data
+        data = request.data.copy() if hasattr(request, "data") else {}
+
+        # Accept either 'organization' or 'organization_id' as query param
+        org_q = request.query_params.get("organization") or request.query_params.get("organization_id")
+        try:
+            # If org provided and organizations not in payload, inject it as a list
+            if org_q and not data.get("organizations"):
+                # coerce to int where possible
+                try:
+                    org_id = int(org_q)
+                except Exception:
+                    org_id = org_q
+                data["organizations"] = [org_id]
+        except Exception:
+            pass
+
+        serializer = self.get_serializer(data=data)
+        if not serializer.is_valid():
+            # Return structured errors to help frontend debug
+            return Response({"success": False, "errors": serializer.errors}, status=400)
+
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=201, headers=headers)
+
     def get_queryset(self):
         organization_id = self.request.query_params.get("organization_id", None)
+        organization = self.request.query_params.get("organization", None)
         branch_id = self.request.query_params.get("branch_id", None)
+        
+        # Debug logging
+        print(f"DEBUG UserViewSet.get_queryset - organization_id: {organization_id}, organization: {organization}, branch_id: {branch_id}")
+        print(f"DEBUG UserViewSet.get_queryset - All query params: {dict(self.request.query_params)}")
+        
         query_filters = Q()
         if organization_id:
             query_filters &= Q(organizations=organization_id)
@@ -32,7 +67,12 @@ class GroupViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         organization_id = self.request.query_params.get("organization_id", None)
+        organization = self.request.query_params.get("organization", None)
         type = self.request.query_params.get("type", None)
+
+        # Debug logging
+        print(f"DEBUG GroupViewSet.get_queryset - organization_id: {organization_id}, organization: {organization}, type: {type}")
+        print(f"DEBUG GroupViewSet.get_queryset - All query params: {dict(self.request.query_params)}")
 
         query_filters = Q()
         if organization_id:
@@ -148,3 +188,39 @@ class UploadPermissionsFileAPIView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+
+class LogoutView(APIView):
+    """
+    POST /api/logout/
+    
+    Blacklist the refresh token to logout the user.
+    The access token will be invalidated when it expires.
+    """
+    from rest_framework.permissions import IsAuthenticated
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            from rest_framework_simplejwt.tokens import RefreshToken
+            
+            refresh_token = request.data.get("refresh_token")
+            if not refresh_token:
+                return Response(
+                    {"detail": "refresh_token is required"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Blacklist the refresh token
+            token = RefreshToken(refresh_token)
+            token.blacklist()
+            
+            return Response(
+                {"detail": "Successfully logged out"},
+                status=status.HTTP_205_RESET_CONTENT
+            )
+        except Exception as e:
+            return Response(
+                {"detail": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )

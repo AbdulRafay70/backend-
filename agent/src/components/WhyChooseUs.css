@@ -1,0 +1,24 @@
+/* Custom styles for WhyChooseUs component */
+.btn-custom:hover {
+  transform: translateY(-2px);
+  transition: all 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .section-title {
+    font-size: 2rem !important;
+  }
+  
+  .image-container {
+    height: 300px !important;
+    margin-bottom: 2rem;
+  }
+}
+
+.image-container {
+  transition: transform 0.3s ease;
+}
+
+.image-container:hover {
+  transform: scale(1.02);
+}

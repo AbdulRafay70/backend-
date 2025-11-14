@@ -5441,6 +5441,156 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/universal/register/:
+    post:
+      operationId: universal_register
+      tags:
+      - universal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UniversalRegistrationInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/UniversalRegistration'
+          description: Registered successfully
+
+  /api/universal/list/:
+    get:
+      operationId: universal_list
+      tags:
+      - universal
+      parameters:
+      - in: query
+        name: type
+        schema:
+          type: string
+      - in: query
+        name: parent_id
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+      - in: query
+        name: search
+        schema:
+          type: string
+      - in: query
+        name: limit
+        schema:
+          type: integer
+      - in: query
+        name: offset
+        schema:
+          type: integer
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UniversalRegistration'
+          description: ''
+
+  /api/universal/{id}/:
+    get:
+      operationId: universal_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - universal
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UniversalRegistration'
+          description: ''
+
+  /api/universal/update/{id}/:
+    put:
+      operationId: universal_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - universal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UniversalRegistrationInput'
+        required: true
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UniversalRegistration'
+          description: ''
+
+  /api/universal/delete/{id}/:
+    delete:
+      operationId: universal_delete
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - universal
+      security:
+      - cookieAuth: []
+      - basicAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+          description: ''
+
 components:
   schemas:
     Agency:
@@ -9869,6 +10019,93 @@ components:
       - id
       - organization
       - ziarat_title
+    UniversalRegistration:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        parent:
+          type: string
+        organization_id:
+          type: string
+        branch_id:
+          type: string
+        name:
+          type: string
+        owner_name:
+          type: string
+        email:
+          type: string
+          format: email
+        contact_no:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        country:
+          type: string
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      required:
+      - id
+      - type
+      - name
+    UniversalRegistrationInput:
+      type: object
+      properties:
+        type:
+          type: string
+        parent:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        contact_no:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        country:
+          type: string
+      required:
+      - type
+      - name
+      example:
+        type: agent
+        parent: BRN-0001
+        name: Star Travel Agency
+        email: info@startravel.com
+        contact_no: "+92 300 1234567"
+        address: Shop 12, Liberty Market, Lahore
+        city: Lahore
+        country: Pakistan
+    AuditLog:
+      type: object
+      properties:
+        action:
+          type: string
+        model_name:
+          type: string
+        object_id:
+          type: string
+        performed_by:
+          type: string
+        previous_data:
+          type: object
+        new_data:
+          type: object
+        timestamp:
+          type: string
+          format: date-time
   securitySchemes:
     basicAuth:
       type: http

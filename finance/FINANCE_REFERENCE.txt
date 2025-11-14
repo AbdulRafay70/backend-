@@ -1,0 +1,140 @@
+Finance module — endpoints, notes, and reference
+
+This finance app implements a double-entry ledger integration, expenses, financial records, reporting and CSV exports.
+
+Status / completion
+
+- Core models implemented: ChartOfAccount, TransactionJournal, FinancialRecord, Expense, AuditLog.
+- Double-entry posting pipeline implemented: TransactionJournal -> post_journal_to_ledger -> LedgerEntry/LedgerLine updates.
+- Expense APIs (create/list) implemented with auto-posting attempts to the ledger.
+- Manual posting endpoint implemented with permissions for the finance_managers group.
+- Profit & Loss calculations: persisted FinancialRecord snapshots and read-time aggregation for walk-ins/linked bookings.
+- Reporting endpoints (JSON + CSV) for P&L and a basic FBR summary (FBR CSV uses placeholder rules — replace with official spec if required).
+- Compact dashboard endpoint implemented: GET /api/finance/dashboard (metrics for embedding in Sweegar/Swagger UI).
+- Audit logs and signals: booking/payment changes trigger recalculation & AuditLog snapshots.
+- Management commands: COA seeder, finance group creation, permissions assignment, merge_walkin_financials, diagnose_finance_endpoints.
+- Tests: unit and integration tests for posting, aggregation, SAR conversion edge cases, reporting, merge command.
+
+Endpoints and JSON examples
+
+1) POST /api/finance/expense/add
+Request example:
+{
+  "organization": 1,
+  "branch": 2,
+  "category": "fuel",
+  "amount": "150.00",
+  "currency": "PKR",
+  "date": "2025-10-28",
+  "booking_id": 10,
+  "coa": 5,
+  "notes": "Transport fuel for transfer",
+  "module_type": "transport",
+  "payment_mode": "cash",
+  "paid_to": "Driver A"
+}
+
+Success response (201):
+{
+  "id": 12,
+  "organization": 1,
+  "branch": 2,
+  "category": "fuel",
+  "amount": "150.00",
+  "currency": "PKR",
+  "date": "2025-10-28",
+  "booking_id": 10,
+  "coa": 5,
+  "ledger_entry_id": 99,
+  "notes": "Transport fuel for transfer",
+  "module_type": "transport",
+  "payment_mode": "cash",
+  "paid_to": "Driver A",
+  "created_at": "2025-10-30T10:00:00Z"
+}
+
+2) GET /api/finance/expense/list
+Response example:
+[
+  {
+    "id": 12,
+    "organization": 1,
+    "branch": 2,
+    "category": "fuel",
+    "amount": "150.00",
+    "currency": "PKR",
+    "date": "2025-10-28",
+    "booking_id": 10,
+    "coa": 5,
+    "ledger_entry_id": 99,
+    "notes": "Transport fuel for transfer",
+    "module_type": "transport",
+    "payment_mode": "cash",
+    "paid_to": "Driver A",
+    "created_at": "2025-10-30T10:00:00Z"
+  }
+]
+
+3) GET /api/finance/summary/all
+Response example:
+{
+  "total_income": "50000.00",
+  "total_purchase": "35000.00",
+  "total_expenses": "1200.00",
+  "total_profit": "13800.00",
+  "breakdown_by_module": {
+    "hotel": {"income": "20000.00", "expense": "200.00", "profit": "19800.00"},
+    "ticket": {"income": "30000.00", "expense": "1000.00", "profit": "28000.00"}
+  }
+}
+
+4) GET /api/finance/ledger/by-service
+Response example:
+{"records": [{"booking_id": 10, "reference_no": "BK-123", "income_amount": "1000.00", "expense_amount": "50.00", "profit": "450.00", "record_date": "2025-10-29", "agent_name": "Agent A"}]}
+
+5) POST /api/finance/manual/post
+Request example:
+{
+  "organization": 1,
+  "branch": 1,
+  "reference": "MAN-123",
+  "narration": "Adjustment",
+  "entries": [{"account_id": 10, "debit": "100.00", "credit": "0.00"}, {"account_id": 20, "debit": "0.00", "credit": "100.00"}]
+}
+
+Success response:
+{"journal_id": 7, "ledger_entry_id": 123}
+
+Reports
+
+- GET /reports/profit-loss (JSON)
+Response example:
+{"summary": {"hotel": {"income": "1000.00", "expenses": "50.00", "profit": "950.00"}}, "total_income": "1000.00", "total_expenses": "50.00", "total_profit": "950.00"}
+
+- GET /reports/profit-loss/csv
+- GET /reports/fbr/summary (JSON)
+Response example:
+{"organization": "1", "year": "2025", "total_income": "1000.00", "total_expenses": "50.00", "total_profit": "950.00"}
+
+- GET /reports/fbr/summary/csv
+
+Data flow (high level)
+
+1. Booking created/updated → signals trigger `calculate_profit_loss` → `FinancialRecord` snapshot persisted.
+2. Expense creation → `TransactionJournal` created → `post_journal_to_ledger` attempts posting → ledger entries created on success.
+3. Reporting reads `FinancialRecord` rows; aggregation uses `aggregate_financials_for_booking` for walk-ins unless merged via `merge_walkin_financials`.
+
+Management commands
+
+- python manage.py create_base_coa
+- python manage.py create_finance_group
+- python manage.py assign_finance_permissions
+- python manage.py merge_walkin_financials <booking_id>
+- python manage.py diagnose_finance_endpoints
+
+Diagnostics & quick fixes
+
+- DisallowedHost: add host to ALLOWED_HOSTS in configuration/settings_local.py (e.g. "testserver", "localhost", "127.0.0.1").
+- Missing DB column errors: run migrations for finance and inspect sqlmigrate if needed.
+
+End of file

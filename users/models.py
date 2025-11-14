@@ -8,6 +8,8 @@ from organization.models import Organization
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="profile")
     type = models.CharField(max_length=30, null=True, blank=True)
+    # optional commission account identifier for the user
+    commission_id = models.CharField(max_length=64, null=True, blank=True)
 
 
 class GroupExtension(models.Model):

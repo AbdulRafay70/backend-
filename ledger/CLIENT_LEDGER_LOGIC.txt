@@ -1,0 +1,76 @@
+Ledger — Client-Facing Logic & Rules
+
+Purpose
+-------
+This document explains, in plain language for the client, how the ledger works, what logic is applied when transactions are posted, and how to interpret ledger JSON/API responses.
+
+1) Goal
+-------
+- Provide an auditable, double-entry ledger for payments and system transactions.
+- Keep account balances consistent and traceable to source events (for example, a Payment created in the booking system).
+
+2) Accounts (what they represent)
+---------------------------------
+- Account: a bookkeeping bucket. Examples: Sales (organization income), Cash (physical cash or bank), Agent (commissions or agent balance), Suspense (temporary holding), etc.
+- Each Account can optionally be linked to an Organization, Branch or Agency so we can keep separate ledgers per client / branch / agent.
+- Each account has a running `balance` which is a snapshot updated after each posting.
+
+3) Posting rules (how we create ledger entries)
+-----------------------------------------------
+- Every ledger posting is double-entry: for every debit there is an equal credit.
+- A posting is represented by a LedgerEntry (header) and two or more LedgerLine records (lines).
+- Each LedgerLine records debit or credit amounts and a `final_balance` snapshot for the linked account after the posting.
+- Posting is atomic: both lines are written inside a single database transaction. If anything fails, nothing is written and balances are unchanged.
+
+4) Automatic posting from Payments
+---------------------------------
+- When a Payment is saved with status "Completed", the system will attempt to auto-create a ledger entry that records the movement (for example, debit Agent account, credit Organization/Suspense account).
+- The auto-post is synchronous and idempotent: we store `payment_id` in the LedgerEntry.metadata and avoid creating duplicates for the same payment.
+- If default accounts do not exist for the Organization or Agency, the system will create sensible default accounts (Sales, Cash, Suspense, Agent) when possible; there's also a management command to bootstrap accounts for all organizations.
+
+5) Reversals
+-------------
+- To reverse an entry, the system creates a reversing LedgerEntry where debit/credit values are swapped for each original line. This also updates account balances.
+- The original entry is marked as `reversed` and the reversing entry links back via `reversed_of` so history remains intact.
+
+6) Currency and amounts
+-----------------------
+- Ledger stores amounts as PKR (Decimal with 2 decimal places). If an incoming payment is in another currency (e.g., SAR), the system expects that currency conversion happens before posting.
+- Decimal amounts are serialized as strings in the API JSON to preserve precision.
+
+7) Traceability & audit
+------------------------
+- Each LedgerEntry stores `metadata` (JSON) where the system saves references such as `payment_id`, `booking_no`, or other source identifiers. Use these to trace entries back to business data.
+- The `created_at` and `creation_datetime` timestamps provide chronology.
+- The `final_balance` field on lines is a snapshot of the account after posting — useful for quick reconciliation.
+
+8) API shape you will see (example)
+-----------------------------------
+- GET `/api/ledger/list/` returns a list of LedgerEntry objects. Each entry contains `id`, `booking_no`, `service_type`, `narration`, `creation_datetime`, `metadata`, `reversed`, and `lines` (an array of debit/credit lines).
+- Each line includes the nested `account` object (id, name, type, org/branch/agency), `account_id`, `account_name`, `debit`, `credit`, `final_balance`, `created_at`.
+
+9) Typical example (short)
+--------------------------
+- Payment completed (id: 1) triggers auto-post:
+  - LedgerEntry.metadata: {"payment_id": 1}
+  - Lines:
+    - Debit: Agent Account — debit 1000.00, final_balance 1000.00
+    - Credit: Suspense/Org Account — credit 1000.00, final_balance -1000.00
+
+10) Client responsibilities / recommendations
+-------------------------------------------
+- When sending payment data to the API, include a reliable payment id/reference so the ledger can store it in metadata.
+- Ensure currency normalization to PKR prior to posting (or indicate conversion details in metadata).
+- Use the management command `bootstrap_ledger_accounts` before bulk posting historical payments so default accounts exist.
+- Prefer using the API endpoints or the documented shell commands to create postings — do not insert LedgerLine rows directly in the DB or admin without calling the posting routines (they maintain balances atomically).
+
+11) Limitations / next improvements
+----------------------------------
+- Current implementation supports simple two-line entries and basic reversal. Multi-line journal entries, advanced filtering endpoints, and an admin posting UI can be added on request.
+- We serialize Decimals as strings in JSON for precision. If you need numeric types in the integration, handle conversion on the client side.
+
+12) Contact / support
+---------------------
+- If you want this behavior changed (different mapping from Payment to accounts, multi-currency support, or admin UI), tell us which specific rules you need and we will implement them.
+
+End of document

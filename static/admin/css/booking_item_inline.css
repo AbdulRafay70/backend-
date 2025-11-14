@@ -1,0 +1,56 @@
+/* Booking Item Inline Styles */
+
+/* Better spacing for booking items table */
+#bookingitem_set-group .form-row {
+    border-bottom: 1px solid #ddd;
+}
+
+#bookingitem_set-group .form-row td {
+    padding: 8px 5px;
+    vertical-align: middle;
+}
+
+/* Hide empty inventory fields with smooth transition */
+#bookingitem_set-group td[style*="display: none"] {
+    display: none !important;
+}
+
+/* Highlight the final amount field */
+#bookingitem_set-group input[name*="final_amount"] {
+    background-color: #d4edda;
+    font-weight: bold;
+    color: #155724;
+    border-color: #c3e6cb;
+}
+
+/* Style the inventory type dropdown */
+#bookingitem_set-group select[name*="inventory_type"] {
+    background-color: #fff3cd;
+    border: 2px solid #ffc107;
+    font-weight: bold;
+}
+
+/* Highlight required fields */
+#bookingitem_set-group input[name*="unit_price"],
+#bookingitem_set-group input[name*="quantity"] {
+    border-left: 3px solid #007bff;
+}
+
+/* Make item_name field stand out when it needs to be filled */
+#bookingitem_set-group input[name*="item_name"]:invalid {
+    border-left: 3px solid #dc3545;
+}
+
+/* JSON field textarea */
+#bookingitem_set-group textarea[name*="item_details"] {
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    min-height: 40px;
+}
+
+/* Responsive table improvements */
+@media (max-width: 1200px) {
+    #bookingitem_set-group .form-row td {
+        font-size: 12px;
+    }
+}

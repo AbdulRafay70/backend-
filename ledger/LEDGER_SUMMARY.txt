@@ -1,0 +1,178 @@
+Ledger Implementation Summary
+
+Overview
+--------
+This file documents the ledger functionality added to the project, the flow of posting a ledger entry, files created, how to demo, and important notes.
+
+What was implemented
+--------------------
+- New Django app: `ledger`
+  - Purpose: support double-entry general ledger (accounts, journal entries, and ledger lines) and basic APIs.
+- Core models added:
+  - `Account` — holds account metadata (organization/branch/agency optional) and `balance` (Decimal).
+  - `LedgerEntry` — journal header with metadata, booking reference, narration, created_by, and reversal linkage.
+  - `LedgerLine` — individual debit/credit line for each entry with `final_balance` snapshot.
+- API endpoints (wired under project URLs):
+  - POST `/api/ledger/create/` — create a simple two-line (debit+credit) ledger entry.
+  - GET  `/api/ledger/list/` — list ledger entries (simple listing; filters can be added later).
+  - POST `/api/ledger/reverse/{id}/` — reverse an existing ledger entry (creates reversing entry and updates balances).
+- Auto-posting: a conservative `post_save` signal for `booking.models.Payment` (in `ledger.signals`) that auto-posts a simple agent→organization payment entry when:
+  - `Payment.status == 'Completed'` and
+  - matching Agent (agency) `Account` and Organization `Account` exist. If accounts are absent, the signal skips posting (to avoid accidental posts).
+
+Files added (paths and purpose)
+-------------------------------
+ledger/
+  __init__.py            - app package (registers app config)
+  apps.py                - LedgerConfig (imports signals on ready)
+  models.py              - Account, LedgerEntry, LedgerLine models
+  admin.py               - admin registrations for Account, LedgerEntry, LedgerLine
+  serializers.py         - DRF serializers (basic) for Account, LedgerEntry, LedgerLine
+  views.py               - API views: LedgerCreateAPIView, LedgerListAPIView, LedgerReverseAPIView
+  urls.py                - Routes for create/list/reverse
+  signals.py             - post_save handler for Payment auto-posting
+  tests.py               - basic smoke tests (and a starting point for more tests)
+  migrations/            - migrations (initial migration created)
+  LEDGER_SUMMARY.txt     - (this file) summary and demo instructions
+
+Models summary (fields of interest)
+-----------------------------------
+- Account
+  - organization (FK), branch (FK), agency (FK), name, account_type, balance (Decimal), timestamps
+- LedgerEntry
+  - booking_no, service_type, narration, transaction_type, created_by, creation_datetime (tz-aware), metadata (JSON), reversed, reversed_of, created_at
+- LedgerLine
+  - ledger_entry (FK), account (FK), debit (Decimal), credit (Decimal), final_balance (Decimal), created_at
+
+Ledger Implementation Summary
+
+Overview
+--------
+This file documents the ledger functionality added to the project, the flow of posting a ledger entry, files created, how to demo, and important notes.
+
+What was implemented
+--------------------
+- New Django app: `ledger`
+  - Purpose: support double-entry general ledger (accounts, journal entries, and ledger lines) and basic APIs.
+- Core models added:
+  - `Account` — holds account metadata (organization/branch/agency optional) and `balance` (Decimal).
+  - `LedgerEntry` — journal header with metadata, booking reference, narration, created_by, and reversal linkage.
+  - `LedgerLine` — individual debit/credit line for each entry with `final_balance` snapshot.
+- API endpoints (wired under project URLs):
+  - POST `/api/ledger/create/` — create a simple two-line (debit+credit) ledger entry.
+  - GET  `/api/ledger/list/` — list ledger entries (simple listing; filters can be added later).
+  - POST `/api/ledger/reverse/{id}/` — reverse an existing ledger entry (creates reversing entry and updates balances).
+- Auto-posting: a `post_save` signal for `booking.models.Payment` (in `ledger.signals`) that auto-posts a simple agent→organization payment entry when:
+  - `Payment.status == 'Completed'` and
+  - matching Agent (agency) `Account` and Organization `Account` exist. The signal is idempotent (it checks existing metadata to avoid duplicates). If accounts are absent, the signal will create sensible defaults in many cases or skip posting depending on config.
+
+Files added (paths and purpose)
+-------------------------------
+ledger/
+  __init__.py            - app package (registers app config)
+  apps.py                - LedgerConfig (imports signals on ready)
+  models.py              - Account, LedgerEntry, LedgerLine models
+  admin.py               - admin registrations for Account, LedgerEntry, LedgerLine
+  serializers.py         - DRF serializers (basic) for Account, LedgerEntry, LedgerLine (includes account id/name)
+  views.py               - API views: LedgerCreateAPIView, LedgerListAPIView, LedgerReverseAPIView
+  urls.py                - Routes for create/list/reverse
+  signals.py             - post_save handler for Payment auto-posting (idempotent)
+  tests.py               - basic smoke tests (and a starting point for more tests)
+  migrations/            - migrations (initial migration created)
+  management/commands/   - `bootstrap_ledger_accounts` to create default accounts for existing Orgs/Agencies
+  LEDGER_SUMMARY.txt     - (this file) summary and demo instructions
+
+Models summary (fields of interest)
+-----------------------------------
+- Account
+  - organization (FK), branch (FK), agency (FK), name, account_type, balance (Decimal), timestamps
+- LedgerEntry
+  - booking_no, service_type, narration, transaction_type, created_by, creation_datetime (tz-aware), metadata (JSON), reversed, reversed_of, created_at
+- LedgerLine
+  - ledger_entry (FK), account (FK), debit (Decimal), credit (Decimal), final_balance (Decimal), created_at
+
+Monetary handling
+------------------
+- All ledger amounts are stored as PKR (DecimalField max_digits=18, decimal_places=2).
+- If source data is in SAR, convert SAR→PKR before creating the ledger entry (the system expects PKR amounts).
+
+Posting flow (what the code does when creating an entry)
+-------------------------------------------------------
+1. Validate request payload (requires `debit_account_id`, `credit_account_id`, `amount`).
+2. Convert `amount` into Decimal and validate positive amount.
+3. Begin a DB transaction (`transaction.atomic()`).
+4. Lock involved accounts using `select_for_update()` to avoid race conditions.
+5. Create `LedgerEntry` header record.
+6. Create `LedgerLine` for debit (debit=amount, credit=0), compute `final_balance = account.balance + debit - credit`, save account balance.
+7. Create `LedgerLine` for credit (debit=0, credit=amount), compute `final_balance` and save account balance.
+8. Commit transaction. If any step fails, the transaction rolls back; account balances remain consistent.
+
+Reversal flow
+-------------
+- POST `/api/ledger/reverse/{id}/` creates a reversing `LedgerEntry` which swaps debit and credit for each original line, updates accounts atomically, and marks the original entry's `reversed = True` and links `reversed_of`.
+
+Auto-post on Payment
+--------------------
+- `ledger.signals.auto_post_payment`: when a `Payment` is saved with status 'Completed' and both payer (agent) and receiver (organization) accounts exist, a simple debit(agent)/credit(org) entry is created. The signal is idempotent (it checks metadata.payment_id) and the app provides a bootstrap command to create default accounts for existing Orgs/Agencies.
+
+How to demo (quick steps)
+-------------------------
+1. Ensure migrations applied:
+   python manage.py makemigrations ledger
+   python manage.py migrate
+   Note: if tables already exist from a previous run you can use `--fake-initial` for the `ledger` app to mark the initial migration applied.
+2. Bootstrap default accounts (recommended):
+   python manage.py bootstrap_ledger_accounts
+3. Obtain JWT token (use a staff/admin account):
+   POST /api/token/ with username/password — use Invoke-RestMethod in PowerShell or curl.
+4. Create ledger entry via API (authenticated):
+   POST /api/ledger/create/ with JSON {
+     "debit_account_id": <id1>,
+     "credit_account_id": <id2>,
+     "amount": 1000.00,
+     "booking_no": "B-DEMO-001",
+     "service_type": "ticket",
+     "narration": "Demo payment",
+     "metadata": {"payment_ids": [123]}
+   }
+5. Or create a `Payment` with `status: 'Completed'` to trigger auto-post (the signal is synchronous in the save operation).
+6. Verify balances via shell or admin: Account.balance reflects snapshot after posting. LedgerEntry lines contain `final_balance` per account.
+7. Reverse: POST /api/ledger/reverse/{entry_id}/ to demonstrate reversal and balance update.
+
+Notes, caveats & next steps
+---------------------------
+- Current scope tested: simple two-line entries and basic reversal. Additional features to add later:
+  - Multi-line entries (multi-debit/multi-credit), filtered ledger GET endpoints (organization/branch/agency/org-to-org), admin-driven posting rules UI, extra unit tests for idempotency and concurrency.
+- Admin caveat: creating `LedgerLine` rows manually in the admin will NOT auto-update `Account.balance` — use the API or the shell routines (which perform atomic updates) to ensure correct balances.
+- Currency: ledger stores PKR — convert SAR amounts before posting.
+- Migration warning: when running migrations on your configured MySQL in your environment you previously saw an OperationalError related to opening a referenced table (`organization_agency`). The test run used SQLite in-memory and worked fine. If you run migrations on MySQL, ensure the DB is healthy and has required tables.
+
+Folder structure (ledger/)
+--------------------------
+ledger/
+  __init__.py
+  apps.py
+  admin.py
+  models.py
+  serializers.py
+  views.py
+  urls.py
+  signals.py
+  tests.py
+  management/commands/bootstrap_ledger_accounts.py  <-- create defaults for Orgs/Agencies
+  migrations/__init__.py
+  LEDGER_SUMMARY.txt   <-- this file
+
+How to run tests for ledger
+---------------------------
+python manage.py makemigrations ledger
+python manage.py migrate --noinput
+python manage.py test ledger -v 2
+
+Recent changes
+--------------
+- Fixed serialization bug: `LedgerLineSerializer` now includes `account_id` and `account_name` in `fields` so API responses serialize correctly.
+- Authentication: the project exposes SimpleJWT endpoints at `/api/token/` and `/api/token/refresh/` — use `/api/token/` to obtain `access`/`refresh` tokens for Authorization: Bearer <access_token>.
+
+Prepared by: Automated coding assistant (changes applied to the repository)
+Date: 2025-10-28

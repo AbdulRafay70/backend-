@@ -1,0 +1,118 @@
+const submitBooking = async () => {
+    setIsSubmitting(true);
+    try {
+      const token = localStorage.getItem("agentAccessToken");
+      const orgId = getOrgId();
+      const bookingData = await formatBookingData();
+
+      const formData = new FormData();
+
+      // -------- Main object fields --------
+      const mainFields = {
+        booking_number: bookingData.booking_number,
+        expiry_time: bookingData.expiry_time,
+        total_pax: bookingData.total_pax,
+        total_adult: bookingData.total_adult,
+        total_infant: bookingData.total_infant,
+        total_child: bookingData.total_child,
+        total_ticket_amount: bookingData.total_ticket_amount,
+        total_hotel_amount: bookingData.total_hotel_amount,
+        total_transport_amount: bookingData.total_transport_amount,
+        total_visa_amount: bookingData.total_visa_amount,
+        total_amount: bookingData.total_amount,
+        is_paid: bookingData.is_paid,
+        status: bookingData.status || "Package Booking",
+        payment_status: bookingData.payment_status || "PENDING",
+        is_partial_payment_allowed: bookingData.is_partial_payment_allowed,
+        user: bookingData.user,
+        organization: bookingData.organization || orgId,
+        branch: bookingData.branch,
+        agency: bookingData.agency,
+      };
+
+      Object.entries(mainFields).forEach(([key, val]) => {
+        formData.append(key, val ?? "");
+      });
+
+      // -------- Ticket details (JSON) --------
+      if (Array.isArray(bookingData.ticket_details)) {
+        formData.append("ticket_details", JSON.stringify(bookingData.ticket_details));
+      }
+
+      // -------- Hotel details (JSON) --------
+      if (Array.isArray(bookingData.hotel_details)) {
+        formData.append("hotel_details", JSON.stringify(bookingData.hotel_details));
+      }
+
+      // -------- Transport details (JSON) --------
+      if (Array.isArray(bookingData.transport_details)) {
+        formData.append("transport_details", JSON.stringify(bookingData.transport_details));
+      }
+
+      // -------- Person details (JSON + File refs) --------
+      let personDetailsWithRefs = [];
+      let fileIndex = 1;
+
+      if (Array.isArray(bookingData.person_details)) {
+        bookingData.person_details.forEach((person) => {
+          let personCopy = { ...person };
+
+          // If file exists, replace with reference key
+          if (person.passport_picture instanceof File) {
+            const refKey = `passport_picture_${fileIndex}`;
+            personCopy.passport_picture_field = refKey;
+
+            // Attach actual file
+            formData.append(`person_files[${refKey}]`, person.passport_picture);
+
+            fileIndex++;
+          }
+
+          // Remove the File object before pushing
+          delete personCopy.passport_picture;
+          personDetailsWithRefs.push(personCopy);
+        });
+
+        formData.append("person_details", JSON.stringify(personDetailsWithRefs));
+      }
+
+      console.log("BookingData Payload (stringified):", {
+        ...mainFields,
+        ticket_details: bookingData.ticket_details,
+        hotel_details: bookingData.hotel_details,
+        transport_details: bookingData.transport_details,
+        person_details: personDetailsWithRefs,
+      });
+
+      // -------- API call --------
+      const response = await axios.post(
+        `http://127.0.0.1:8000/api/bookings/`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            "Authorization": `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status >= 200 && response.status < 300) {
+        console.log("Booking created successfully:", response.data);
+        navigate("/packages/pay", {
+          state: {
+            bookingId: response.data.id,
+            totalAmount: totalPrice,
+            package: pkg,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Error creating booking:", error);
+      if (error.response) {
+        console.error("Error response data:", error.response.data);
+      }
+      alert("An error occurred while creating the booking. Please check the console for details.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };

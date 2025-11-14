@@ -7,25 +7,34 @@ from organization.models import Organization, Branch, Agency
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    commission_id = serializers.CharField(read_only=False, required=False, allow_null=True)
+
     class Meta:
         model = UserProfile
-        exclude = ["user"]
+        # explicitly include commission_id and avoid exposing user FK through this serializer
+        fields = ["id", "type", "commission_id"]
+        read_only_fields = ["id"]
 
 
 class UserSerializer(serializers.ModelSerializer):
+    # Make these related fields optional on create/update so API callers
+    # can omit them when not needed (previously they were required which
+    # caused 400 responses on POST if omitted).
     groups = serializers.PrimaryKeyRelatedField(
-        queryset=Group.objects.all(), many=True, write_only=True
+        queryset=Group.objects.all(), many=True, write_only=True, required=False
     )
     organizations = serializers.PrimaryKeyRelatedField(
-        queryset=Organization.objects.all(), many=True, write_only=True
+        queryset=Organization.objects.all(), many=True, write_only=True, required=False
     )
     branches = serializers.PrimaryKeyRelatedField(
-        queryset=Branch.objects.all(), many=True, write_only=True
+        queryset=Branch.objects.all(), many=True, write_only=True, required=False
     )
     agencies = serializers.PrimaryKeyRelatedField(
-        queryset=Agency.objects.all(), many=True, write_only=True
+        queryset=Agency.objects.all(), many=True, write_only=True, required=False
     )
-    profile = UserProfileSerializer()
+    # Make profile optional as well — UserProfile fields are nullable in the model
+    # and it's common to create a User before attaching a profile.
+    profile = UserProfileSerializer(required=False)
     group_details = serializers.SerializerMethodField(read_only=True)
     organization_details = serializers.SerializerMethodField(read_only=True)
     branch_details = serializers.SerializerMethodField(read_only=True)
@@ -52,6 +61,8 @@ class UserSerializer(serializers.ModelSerializer):
             "is_active",
             "username",
             "password",
+            "is_superuser",
+            "is_staff",
             "groups",
             "organizations",
             "branches",

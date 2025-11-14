@@ -29,6 +29,21 @@ urlpatterns = [
     path("", include("packages.urls")),  
     path("", include("tickets.urls")), 
     path("", include("booking.urls")),
+    path("", include("ledger.urls")),
+    path("", include("finance.urls")),  # Finance & Reports Module
+    path("", include("payments.urls")),  # Kuickpay Payment Gateway
+    path("api/operations/", include("operations.urls")),  # Operations Module
+    path("api/leads/", include("leads.urls")),
+    path("api/area-leads/", include("area_leads.urls")),
+    path("api/logs/", include("logs.urls")),
+    path("api/commissions/", include("commissions.urls")),
+    path("api/universal/", include("universal.urls")),
+    path("api/blog/", include("blog.urls")),
+    path("api/promotion-center/", include("promotion_center.urls")),
+    path("api/", include("pax_movements.urls")),
+    path("api/", include("passport_leads.urls")),  # Passport Leads & Follow-up Module
+    path("api/", include("customers.urls")),  # Customer Auto-Collection API
+    path("", include("forms.urls")),  # Dynamic Forms for Lead Generation
 
     # ✅ Debug & API Docs
     path("__debug__/", include("debug_toolbar.urls")),

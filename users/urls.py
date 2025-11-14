@@ -24,4 +24,9 @@ urlpatterns = [
         views.UploadPermissionsFileAPIView.as_view(),
         name="upload-permission",
     ),
+    path(
+        "api/logout/",
+        views.LogoutView.as_view(),
+        name="logout",
+    ),
 ]
