@@ -553,7 +553,7 @@ const AddPackages = ({ mode = "add" }) => {
   setMadinaZiyaaratSellingPrice(pkgData.madinah_ziyarat_selling_price ?? pkgData.madinah_ziyarat_price ?? 0);
   setMadinaZiyaaratPurchasePrice(pkgData.madinah_ziyarat_purchase_price ?? 0);
   setSelectedMadinaZiyaratId(pkgData.madinah_ziyarat_id ?? "");
-  setTransportSellingPrice(pkgData.transport_selling_price ?? pkgData.transport_price ?? 0);
+  setTransportSellingPrice(pkgData.transport_selling_price ?? 0);
   setTransportPurchasePrice(pkgData.transport_purchase_price ?? 0);
   // Tax rate field removed from form - backend will use default or existing value
 
@@ -1493,7 +1493,9 @@ const AddPackages = ({ mode = "add" }) => {
   food_price: parseFloat(foodSellingPrice) || 0,
   makkah_ziyarat_price: parseFloat(meccaZiyaaratSellingPrice) || 0,
   madinah_ziyarat_price: parseFloat(madinaZiyaaratSellingPrice) || 0,
-  transport_price: parseFloat(transportSellingPrice) || 0,
+  // Do not send legacy `transport_price` field. Backend will accept
+  // explicit selling/purchase fields: `transport_selling_price` and
+  // `transport_purchase_price` which are added below.
 
   // Explicit selling / purchase fields
   adault_visa_selling_price: parseFloat(adultVisaSellingPrice) || 0,

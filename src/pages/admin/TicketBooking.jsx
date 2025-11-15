@@ -26,11 +26,89 @@ const FlightCard = ({ ticket, airlineMap, cityMap, orgId }) => {
   // Get airline info
   const airlineInfo = airlineMap[ticket.airline] || {};
 
-  // Determine displayed flight number: prefer top-level, otherwise use first trip_details.flight_number
-  const displayedFlightNumber =
-    ticket.flight_number ||
-    (ticket.trip_details && ticket.trip_details[0] && ticket.trip_details[0].flight_number) ||
-    "N/A";
+  // Robust resolver for city display name. Handles:
+  // - city id (number/string) mapped via `cityMap`
+  // - city object { id, name } or { id } or { name }
+  // - raw string values (already a name)
+  // - fallback to 'Unknown City'
+  const getCityName = (cityRef) => {
+    if (cityRef === null || cityRef === undefined) return "Unknown City";
+    try {
+      if (typeof cityRef === "object") {
+        if (cityRef.name) return cityRef.name;
+        if (cityRef.city_name) return cityRef.city_name;
+        if (cityRef.code && cityRef.name === undefined) return String(cityRef.code);
+        if (cityRef.id || cityRef.id === 0) {
+          const idKey = cityRef.id;
+          if (cityMap && (cityMap[idKey] || cityMap[String(idKey)])) return cityMap[idKey] || cityMap[String(idKey)];
+        }
+        return String(cityRef);
+      }
+
+      if (cityMap && (cityMap[cityRef] || cityMap[String(cityRef)])) {
+        return cityMap[cityRef] || cityMap[String(cityRef)];
+      }
+
+      if (typeof cityRef === "string" && cityRef.trim() !== "") return cityRef;
+
+      return String(cityRef);
+    } catch (e) {
+      return "Unknown City";
+    }
+  };
+
+  // Resolve city name with additional fallbacks using the trip/stopover object
+  const resolveCityName = (cityRef, contextObj) => {
+    // Primary lookup
+    const primary = getCityName(cityRef);
+    // If primary gives a numeric string equal to the ref or 'Unknown City', try fallbacks
+    const isNumericString = (s) => typeof s === 'string' && /^\d+$/.test(s.trim());
+    if (primary && primary !== 'Unknown City' && !isNumericString(primary)) return primary;
+
+    // Check common context fields that may contain readable names
+    if (contextObj && typeof contextObj === 'object') {
+      const candidates = [
+        contextObj.name,
+        contextObj.city_name,
+        contextObj.departure_city_name,
+        contextObj.arrival_city_name,
+        contextObj.display_name,
+        contextObj.label,
+      ];
+      for (const c of candidates) {
+        if (c && typeof c === 'string' && c.trim() !== '') return c;
+      }
+
+      // Sometimes the context contains nested objects with a name
+      const nested = contextObj.departure_city || contextObj.arrival_city || contextObj.stopover_city;
+      if (nested && typeof nested === 'object') {
+        if (nested.name) return nested.name;
+        if (nested.city_name) return nested.city_name;
+      }
+    }
+
+    // If primary looks numeric, check our lazy-fetched fallback names first
+    if (primary && (typeof primary === 'string' && /^\d+$/.test(primary))) {
+      const fb = fallbackCities[String(primary)];
+      if (fb) return fb;
+    }
+
+    // Last resort: return primary even if numeric, or Unknown City
+    // Also check fallbackCities directly for numeric cityRef
+    if ((typeof cityRef === 'number' || (typeof cityRef === 'string' && /^\d+$/.test(String(cityRef).trim())))) {
+      const fb2 = fallbackCities[String(cityRef).trim()];
+      if (fb2) return fb2;
+    }
+
+    return primary || 'Unknown City';
+  };
+
+  // Fallback map for city names fetched lazily when current org doesn't have the city list
+  const [fallbackCities, setFallbackCities] = useState({});
+
+  // If this ticket belongs to another organization (shared inventory), try to fetch any missing
+  // city names by id from the owning organization so linked org can display names.
+  // NOTE: lazy-fetch effect moved below where `outboundTrip` and `returnTrip` are defined
 
   // Safely get trip and stopover details
   const tripDetails = ticket.trip_details || [];
@@ -38,12 +116,113 @@ const FlightCard = ({ ticket, airlineMap, cityMap, orgId }) => {
 
   // FIX: Updated trip_type values to match backend data
   const outboundTrip = tripDetails.find((t) => t.trip_type === "Departure") || tripDetails[0];
-  const returnTrip = tripDetails.find((t) => t.trip_type === "Return");
+  // If the backend does not set `trip_type`, assume a two-item array is [outbound, return]
+  let returnTrip = tripDetails.find((t) => t.trip_type === "Return");
+  if (!returnTrip && tripDetails.length > 1) {
+    returnTrip = tripDetails[1];
+  }
+
+  // Determine displayed flight numbers (compute after outbound/return trip are known)
+  const getFlightNumber = (trip, ticketObj) => {
+    if (!trip) return null;
+    // prefer several possible keys that backend might return
+    const raw = trip.flight_number || trip.flightNumber || trip.flight_no || trip.number || trip.flight;
+    if (raw) {
+      const rawStr = String(raw);
+      // If the trip-level value already contains an airline-code (e.g. PIA-777), return as-is
+      if (rawStr.includes("-")) return rawStr;
+
+      // If trip-level value is numeric-only (e.g. "777") and the parent ticket has a code
+      // like "PIA-777", reuse that code so UI shows "PIA-777" and "PIA-888" correctly.
+      const parentFn = ticketObj && ticketObj.flight_number;
+      if (parentFn && String(parentFn).includes("-")) {
+        const code = String(parentFn).split("-")[0];
+        const digits = rawStr.replace(/\D/g, "");
+        if (digits) return `${code}-${digits}`;
+      }
+
+      // Otherwise return the raw string (may be numeric or some other format)
+      return rawStr;
+    }
+
+    // fallback to top-level ticket.flight_number if trip-level not present
+    return (ticketObj && ticketObj.flight_number) || null;
+  };
+
+  const outboundFlightNumber = getFlightNumber(outboundTrip, ticket) || "N/A";
+  const returnFlightNumber = getFlightNumber(returnTrip, ticket);
+
+  // Debug: if there's a return trip but no flight number, warn so we can inspect API shape
+  if (returnTrip && !returnFlightNumber) {
+    // eslint-disable-next-line no-console
+    console.warn(`Ticket ${ticket.id} has a return trip but no flight number in trip_details`, returnTrip, ticket);
+  }
 
   const outboundStopover = stopoverDetails.find(
     (s) => s.trip_type === "Departure"
   );
   const returnStopover = stopoverDetails.find((s) => s.trip_type === "Return");
+
+  // If this ticket belongs to another organization (shared inventory), try to fetch any missing
+  // city names by id from the owning organization so linked org can display names.
+  useEffect(() => {
+
+    if (!ticket) return;
+
+    // Resolve owner org id reliably (ticket.organization can be id or an object)
+    const ownerOrgId = getOrgId(ticket.organization) || ticket.organization_id || ticket.inventory_owner_organization_id;
+    if (!ownerOrgId) return;
+    // Only fetch when the viewing org differs from the owner org
+    if (String(ownerOrgId) === String(orgId)) return;
+
+    const token = localStorage.getItem("accessToken");
+    if (!token) return;
+
+    const candidateIds = new Set();
+    const collect = (ref) => {
+      if (ref === null || ref === undefined) return;
+      // If ref is an object with an id, use that
+      if (typeof ref === 'object') {
+        const idVal = ref.id || ref.city || ref.city_id || ref.cityId;
+        if (idVal !== undefined && (typeof idVal === 'number' || (typeof idVal === 'string' && /^\d+$/.test(String(idVal).trim())))) {
+          const key = String(idVal).trim();
+          if (!cityMap[key] && !fallbackCities[key]) candidateIds.add(key);
+        }
+        return;
+      }
+
+      // primitive number or numeric string
+      if (typeof ref === 'number' || (typeof ref === 'string' && /^\d+$/.test(ref.trim()))) {
+        const key = String(ref).trim();
+        if (!cityMap[key] && !fallbackCities[key]) candidateIds.add(key);
+      }
+    };
+
+    collect(outboundTrip?.departure_city);
+    collect(outboundTrip?.arrival_city);
+    collect(returnTrip?.departure_city);
+    collect(returnTrip?.arrival_city);
+    if (outboundStopover) collect(outboundStopover.stopover_city);
+    if (returnStopover) collect(returnStopover.stopover_city);
+
+    if (candidateIds.size === 0) return;
+
+    // Fetch each missing city by id from the owning org
+    candidateIds.forEach((id) => {
+      (async () => {
+        try {
+          const res = await axios.get(`http://127.0.0.1:8000/api/cities/${id}/`, {
+            params: { organization: ownerOrgId },
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const name = res?.data?.name || res?.data?.city_name || String(res?.data || "");
+          if (name) setFallbackCities((s) => ({ ...s, [id]: name }));
+        } catch (e) {
+          // ignore failures — we'll still fallback to whatever we have
+        }
+      })();
+    });
+  }, [ticket, outboundTrip, returnTrip, outboundStopover, returnStopover]);
 
   if (!outboundTrip) {
     return (
@@ -219,8 +398,8 @@ const FlightCard = ({ ticket, airlineMap, cityMap, orgId }) => {
     };
 
   return (
-    <div className="card border mb-4 rounded-2">
-      <div className="card-body p-4">
+    <div className="flight-card card mb-4 rounded-3">
+    <div className="card-body p-4">
         {/* Outbound Flight Segment */}
         <div className="d-flex justify-conter-between align-items-center gy-3">
           <div className="col-md-2 text-center">
@@ -233,8 +412,11 @@ const FlightCard = ({ ticket, airlineMap, cityMap, orgId }) => {
             <div className="text-muted mt-2 small fw-medium">
               {airlineInfo.name || "Unknown Airline"}
             </div>
-            <div className="d-flex align-items-center justify-content-center gap-2">
-              <div className="text-primary fw-bold small mt-1">{displayedFlightNumber}</div>
+            <div className="text-muted mt-1 small">
+              PNR: {ticket && (ticket.pnr || ticket.pnr_number || ticket.pnr_no || "N/A")}
+            </div>
+            <div className="d-flex flex-column align-items-center justify-content-center gap-2">
+              <div className="flight-number">{outboundFlightNumber}</div>
               {(ticket.reselling_allowed === true || ticket.reselling_allowed === "true" || ticket.reselling_allowed === 1 || ticket.reselling_allowed === "1") && String(ticket.organization) !== String(orgId) && (
                 <span className="badge bg-success">Reselling</span>
               )}
@@ -248,7 +430,7 @@ const FlightCard = ({ ticket, airlineMap, cityMap, orgId }) => {
               {formatDate(outboundTrip.departure_date_time)}
             </div>
             <div className="text-muted small">
-              {cityMap[outboundTrip.departure_city] || "Unknown City"}
+              {resolveCityName(outboundTrip.departure_city, outboundTrip)}
             </div>
           </div>
 
@@ -286,8 +468,7 @@ const FlightCard = ({ ticket, airlineMap, cityMap, orgId }) => {
                           whiteSpace: "nowrap",
                         }}
                       >
-                        {cityMap[outboundStopover.stopover_city] ||
-                          "Unknown City"}
+                        {resolveCityName(outboundStopover.stopover_city, outboundStopover) || "Unknown City"}
                       </div>
                     </div>
                     <hr className="w-50 m-0" />
@@ -299,7 +480,7 @@ const FlightCard = ({ ticket, airlineMap, cityMap, orgId }) => {
             </div>
 
             <div className="text-muted mt-4 small mt-1">
-              {outboundStopover ? `${cityMap[outboundStopover.stopover_city] || 'Stopover'} Stopover — ${formatStopoverDurationForDisplay("Departure", outboundStopover) || "N/A"}` : "Non-stop"}
+              {outboundStopover ? `${resolveCityName(outboundStopover.stopover_city, outboundStopover) || 'Stopover'} Stopover — ${formatStopoverDurationForDisplay("Departure", outboundStopover) || "N/A"}` : "Non-stop"}
             </div>
           </div>
           <div className="col-md-2 text-center text-md-start">
@@ -310,11 +491,11 @@ const FlightCard = ({ ticket, airlineMap, cityMap, orgId }) => {
               {formatDate(outboundTrip.arrival_date_time)}
             </div>
             <div className="text-muted small">
-              {cityMap[outboundTrip.arrival_city] || "Unknown City"}
+              {resolveCityName(outboundTrip.arrival_city, outboundTrip)}
             </div>
           </div>
-          <div className="col-md-2 text-center">
-            <div className="fw-medium">
+            <div className="col-md-2 text-center">
+            <div className="fw-medium flight-duration">
               {getDuration(
                 outboundTrip.departure_date_time,
                 outboundTrip.arrival_date_time
@@ -352,6 +533,9 @@ const FlightCard = ({ ticket, airlineMap, cityMap, orgId }) => {
                 <div className="text-muted mt-2 small fw-medium">
                   {airlineInfo.name || "Unknown Airline"}
                 </div>
+                {returnFlightNumber && (
+                  <div className="flight-number mt-1">{returnFlightNumber}</div>
+                )}
               </div>
               <div className="col-md-2 text-center text-md-start">
                 <h6 className="mb-0 ">
@@ -361,7 +545,7 @@ const FlightCard = ({ ticket, airlineMap, cityMap, orgId }) => {
                   {formatDate(returnTrip.departure_date_time)}
                 </div>
                 <div className="text-muted small">
-                  {cityMap[returnTrip.departure_city] || "Unknown City"}
+                  {resolveCityName(returnTrip.departure_city, returnTrip)}
                 </div>
               </div>
 
@@ -399,8 +583,7 @@ const FlightCard = ({ ticket, airlineMap, cityMap, orgId }) => {
                               whiteSpace: "nowrap",
                             }}
                           >
-                            {cityMap[returnStopover.stopover_city] ||
-                              "Unknown City"}
+                                                {resolveCityName(returnStopover.stopover_city, returnStopover) || "Unknown City"}
                           </div>
                         </div>
                         <hr className="w-50 m-0" />
@@ -412,7 +595,7 @@ const FlightCard = ({ ticket, airlineMap, cityMap, orgId }) => {
                 </div>
 
                 <div className="text-muted mt-4 small mt-1">
-                  {returnStopover ? `${cityMap[returnStopover.stopover_city] || 'Stopover'} Stopover — ${formatStopoverDurationForDisplay("Return", returnStopover) || "N/A"}` : "Non-stop"}
+                  {returnStopover ? `${resolveCityName(returnStopover.stopover_city, returnStopover) || 'Stopover'} Stopover — ${formatStopoverDurationForDisplay("Return", returnStopover) || "N/A"}` : "Non-stop"}
                 </div>
               </div>
               <div className="col-md-2 text-center text-md-start">
@@ -423,7 +606,7 @@ const FlightCard = ({ ticket, airlineMap, cityMap, orgId }) => {
                   {formatDate(returnTrip.arrival_date_time)}
                 </div>
                 <div className="text-muted small">
-                  {cityMap[returnTrip.arrival_city] || "Unknown City"}
+                  {resolveCityName(returnTrip.arrival_city, returnTrip)}
                 </div>
               </div>
               <div className="col-md-2 text-center">
@@ -475,19 +658,19 @@ const FlightCard = ({ ticket, airlineMap, cityMap, orgId }) => {
             </span>
           </div>
 
-          <div className="col-md-5 text-md-end text-center d-flex">
+          <div className="col-md-5 text-md-end text-center d-flex flight-right">
             <div className="d-flex flex-column me-3 align-items-center">
-              <div className="fw-bold">
+              <div className="flight-price">
                 PKR {ticket.adult_price}{" "}
-                <span className="text-muted fw-normal">/per person</span>
+                <span className="text-muted fw-normal" style={{ fontWeight: 500, fontSize: '0.85rem' }}>/per person</span>
               </div>
             </div>
             <Link to={`/ticket-booking/detail/${ticket.id}`}>
               <button
-                className="btn btn-primary btn-sm w-100 rounded "
-                style={{ padding: "0.5rem 1.5rem" }}
+                className="btn btn-primary btn-sm w-100 rounded btn-see-details"
+                style={{ padding: "0.5rem 1.2rem" }}
               >
-                {(ticket.is_umrah_seat = "See Details")}
+                See Details
               </button>
             </Link>
           </div>
@@ -772,13 +955,20 @@ const TicketBooking = () => {
         const cacheKey = `ticketData-${orgId}`;
         const cachedData = JSON.parse(localStorage.getItem(cacheKey));
 
-        console.log(`Org ID: ${orgId}, Cache key: ${cacheKey}`);
-        console.log(`Cache exists: ${!!cachedData}, Cache valid: ${cachedData ? isCacheValid(cachedData) : false}`);
+        // If a refresh flag is present, ignore cache and remove flag so we fetch fresh data
+        const refreshFlag = localStorage.getItem(`ticket_refresh_${orgId}`);
+        if (refreshFlag) {
+          console.log('ticket refresh flag found — ignoring cache');
+          localStorage.removeItem(`ticket_refresh_${orgId}`);
+        }
 
-        // Use cache only when it appears valid and contains tickets.
+        console.log(`Org ID: ${orgId}, Cache key: ${cacheKey}`);
+        console.log(`Cache exists: ${!!cachedData}, Cache valid: ${cachedData ? isCacheValid(cachedData) : false}, refreshFlag: ${!!refreshFlag}`);
+
+        // Use cache only when it appears valid and contains tickets and no refresh flag set.
         // A cached object with an empty tickets array can hide newly created tickets
         // (observed when some code seeded an empty cache with a future timestamp).
-        if (cachedData && isCacheValid(cachedData) && Array.isArray(cachedData.tickets) && cachedData.tickets.length > 0) {
+        if (!refreshFlag && cachedData && isCacheValid(cachedData) && Array.isArray(cachedData.tickets) && cachedData.tickets.length > 0) {
           // Use cached data
           console.log('Using cached data');
           setTickets(cachedData.tickets);
@@ -1005,11 +1195,41 @@ const TicketBooking = () => {
 
     console.log(`After filtering: ${result.length} tickets from ${tickets.length} total`);
 
-    // PNR search
-    if (pnr) {
-      result = result.filter((ticket) =>
-        ticket.pnr.toLowerCase().includes(pnr.toLowerCase())
-      );
+    // PNR search (robust): search common pnr fields and nested booking objects
+    if (pnr && String(pnr).trim() !== "") {
+      const q = String(pnr).toLowerCase().trim();
+      result = result.filter((ticket) => {
+        if (!ticket) return false;
+
+        const candidates = [];
+
+        // Top-level common fields
+        candidates.push(ticket.pnr);
+        candidates.push(ticket.pnr_number);
+        candidates.push(ticket.pnr_no);
+        candidates.push(ticket.reference);
+        candidates.push(ticket.booking_reference);
+
+        // nested booking object
+        if (ticket.booking && typeof ticket.booking === "object") {
+          candidates.push(ticket.booking.pnr);
+          candidates.push(ticket.booking.pnr_number);
+          candidates.push(ticket.booking.reference);
+        }
+
+        // Try inventory or meta fields that sometimes hold PNR
+        candidates.push(ticket.code);
+        candidates.push(ticket.booking_code);
+
+        // Check each candidate for a match
+        return candidates.some((c) => {
+          try {
+            return c && String(c).toLowerCase().includes(q);
+          } catch (e) {
+            return false;
+          }
+        });
+      });
     }
 
     // Destination search
@@ -1021,7 +1241,7 @@ const TicketBooking = () => {
           (t) => t.trip_type === "Departure"
         ) || ticket.trip_details?.[0];
         if (!outbound) return false;
-        const arrivalCity = cityMap[outbound.arrival_city] || "";
+        const arrivalCity = (resolveCityName(outbound.arrival_city, outbound) || "");
         return arrivalCity.toUpperCase().includes(destUpper);
       });
     }
@@ -1108,6 +1328,34 @@ const TicketBooking = () => {
               if (a.is_umrah_seat && !b.is_umrah_seat) cmp = -1;
               else if (!a.is_umrah_seat && b.is_umrah_seat) cmp = 1;
               break;
+            case "closedBooking": {
+              // Put closed bookings first
+              const closedA = !!(a.closed || a.closed_at || a.booking_status === "closed");
+              const closedB = !!(b.closed || b.closed_at || b.booking_status === "closed");
+              if (closedA === closedB) cmp = 0;
+              else cmp = closedA ? -1 : 1;
+              break;
+            }
+            case "travelDatePassed": {
+              // Tickets with travel date in the past are considered "passed".
+              const outboundA = a.trip_details?.find((t) => t.trip_type === "Departure") || a.trip_details?.[0];
+              const outboundB = b.trip_details?.find((t) => t.trip_type === "Departure") || b.trip_details?.[0];
+              const now = Date.now();
+              const passedA = outboundA && new Date(outboundA.departure_date_time).getTime() < now;
+              const passedB = outboundB && new Date(outboundB.departure_date_time).getTime() < now;
+              // Keep non-passed first
+              if (passedA === passedB) cmp = 0;
+              else cmp = passedA ? 1 : -1;
+              break;
+            }
+            case "deleteHistory": {
+              // If ticket appears deleted/archived, sort it to the end
+              const deletedA = !!(a.deleted || a.is_deleted || a.deleted_at || a.delete_history);
+              const deletedB = !!(b.deleted || b.is_deleted || b.deleted_at || b.delete_history);
+              if (deletedA === deletedB) cmp = 0;
+              else cmp = deletedA ? 1 : -1;
+              break;
+            }
             default:
               cmp = 0;
           }
@@ -1225,6 +1473,33 @@ const TicketBooking = () => {
           .shimmer-line, .shimmer-image, .shimmer-badge, .shimmer-button, .shimmer-dot {
             background: #e0e0e0;
             border-radius: 4px;
+          }
+
+          /* Flight card modern styles */
+          .flight-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(16,24,40,0.08);
+            transition: transform .12s ease, box-shadow .12s ease;
+            overflow: hidden;
+            background: #ffffff;
+          }
+          .flight-card:hover { transform: translateY(-4px); box-shadow: 0 12px 30px rgba(16,24,40,0.12); }
+          .flight-card .card-body { padding: 1.25rem 1.25rem; }
+          .flight-header { display:flex; gap:1rem; align-items:center; }
+          .flight-logo { max-height:56px; width:auto; object-fit:contain; }
+          .flight-number { font-size:1.05rem; font-weight:700; color:#0d6efd; letter-spacing:0.4px; }
+          .flight-return { font-size:0.85rem; color:#6c757d; }
+          .flight-meta { color:#495057; font-size:0.95rem; }
+          .flight-duration { color:#6b7280; font-size:0.9rem; }
+          .flight-right { display:flex; flex-direction:column; align-items:flex-end; justify-content:space-between; gap:0.6rem; }
+          .flight-price { font-size:1.15rem; font-weight:800; color:#0b5ed7; }
+          .flight-badges { display:flex; gap:0.5rem; align-items:center; }
+          .flight-card .badge { border-radius:6px; padding:.35rem .6rem; font-weight:600; }
+          .btn-see-details { box-shadow: 0 6px 18px rgba(11,94,215,0.12); }
+          @media (max-width: 767px) {
+            .flight-header { flex-direction:row; }
+            .flight-right { align-items:flex-start; text-align:left; }
           }
         `}
       </style>

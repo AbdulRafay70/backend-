@@ -3,6 +3,17 @@ import { Card, Form, Button, Row, Col, Badge, Modal, Spinner, Alert, Tab, Tabs, 
 import { Plus, Edit2, Trash2, Upload, Grid3x3, Home, Bed, AlertCircle, CheckCircle, X } from "lucide-react";
 import axios from "axios";
 
+// Small helper to generate an inline SVG placeholder as a data URI
+const placeholderDataUri = (text = "Layout", width = 400, height = 300, bg = "#f0f0f0", fg = "#666") => {
+  const svg = `
+    <svg xmlns='http://www.w3.org/2000/svg' width='${width}' height='${height}'>
+      <rect width='100%' height='100%' fill='${bg}' />
+      <text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' fill='${fg}' font-size='18' font-family='Arial, Helvetica, sans-serif'>${text}</text>
+    </svg>
+  `;
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+};
+
 const RoomMapManager = ({ hotelId, onSaved }) => {
   const [activeTab, setActiveTab] = useState("floors");
   
@@ -10,7 +21,7 @@ const RoomMapManager = ({ hotelId, onSaved }) => {
   const demoFloors = [
     {
       floor_no: 1,
-      floor_map_url: "https://via.placeholder.com/400x300?text=Floor+1+Layout",
+      floor_map_url: placeholderDataUri('Floor 1 Layout'),
       rooms: [
         {
           id: 1,
@@ -52,7 +63,7 @@ const RoomMapManager = ({ hotelId, onSaved }) => {
     },
     {
       floor_no: 2,
-      floor_map_url: "https://via.placeholder.com/400x300?text=Floor+2+Layout",
+      floor_map_url: placeholderDataUri('Floor 2 Layout'),
       rooms: [
         {
           id: 4,
@@ -82,7 +93,7 @@ const RoomMapManager = ({ hotelId, onSaved }) => {
     },
     {
       floor_no: "G",
-      floor_map_url: "https://via.placeholder.com/400x300?text=Ground+Floor+Layout",
+      floor_map_url: placeholderDataUri('Ground Floor Layout'),
       rooms: [
         {
           id: 6,
@@ -360,7 +371,7 @@ const RoomMapManager = ({ hotelId, onSaved }) => {
       };
 
       const token = localStorage.getItem("accessToken");
-      await axios.post("http://127.0.0.1:8000/api/hotels/room-map", payload, {
+      await axios.post("https://api.saer.pk/api/hotels/room-map", payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

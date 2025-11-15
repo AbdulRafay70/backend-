@@ -36,7 +36,7 @@ const UmrahPackageCard = () => {
         const [packageRes, hotelsRes, ticketsRes, airlinesRes] =
           await Promise.all([
             axios.get(
-              `http://127.0.0.1:8000/api/umrah-packages/?organization=${orgId}`,
+              `https://api.saer.pk/api/umrah-packages/?organization=${orgId}`,
               {
                 // params: { organization: organizationId },
                 headers: {
@@ -45,21 +45,21 @@ const UmrahPackageCard = () => {
                 },
               }
             ),
-            axios.get("http://127.0.0.1:8000/api/hotels/", {
+            axios.get("https://api.saer.pk/api/hotels/", {
               params: { organization: orgId },
               headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
               },
             }),
-            axios.get("http://127.0.0.1:8000/api/tickets/", {
+            axios.get("https://api.saer.pk/api/tickets/", {
               params: { organization: orgId },
               headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
               },
             }),
-            axios.get("http://127.0.0.1:8000/api/airlines/", {
+            axios.get("https://api.saer.pk/api/airlines/", {
               params: { organization: orgId },
               headers: {
                 Authorization: `Bearer ${token}`,

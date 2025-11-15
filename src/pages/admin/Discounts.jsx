@@ -4,6 +4,7 @@ import { Gear } from "react-bootstrap-icons";
 import { ArrowBigLeft, Funnel, Search, UploadCloudIcon } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
+import PartnersTabs from "../../components/PartnersTabs";
 import { Link, NavLink } from "react-router-dom";
 import AdminFooter from "../../components/AdminFooter";
 
@@ -133,15 +134,7 @@ const Discounts = () => {
       ? data
       : data.filter((item) => item.status === statusFilter);
 
-  const tabs = [
-    { name: "All Partners", path: "/partners" },
-    { name: "Request", path: "/partners/request" },
-    { name: "Group And Permissions", path: "/partners/role-permissions" },
-    { name: "Discounts", path: "/partners/discounts" },
-    { name: "Organizations", path: "/partners/organization" },
-    { name: "Branches", path: "/partners/branche" },
-    { name: "Agencies", path: "/partners/agencies" },
-  ];
+  // Navigation is rendered by shared PartnersTabs
   
 
   const [filter, setFilter] = useState("empolyes");
@@ -159,41 +152,7 @@ const Discounts = () => {
             <Header />
             <div className="px-3 px-lg-4 my-3">
               {/* Navigation Tabs */}
-              <div className="row ">
-            <div className="d-flex flex-wrap justify-content-between align-items-center w-100">
-              {/* Navigation Tabs */}
-              <nav className="nav flex-wrap gap-2">
-                {tabs.map((tab, index) => (
-                  <NavLink
-                    key={index}
-                    to={tab.path}
-                    className={`nav-link btn btn-link text-decoration-none px-0 me-3 border-0 ${
-                      tab.name === "Discounts"
-                        ? "text-primary fw-semibold"
-                        : "text-muted"
-                    }`}
-                    style={{ backgroundColor: "transparent" }}
-                  >
-                    {tab.name}
-                  </NavLink>
-                ))}
-              </nav>
-
-              {/* Action Buttons */}
-              <div className="input-group" style={{ maxWidth: "300px" }}>
-                <span className="input-group-text">
-                  <Search />
-                </span>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Search name, address, job, etc"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
+              <PartnersTabs />
 
           {/* Partner Table or Detail View */}
           <div className="p-3 bg-white rounded shadow-sm">

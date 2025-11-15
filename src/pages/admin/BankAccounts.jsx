@@ -92,7 +92,7 @@ const BankAccountsScreen = () => {
   console.debug('fetchBankAccounts - organization_id:', organization_id);
   const branch_id = (() => { try { const s = JSON.parse(localStorage.getItem('selectedOrganization')) || {}; return s?.branch_id || s?.branch || localStorage.getItem('selectedBranchId') || 0; } catch (_) { return localStorage.getItem('selectedBranchId') || 0; } })();
       const token = localStorage.getItem('accessToken');
-      const resp = await axios.get('http://127.0.0.1:8000/api/bank-accounts/', {
+      const resp = await axios.get('https://api.saer.pk/api/bank-accounts/', {
         params: { organization: organization_id, organization_id, branch_id, _ts: Date.now() },
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
@@ -178,7 +178,7 @@ const BankAccountsScreen = () => {
     try {
       setLoadingAgencies(true);
       const token = localStorage.getItem('accessToken');
-      const resp = await axios.get('http://127.0.0.1:8000/api/agencies/', {
+      const resp = await axios.get('https://api.saer.pk/api/agencies/', {
         params: { organization: organization_id },
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
@@ -291,7 +291,7 @@ const BankAccountsScreen = () => {
       if (!agency_id || Number(agency_id) === 0) {
         try {
           const tokenHeader = rawToken ? { Authorization: `Bearer ${rawToken}` } : {};
-          const agencyResp = await axios.get(`http://127.0.0.1:8000/api/agencies/?organization=${organization_id}`, { headers: tokenHeader });
+          const agencyResp = await axios.get(`https://api.saer.pk/api/agencies/?organization=${organization_id}`, { headers: tokenHeader });
           const agencies = Array.isArray(agencyResp.data) ? agencyResp.data : (agencyResp.data.results || []);
           if (agencies.length > 0) {
             const first = agencies[0];
@@ -320,7 +320,7 @@ const BankAccountsScreen = () => {
           // attempt to resolve branch_code or name to numeric id via branches API
           try {
             const tokenHeader = rawToken ? { Authorization: `Bearer ${rawToken}` } : {};
-            const branchesResp = await axios.get('http://127.0.0.1:8000/api/branches/', {
+            const branchesResp = await axios.get('https://api.saer.pk/api/branches/', {
               params: { organization_id: organization_id },
               headers: tokenHeader
             });
@@ -359,11 +359,11 @@ const BankAccountsScreen = () => {
       let resp;
       if (editingAccount && (editingAccount.id || editingAccount.pk)) {
         const id = editingAccount.id || editingAccount.pk;
-        resp = await axios.put(`http://127.0.0.1:8000/api/bank-accounts/${id}/`, payload, {
+        resp = await axios.put(`https://api.saer.pk/api/bank-accounts/${id}/`, payload, {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
       } else {
-        resp = await axios.post('http://127.0.0.1:8000/api/bank-accounts/', payload, {
+        resp = await axios.post('https://api.saer.pk/api/bank-accounts/', payload, {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
       }
@@ -414,7 +414,7 @@ const BankAccountsScreen = () => {
     try {
       const token = localStorage.getItem('accessToken');
       const id = account.id || account.pk || account.account_number;
-      await axios.delete(`http://127.0.0.1:8000/api/bank-accounts/${id}/`, {
+      await axios.delete(`https://api.saer.pk/api/bank-accounts/${id}/`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       await fetchBankAccounts();

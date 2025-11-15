@@ -46,6 +46,14 @@ const TicketDetail = () => {
 
   useEffect(() => {
     const fetchAirlinesAndCities = async () => {
+      // Ensure we have a selected organization; otherwise bail and show an error
+      if (!selectedOrg) {
+        console.error('TicketDetail: no selectedOrganization in localStorage');
+        setError('No organization selected. Please select an organization first.');
+        setLoading(false);
+        return;
+      }
+
       const orgId = typeof selectedOrg === "object" ? selectedOrg.id : selectedOrg;
       try {
         const [airlinesRes, citiesRes] = await Promise.all([
@@ -57,10 +65,12 @@ const TicketDetail = () => {
           }),
         ]);
 
-        setAirlines(airlinesRes.data);
-        setCities(citiesRes.data);
+        setAirlines(airlinesRes.data || []);
+        setCities(citiesRes.data || []);
       } catch (err) {
         console.error("Error fetching reference data:", err);
+        setError("Failed to load reference data. Please try again later.");
+        setLoading(false);
       }
     };
 

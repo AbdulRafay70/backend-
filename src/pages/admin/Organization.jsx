@@ -4,6 +4,7 @@ import { Gear } from "react-bootstrap-icons";
 import { Search, UploadCloudIcon } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
+import PartnersTabs from "../../components/PartnersTabs";
 import { NavLink } from "react-router-dom";
 import axios from "axios";
 import AdminFooter from "../../components/AdminFooter";
@@ -31,7 +32,7 @@ const ShimmerLoader = () => {
 };
 
 const Organization = () => {
-  const API_URL = "http://127.0.0.1:8000/api/organizations/";
+  const API_URL = "https://api.saer.pk/api/organizations/";
   const CACHE_KEY = "organizations_cache";
   const CACHE_TIMESTAMP_KEY = "organizations_cache_timestamp";
   const CACHE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes cache expiry
@@ -59,7 +60,7 @@ const Organization = () => {
   const accessToken = localStorage.getItem("accessToken");
 
   const api = axios.create({
-    baseURL: "http://127.0.0.1:8000",
+    baseURL: "https://api.saer.pk",
     headers: {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "multipart/form-data",
@@ -265,15 +266,7 @@ const Organization = () => {
     }
   };
 
-  const tabs = [
-    { name: "All Partners", path: "/partners" },
-    { name: "Request", path: "/partners/request" },
-    { name: "Group And Permissions", path: "/partners/role-permissions" },
-    { name: "Discounts", path: "/partners/discounts" },
-    { name: "Organizations", path: "/partners/organization" },
-    { name: "Branches", path: "/partners/branche" },
-    { name: "Agencies", path: "/partners/agencies" },
-  ];
+  // Navigation is rendered by shared PartnersTabs
 
   return (
     <>
@@ -304,40 +297,7 @@ const Organization = () => {
             <Header />
             <div className="px-3 px-lg-4 my-3">
               {/* Navigation Tabs */}
-              <div className="row ">
-                <div className="d-flex flex-wrap justify-content-between align-items-center w-100">
-                  {/* Navigation Tabs */}
-                  <nav className="nav flex-wrap gap-2">
-                    {tabs.map((tab, index) => (
-                      <NavLink
-                        key={index}
-                        to={tab.path}
-                        className={`nav-link btn btn-link text-decoration-none px-0 me-3  ${tab.name === "Organizations"
-                            ? "text-primary fw-semibold"
-                            : "text-muted"
-                          }`}
-                        style={{ backgroundColor: "transparent" }}
-                      >
-                        {tab.name}
-                      </NavLink>
-                    ))}
-                  </nav>
-
-                  {/* Action Buttons */}
-                  <div className="input-group" style={{ maxWidth: "300px" }}>
-                    <span className="input-group-text">
-                      <Search />
-                    </span>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="Search name, phone, email, etc"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
+              <PartnersTabs />
 
               {/* Error Message */}
               {error && (

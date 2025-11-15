@@ -1,6 +1,7 @@
 import axios from "axios";
 
 // Use Vite env variable when available, otherwise fall back to local dev backend
+// Default to `http://127.0.0.1:8000/api` to avoid accidentally targeting production
 const baseURL = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000/api";
 
 const api = axios.create({
@@ -48,6 +49,23 @@ api.interceptors.response.use(
 export default api;
 
 export const getPost = () => api.get("/branches/");
+
+// Helper to set or clear the default Authorization header on the axios instance
+export const setAuthToken = (token) => {
+  try {
+    if (!api.defaults) api.defaults = {};
+    if (!api.defaults.headers) api.defaults.headers = {};
+    if (token) {
+      // Accept either a raw token or a "Bearer ..." value
+      api.defaults.headers.Authorization = token.startsWith("Bearer ") ? token : `Bearer ${token}`;
+    } else {
+      // remove header when token is null/undefined
+      delete api.defaults.headers.Authorization;
+    }
+  } catch (e) {
+    // ignore errors when running in non-browser environments
+  }
+};
 
 export const getFinanceDashboard = (period = "today") => {
   return api.get(`/finance/dashboard`, { params: { period } });

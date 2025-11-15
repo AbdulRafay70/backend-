@@ -4,6 +4,7 @@ import { Gear } from "react-bootstrap-icons";
 import { Funnel, Search } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
+import PartnersTabs from "../../components/PartnersTabs";
 import { NavLink } from "react-router-dom";
 import axios from "axios";
 import Select from "react-select";
@@ -32,7 +33,7 @@ const ShimmerLoader = () => {
   );
 };
 
-const Partners = () => {
+const Partners = ({ embed = false }) => {
   const PARTNERS_CACHE_KEY = "partners_cache";
   const AGENCIES_CACHE_KEY = "agencies_cache";
   const GROUPS_CACHE_KEY = "groups_cache";
@@ -106,7 +107,7 @@ const Partners = () => {
         );
       } else {
         const response = await axios.get(
-          `http://127.0.0.1:8000/api/users/?organization=${getSelectedOrganization}`,
+          `https://api.saer.pk/api/users/?organization=${getSelectedOrganization}`,
           axiosConfig
         );
         const data = response.data || [];
@@ -143,7 +144,7 @@ const Partners = () => {
         setAgencies(JSON.parse(cachedData));
       } else {
         const response = await axios.get(
-          `http://127.0.0.1:8000/api/agencies/?organization=${getSelectedOrganization}`,
+          `https://api.saer.pk/api/agencies/?organization=${getSelectedOrganization}`,
           axiosConfig
         );
         const data = response.data || [];
@@ -177,7 +178,7 @@ const Partners = () => {
         setGroups(JSON.parse(cachedData));
       } else {
         const response = await axios.get(
-          `http://127.0.0.1:8000/api/groups/?organization=${getSelectedOrganization}`,
+          `https://api.saer.pk/api/groups/?organization=${getSelectedOrganization}`,
           axiosConfig
         );
         const data = response.data || [];
@@ -383,13 +384,13 @@ const Partners = () => {
       let response;
       if (editingId) {
         response = await axios.put(
-          `http://127.0.0.1:8000/api/users/${editingId}/?organization=${getSelectedOrganization}`,
+          `https://api.saer.pk/api/users/${editingId}/?organization=${getSelectedOrganization}`,
           userPayload,
           axiosConfig
         );
       } else {
         response = await axios.post(
-          `http://127.0.0.1:8000/api/users/?organization=${getSelectedOrganization}`,
+          `https://api.saer.pk/api/users/?organization=${getSelectedOrganization}`,
           userPayload,
           axiosConfig
         );
@@ -412,7 +413,7 @@ const Partners = () => {
     if (window.confirm("Are you sure you want to delete this partner?")) {
       setIsLoading(true);
       try {
-        await axios.delete(`http://127.0.0.1:8000/api/users/${id}/?organization=${getSelectedOrganization}`, axiosConfig);
+        await axios.delete(`https://api.saer.pk/api/users/${id}/?organization=${getSelectedOrganization}`, axiosConfig);
 
         // Clear the partners cache since we've made changes
         localStorage.removeItem(PARTNERS_CACHE_KEY);
@@ -433,7 +434,7 @@ const Partners = () => {
     setIsLoading(true);
     try {
       await axios.patch(
-        `http://127.0.0.1:8000/api/users/${id}/?organization=${getSelectedOrganization}`,
+        `https://api.saer.pk/api/users/${id}/?organization=${getSelectedOrganization}`,
         { is_active: newStatus === "Active" },
         axiosConfig
       );
@@ -462,7 +463,7 @@ const Partners = () => {
         const userId = decoded.user_id || decoded.id;
 
         const response = await axios.get(
-          `http://127.0.0.1:8000/api/users/${userId}/?organization=${getSelectedOrganization}`,
+          `https://api.saer.pk/api/users/${userId}/?organization=${getSelectedOrganization}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -524,16 +525,7 @@ const Partners = () => {
     { value: "subagent", label: "Subagent" },
   ];
 
-  // Navigation tabs
-  const tabs = [
-    { name: "All Partners", path: "/partners" },
-    { name: "Request", path: "/partners/request" },
-    { name: "Group And Permissions", path: "/partners/role-permissions" },
-    { name: "Discounts", path: "/partners/discounts" },
-    { name: "Organizations", path: "/partners/organization" },
-    { name: "Branches", path: "/partners/branche" },
-    { name: "Agencies", path: "/partners/agencies" },
-  ];
+  // Navigation is rendered by shared PartnersTabs
 
   return (
     <>
@@ -555,47 +547,18 @@ const Partners = () => {
      <div className="min-vh-100" style={{ fontFamily: "Poppins, sans-serif" }}>
       <div className="row g-0">
         {/* Sidebar */}
-        <div className="col-12 col-lg-2">
-          <Sidebar />
-        </div>
+        {!embed && (
+          <div className="col-12 col-lg-2">
+            <Sidebar />
+          </div>
+        )}
         {/* Main Content */}
-        <div className="col-12 col-lg-10">
-          <div className="container">
-            <Header />
+        <div className={`col-12 ${!embed ? 'col-lg-10' : ''}`}>
+          <div className={embed ? '' : 'container'}>
+            {!embed && <Header />}
             <div className="px-3 px-lg-4 my-3">
               {/* Navigation Tabs */}
-              <div className="row ">
-                <div className="d-flex flex-wrap justify-content-between align-items-center w-100">
-                  <nav className="nav flex-wrap gap-2">
-                    {tabs.map((tab, index) => (
-                      <NavLink
-                        key={index}
-                        to={tab.path}
-                        className={`nav-link btn btn-link text-decoration-none px-0 me-3  ${tab.name === "All Partners"
-                          ? "text-primary fw-semibold"
-                          : "text-muted"
-                          }`}
-                        style={{ backgroundColor: "transparent" }}
-                      >
-                        {tab.name}
-                      </NavLink>
-                    ))}
-                  </nav>
-
-                  <div className="input-group" style={{ maxWidth: "300px" }}>
-                    <span className="input-group-text">
-                      <Search />
-                    </span>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="Search name, address, job, etc"
-                      value={searchTerm}
-                      onChange={handleSearchChange}
-                    />
-                  </div>
-                </div>
-              </div>
+              {!embed && <PartnersTabs />}
 
               <div className="p-3 my-3 rounded-4 shadow-sm">
                 <div className="d-flex flex-wrap gap-2 justify-content-between">

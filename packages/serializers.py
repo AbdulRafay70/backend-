@@ -370,7 +370,7 @@ class UmrahPackageSerializer(ModelSerializer):
 
             # age/restriction & organisation internals
             'filght_min_adault_age', 'filght_max_adault_age', 'max_chilld_allowed', 'max_infant_allowed',
-            'inventory_owner_organization_id', 'reselling_allowed',
+            'inventory_owner_organization_id',
             # nested inclusions/exclusions are disabled separately by setting
             # the declared fields to None (see above). Do NOT include them
             # in Meta.exclude because they are not direct model fields.

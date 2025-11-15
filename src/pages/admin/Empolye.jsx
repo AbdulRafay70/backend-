@@ -5,6 +5,7 @@ import { ArrowBigLeft, Funnel, Search, UploadCloudIcon } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import { Link, NavLink } from "react-router-dom";
+import PartnersTabs from "../../components/PartnersTabs";
 import document from "../../assets/document.jpg";
 import axios from "axios";
 
@@ -29,7 +30,7 @@ const PartnerEmpolye = () => {
   useEffect(() => {
     const fetchBranches = async () => {
       try {
-        const response = await axios.get("http://127.0.0.1:8000/api/branches/");
+        const response = await axios.get("https://api.saer.pk/api/branches/");
         setBranches(response.data);
         setLoading(false);
       } catch (error) {
@@ -174,40 +175,10 @@ const PartnerEmpolye = () => {
         <div className="col-lg-10" style={{ background: "#F2F3F4" }}>
           <Header />
 
-          <div className="row my-3 w-100">
-            <div className="d-flex flex-wrap justify-content-between align-items-center w-100">
-              {/* Navigation Tabs */}
-              <nav className="nav flex-wrap gap-2">
-                {tabs.map((tab, index) => (
-                  <NavLink
-                    key={index}
-                    to={tab.path}
-                    className={`nav-link btn btn-link text-decoration-none px-0 me-3 border-0 ${
-                      tab.name === "Empolye and Branches"
-                        ? "text-primary fw-semibold"
-                        : "text-muted"
-                    }`}
-                    style={{ backgroundColor: "transparent" }}
-                  >
-                    {tab.name}
-                  </NavLink>
-                ))}
-              </nav>
-
-              {/* Action Buttons */}
-              <div className="input-group" style={{ maxWidth: "300px" }}>
-                <span className="input-group-text">
-                  <Search />
-                </span>
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Search name, address, job, etc"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
+          <div className="px-3 px-lg-4 my-3">
+            {/* Use shared PartnersTabs so Employee page shows the same partners navigation
+                (this avoids hardcoded "/admin/..." links and duplicate /admin in URLs) */}
+            <PartnersTabs activeName="Employees" />
           </div>
 
           {/* Partner Table or Detail View */}

@@ -244,6 +244,8 @@ class Hotels(models.Model):
     contact_number = models.CharField(max_length=20, blank=True, null=True)
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='standard')
     distance = models.FloatField(default=0)
+    # Walking time in minutes from reference point (migration 0025 adds this)
+    walking_time_minutes = models.IntegerField(blank=True, help_text='Walking time in minutes from reference point', null=True)
     is_active = models.BooleanField(default=True)
     available_start_date = models.DateField(blank=True, null=True)
     available_end_date = models.DateField(blank=True, null=True)
@@ -257,6 +259,11 @@ class Hotels(models.Model):
         verbose_name = "Hotel"
         verbose_name_plural = "Hotels"
         ordering = ['name']
+
+    @property
+    def walking_time(self):
+        """Compatibility property: return walking time in minutes as `walking_time`."""
+        return self.walking_time_minutes
 
 
 class HotelPrices(models.Model):

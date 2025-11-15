@@ -206,6 +206,8 @@ class HotelsSerializer(serializers.ModelSerializer):
     contact_details = HotelContactDetailsSerializer(many=True, required=False)
     photos = serializers.ListField(child=serializers.CharField(), write_only=True, required=False)
     photos_data = serializers.SerializerMethodField(read_only=True)
+    # expose walking_time (minutes) for frontend compatibility — backed by model field `walking_time_minutes`
+    walking_time = serializers.IntegerField(source='walking_time_minutes', required=False, allow_null=True)
 
     class Meta:
         model = Hotels
@@ -264,10 +266,44 @@ class HotelsSerializer(serializers.ModelSerializer):
 
     def get_photos_data(self, obj):
         photos_qs = obj.photos.all() if hasattr(obj, "photos") else []
-        return [
-            {"id": p.id, "caption": p.caption, "image": p.image.url if getattr(p, 'image', None) else None}
-            for p in photos_qs
-        ]
+        result = []
+        # Guard access to file storage when building URLs — missing files or
+        # storage misconfiguration can raise exceptions when accessing `.url`.
+        try:
+            from django.core.files.storage import default_storage
+        except Exception:
+            default_storage = None
+
+        for p in photos_qs:
+            image_url = None
+            try:
+                img_field = getattr(p, "image", None)
+                # Only attempt to access .url when we have a stored filename
+                if img_field and getattr(img_field, "name", None):
+                    fname = img_field.name
+                    if default_storage:
+                        try:
+                            if default_storage.exists(fname):
+                                image_url = img_field.url
+                        except Exception:
+                            # storage backend may raise; fall back to safe None
+                            image_url = None
+                    else:
+                        # no storage available in this context; try .url but guard
+                        try:
+                            image_url = img_field.url
+                        except Exception:
+                            image_url = None
+            except Exception:
+                image_url = None
+
+            result.append({
+                "id": p.id,
+                "caption": p.caption,
+                "image": image_url,
+            })
+
+        return result
 
 
 class HotelRoomDetailsSerializer(serializers.ModelSerializer):

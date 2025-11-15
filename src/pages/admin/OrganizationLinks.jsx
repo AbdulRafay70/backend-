@@ -8,6 +8,14 @@ import api from "../../utils/Api";
 import orgApi from "../../utils/organizationApi";
 
 const OrganizationLinks = () => {
+  // Debug: log the organization API wrapper to help diagnose missing methods
+  useEffect(() => {
+    try {
+      console.debug('organizationApi available methods:', Object.keys(orgApi || {}), orgApi);
+    } catch (e) {
+      console.warn('Failed to inspect orgApi', e);
+    }
+  }, []);
   const [links, setLinks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -17,46 +25,10 @@ const OrganizationLinks = () => {
   const [resellRequests, setResellRequests] = useState([]);
   const [currentUserOrgIds, setCurrentUserOrgIds] = useState([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [orgsLoaded, setOrgsLoaded] = useState(false);
   const [form, setForm] = useState({ main_org: "", link_org: "" });
   const [actionLoading, setActionLoading] = useState(null);
-
-  const fetchLinks = async () => {
-    setLoading(true);
-    try {
-      const response = await orgApi.listLinks();
-      const data = response.data;
-      // The API returns an array (serializer) — adapt if API returns {results: []}
-      const list = Array.isArray(data) ? data : data.results || [];
-      // attach a normalized link id and stable row key so rendering is consistent
-      const normalized = list.map((item, idx) => {
-        const linkId = getLinkId(item);
-        const rowKey = linkId != null ? `${linkId}` : `link-row-${idx}`;
-        return { __linkId: linkId, __rowKey: rowKey, __origIndex: idx, ...item };
-      });
-      // debug: log first item shape and computed id to help diagnose missing ids
-      if (normalized.length > 0) {
-        console.debug("OrganizationLinks.fetchLinks: first item:", normalized[0]);
-      } else {
-        console.debug("OrganizationLinks.fetchLinks: no links returned");
-      }
-      setLinks(normalized);
-    } catch (e) {
-      console.error("fetchLinks error", e);
-      setError(parseApiError(e) || "Failed to fetch links");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchOrgs = async () => {
-    try {
-      const res = await api.get(`/organizations/`);
-      const list = res.data || [];
-      setOrganizations(list);
-    } catch (e) {
-      console.error("fetchOrgs error", e);
-    }
-  };
 
   // Helper to normalise API errors to readable strings
   function parseApiError(err) {
@@ -83,28 +55,219 @@ const OrganizationLinks = () => {
     }
   }
 
+  // Fetch organization list for lookups
+  async function fetchOrgs() {
+    try {
+      let resp;
+      if (typeof orgApi.listOrganizations === 'function') {
+        resp = await orgApi.listOrganizations();
+      } else {
+        resp = await api.get('/organizations/');
+      }
+      const list = Array.isArray(resp.data) ? resp.data : resp.data?.results || [];
+      setOrganizations(list || []);
+    } catch (e) {
+      console.warn('fetchOrgs error', e);
+    }
+  }
+
+  // Fetch links and apply the same org-based filtering as resell requests
+  async function fetchLinks() {
+    setLoading(true);
+    try {
+      const resp = await orgApi.listLinks();
+      const list = Array.isArray(resp.data) ? resp.data : resp.data?.results || [];
+      let normalized = list.map((item, idx) => {
+        const id = getLinkId(item) || item.id || idx;
+        return { __linkId: Number(id), __rowKey: `${id}`, __origIndex: idx, ...item };
+      });
+
+      // Identify links where BOTH sides have rejected and remove them automatically.
+      const toAutoDelete = [];
+      const remaining = [];
+      for (const it of normalized) {
+        const mainRejected = isSideRejected(it, 'main');
+        const linkRejected = isSideRejected(it, 'link');
+        if (mainRejected && linkRejected) toAutoDelete.push(it);
+        else remaining.push(it);
+      }
+
+      if (toAutoDelete.length > 0) {
+        console.debug('Auto-deleting fully-rejected organization links:', toAutoDelete.map(d => d.__linkId));
+
+        // Try to read resell requests once to discover related records to remove
+        let allResells = [];
+        try {
+          const rresp = await orgApi.listResellRequests();
+          allResells = Array.isArray(rresp.data) ? rresp.data : rresp.data?.results || [];
+        } catch (e) {
+          console.warn('Failed to list resell requests during auto-delete', e);
+        }
+
+        // For each fully rejected link, attempt server delete (with fallback),
+        // and cleanup any associated resell requests both server-side and client-side.
+        for (const del of toAutoDelete) {
+          const linkId = del.__linkId || getLinkId(del) || del.id;
+
+          if (linkId) {
+            // prefer a resource URL if the API provided one
+            const resourceUrl = getLinkUrl(del);
+            const tryDelete = async (target) => {
+              try {
+                await api.delete(target);
+                console.debug('DELETE succeeded for', target);
+                return true;
+              } catch (e) {
+                // treat 404 as 'not found' (already removed) and return true
+                if (e && e.response && e.response.status === 404) {
+                  console.warn('DELETE returned 404 (not found) for', target);
+                  return true;
+                }
+                console.warn('DELETE failed for', target, e);
+                return false;
+              }
+            };
+
+            let deleted = false;
+            if (resourceUrl) {
+              // resourceUrl may be absolute or relative; api.delete can accept absolute URLs
+              deleted = await tryDelete(resourceUrl);
+            }
+
+            if (!deleted) {
+              if (typeof orgApi.deleteLink === 'function') {
+                try {
+                  await orgApi.deleteLink(linkId);
+                  deleted = true;
+                } catch (err) {
+                  console.warn('orgApi.deleteLink failed for', linkId, err);
+                }
+              }
+            }
+
+            if (!deleted) {
+              const path = `/organization-links/${linkId}/`;
+              deleted = await tryDelete(path);
+            }
+
+            if (!deleted) {
+              console.error('All attempts to delete organization link failed for', linkId);
+            }
+          }
+
+          const mainOrgId = Number(del.Main_organization_id || del.main_organization_id || del.main_organization || del.main_org || NaN);
+          const linkOrgId = Number(del.Link_organization_id || del.link_organization_id || del.link_organization || del.link_org || NaN);
+
+          // delete matching resell requests found in server list
+          for (const r of allResells) {
+            const rMain = Number(r.Main_organization_id || r.main_organization_id || r.main_organization || r.main_org || NaN);
+            const rLink = Number(r.Link_organization_id || r.link_organization_id || r.link_organization || r.link_org || NaN);
+            const match = (!Number.isNaN(mainOrgId) && !Number.isNaN(linkOrgId) && rMain === mainOrgId && rLink === linkOrgId);
+            if (match) {
+              const rid = r.id || getLinkId(r);
+              const rUrl = getLinkUrl(r);
+              const tryDeleteResell = async (target) => {
+                try {
+                  await api.delete(target);
+                  console.debug('Deleted resell request', target);
+                } catch (err) {
+                  if (err && err.response && err.response.status === 404) {
+                    console.warn('Resell DELETE returned 404 (not found) for', target);
+                    return;
+                  }
+                  console.warn('Failed deleting resell request', target, err);
+                }
+              };
+
+              if (rUrl) {
+                tryDeleteResell(rUrl);
+              } else if (rid) {
+                if (typeof orgApi.deleteResellRequest === 'function') {
+                  orgApi.deleteResellRequest(rid).catch((err) => console.warn('deleteResellRequest failed', rid, err));
+                } else {
+                  tryDeleteResell(`/resell-requests/${rid}/`);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Apply org-based filtering for non-admins on the remaining links
+      let filtered = remaining;
+      if (!isAdmin && Array.isArray(currentUserOrgIds) && currentUserOrgIds.length > 0) {
+        filtered = remaining.filter((it) => {
+          const mainOrgId = Number(it.Main_organization_id || it.main_organization_id || it.main_organization || it.main_org || NaN);
+          const linkOrgId = Number(it.Link_organization_id || it.link_organization_id || it.link_organization || it.link_org || NaN);
+          return (Number.isFinite(mainOrgId) && currentUserOrgIds.includes(mainOrgId)) || (Number.isFinite(linkOrgId) && currentUserOrgIds.includes(linkOrgId));
+        });
+      }
+
+      setLinks(filtered);
+
+      // Remove any resell requests in UI that correspond to auto-deleted links
+      if (toAutoDelete.length > 0) {
+        setResellRequests((prev) => prev.filter((r) => {
+          for (const del of toAutoDelete) {
+            const mainOrgId = Number(del.Main_organization_id || del.main_organization_id || del.main_organization || del.main_org || NaN);
+            const linkOrgId = Number(del.Link_organization_id || del.link_organization_id || del.link_organization || del.link_org || NaN);
+            const rMain = Number(r.Main_organization_id || r.main_organization_id || r.main_organization || r.main_org || NaN);
+            const rLink = Number(r.Link_organization_id || r.link_organization_id || r.link_organization || r.link_org || NaN);
+            if (!Number.isNaN(mainOrgId) && !Number.isNaN(linkOrgId) && rMain === mainOrgId && rLink === linkOrgId) return false;
+          }
+          return true;
+        }));
+      }
+    } catch (e) {
+      console.error('fetchLinks error', e);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
+    // Fetch organizations and current user orgs first. Links/resell requests
+    // are fetched once we know the current user's organizations so we can
+    // filter out requests that do not involve the user's organizations.
     fetchOrgs();
-    fetchLinks();
-    fetchResellRequests();
     fetchCurrentUserOrgs();
   }, []);
+
+  // When we've loaded the current user's orgs (or admin flag), fetch lists
+  useEffect(() => {
+    if (!orgsLoaded) return;
+    fetchLinks();
+    fetchResellRequests();
+  }, [orgsLoaded, isAdmin, isSuperAdmin, currentUserOrgIds]);
 
   const fetchResellRequests = async () => {
     try {
       const resp = await orgApi.listResellRequests();
       const list = Array.isArray(resp.data) ? resp.data : resp.data.results || [];
-      setResellRequests(list);
+      // If user is not admin, only show resell requests that involve the
+      // current user's organizations.
+      let filtered = list;
+      if (!isAdmin && Array.isArray(currentUserOrgIds) && currentUserOrgIds.length > 0) {
+        filtered = list.filter((r) => {
+          const mainOrgId = Number(r.Main_organization_id || r.main_organization_id || r.main_organization || r.main_org || NaN);
+          const linkOrgId = Number(r.Link_organization_id || r.link_organization_id || r.link_organization || r.link_org || NaN);
+          return (Number.isFinite(mainOrgId) && currentUserOrgIds.includes(mainOrgId)) || (Number.isFinite(linkOrgId) && currentUserOrgIds.includes(linkOrgId));
+        });
+      }
+      setResellRequests(filtered);
     } catch (e) {
       console.error('fetchResellRequests error', e);
     }
   };
 
   useEffect(() => {
-    if (!isAdmin && currentUserOrgIds.length > 0) {
+    // If the user is neither an agent-admin nor a super-admin, default the
+    // create form's main_org to the user's first organization and disable
+    // the selector so users can only create links for their own org.
+    if (!isAdmin && !isSuperAdmin && currentUserOrgIds.length > 0) {
       setForm(prev => ({ ...prev, main_org: currentUserOrgIds[0] }));
     }
-  }, [isAdmin, currentUserOrgIds]);
+  }, [isAdmin, isSuperAdmin, currentUserOrgIds]);
 
   const fetchCurrentUserOrgs = async () => {
     try {
@@ -128,9 +291,18 @@ const OrganizationLinks = () => {
           ? userData.organization_details.map((o) => o.id)
           : [];
       setCurrentUserOrgIds(orgIds.map((id) => Number(id)));
-      setIsAdmin(isAgent || userData.is_superuser || userData.is_staff || false);
+      // Treat only agent tokens as admin for the UI. Do NOT grant superuser
+      // or staff users the global admin view — they should only see requests
+      // for organizations they belong to.
+      setIsAdmin(Boolean(isAgent));
+      // But record if the user is a superuser/staff so they may create links
+      // on behalf of any organization (without granting global view).
+      setIsSuperAdmin(Boolean(userData.is_superuser || userData.isSuperuser || userData.is_staff || userData.isStaff));
     } catch (e) {
       console.warn('fetchCurrentUserOrgs failed', e);
+    } finally {
+      // Indicate we've completed the attempt to load user's orgs (even if empty)
+      setOrgsLoaded(true);
     }
   };
 
@@ -146,6 +318,7 @@ const OrganizationLinks = () => {
     try {
       const response = await orgApi.acceptLink(linkId);
       const updated = response.data;
+      console.debug('OrganizationLinks.handleReject - reject response:', updated);
       console.debug("OrganizationLinks.handleAccept: accept response ->", updated);
       // update that row in-place to reflect new status without refetching
       setLinks((prev) =>
@@ -171,19 +344,105 @@ const OrganizationLinks = () => {
     const key = `${linkId}`;
     setActionLoading(key);
     try {
-      const response = await orgApi.rejectLink(linkId);
-      const updated = response.data;
-      // update that row in-place to reflect new status without refetching
-      setLinks((prev) =>
-        prev.map((item) => {
-          if (item.id === linkId) {
-            const linkIdUpdated = getLinkId(updated) || item.__linkId;
+      // call reject endpoint
+      await orgApi.rejectLink(linkId);
+
+      // refetch the link list to get the authoritative current state
+      let listResp;
+      try {
+        listResp = await orgApi.listLinks();
+      } catch (listErr) {
+        console.warn('Failed to refetch links after reject', listErr);
+        // optimistic fallback: mark matching local row as rejected
+        setLinks((prev) =>
+          prev.map((item) => {
+            if (item.id === linkId || item.__linkId === linkId) {
+              const copy = { ...item };
+              copy.main_organization_request = copy.main_organization_request || 'REJECTED';
+              copy.link_organization_request = copy.link_organization_request || 'REJECTED';
+              return copy;
+            }
+            return item;
+          })
+        );
+        return;
+      }
+
+      const dataList = Array.isArray(listResp.data) ? listResp.data : listResp.data?.results || [];
+      const found = dataList.find(d => getLinkId(d) === Number(linkId));
+
+      if (!found) {
+        // server removed the link
+        setLinks(prev => prev.filter(item => !(item.__linkId === linkId || item.id === linkId)));
+        // best-effort remove any resell that references this link id
+        setResellRequests(prev => prev.filter(r => {
+          const id = r.id || getLinkId(r);
+          return id !== linkId;
+        }));
+        return;
+      }
+
+      const mainRejected = isSideRejected(found, 'main');
+      const linkRejected = isSideRejected(found, 'link');
+      const bothRejected = mainRejected && linkRejected;
+
+      if (bothRejected) {
+        if (typeof orgApi.deleteLink === 'function') {
+          try {
+            await orgApi.deleteLink(linkId);
+          } catch (delErr) {
+            console.error('Failed to delete link after both sides rejected', delErr);
+            // fallback to direct delete via generic api
+            try {
+              await api.delete(`/organization-links/${linkId}/`);
+              console.debug('Fallback: deleted organization link via api.delete', linkId);
+            } catch (fallbackErr) {
+              console.error('Fallback deleteLink via api.delete failed', fallbackErr);
+            }
+          }
+        } else {
+          console.warn('orgApi.deleteLink not available; attempting fallback api.delete');
+          try {
+            await api.delete(`/organization-links/${linkId}/`);
+            console.debug('Fallback: deleted organization link via api.delete', linkId);
+          } catch (fallbackErr) {
+            console.error('Fallback deleteLink via api.delete failed', fallbackErr);
+          }
+        }
+
+        setLinks(prev => prev.filter(item => !(item.__linkId === linkId || item.id === linkId)));
+
+        const mainOrgId = Number(found.Main_organization_id || found.main_organization_id || found.main_organization || found.main_org || NaN);
+        const linkOrgId = Number(found.Link_organization_id || found.link_organization_id || found.link_organization || found.link_org || NaN);
+
+        setResellRequests(prev => prev.filter(r => {
+          const rMain = Number(r.Main_organization_id || r.main_organization_id || r.main_organization || r.main_org || NaN);
+          const rLink = Number(r.Link_organization_id || r.link_organization_id || r.link_organization || r.link_org || NaN);
+          const match = (!Number.isNaN(mainOrgId) && !Number.isNaN(linkOrgId) && rMain === mainOrgId && rLink === linkOrgId);
+          if (match) {
+            const id = r.id || getLinkId(r);
+            if (id) {
+              if (typeof orgApi.deleteResellRequest === 'function') {
+                orgApi.deleteResellRequest(id).catch((err) => console.warn('deleteResellRequest failed', id, err));
+              } else {
+                // fallback to generic delete
+                api.delete(`/resell-requests/${id}/`).catch((err) => console.warn('Fallback deleteResellRequest failed', id, err));
+              }
+            }
+          }
+          return !match;
+        }));
+      } else {
+        // update local row with fresh data
+        setLinks(prev => prev.map(item => {
+          if (item.id === linkId || item.__linkId === linkId) {
+            const linkIdUpdated = getLinkId(found) || item.__linkId;
             const rowKey = linkIdUpdated != null ? `${linkIdUpdated}` : item.__rowKey || item.__origIndex;
-            return { __linkId: linkIdUpdated, __rowKey: rowKey, ...updated };
+            return { __linkId: linkIdUpdated, __rowKey: rowKey, ...found };
           }
           return item;
-        })
-      );
+        }));
+      }
     } catch (e) {
       console.error("reject error", e);
       setError(parseApiError(e));
@@ -284,6 +543,26 @@ const OrganizationLinks = () => {
     return null;
   };
 
+  // helper: try to extract a resource URL from API objects (url/href/resource_uri)
+  const getLinkUrl = (obj) => {
+    if (!obj || typeof obj !== 'object') return null;
+    const urlFields = ['url', 'href', 'resource_uri', 'link_url', 'linkHref'];
+    for (const f of urlFields) {
+      const v = obj[f];
+      if (typeof v === 'string' && v.trim()) return v;
+    }
+    // sometimes nested link object contains the resource url
+    for (const key of Object.keys(obj)) {
+      const v = obj[key];
+      if (v && typeof v === 'object') {
+        for (const f of urlFields) {
+          if (typeof v[f] === 'string' && v[f].trim()) return v[f];
+        }
+      }
+    }
+    return null;
+  };
+
   // helper: get stored status for main/link side handling different API key casings
   const getOrgStatus = (linkObj, side = "main") => {
     if (!linkObj) return "-";
@@ -303,6 +582,40 @@ const OrganizationLinks = () => {
       if (typeof v !== "undefined" && v !== null && v !== "") return v;
     }
     return "-";
+  };
+
+  // helper: robust check for whether a side's status is rejected
+  const isSideRejected = (linkObj, side = "main") => {
+    if (!linkObj) return false;
+    const candidates = [];
+    if (side === 'main') {
+      candidates.push(
+        linkObj.Main_organization_request,
+        linkObj.main_organization_request,
+        linkObj.mainOrganizationRequest,
+        // some responses might nest org objects
+        (linkObj.main_organization && linkObj.main_organization.request),
+        (linkObj.main_organization && linkObj.main_organization.status),
+        (linkObj.main_org && linkObj.main_org.request),
+      );
+    } else {
+      candidates.push(
+        linkObj.Link_organization_request,
+        linkObj.link_organization_request,
+        linkObj.linkOrganizationRequest,
+        (linkObj.link_organization && linkObj.link_organization.request),
+        (linkObj.link_organization && linkObj.link_organization.status),
+        (linkObj.link_org && linkObj.link_org.request),
+      );
+    }
+
+    // also include generic keys
+    candidates.push(linkObj.status, linkObj.Status, linkObj.request);
+
+    for (const c of candidates) {
+      if (typeof c === 'string' && /REJECT/i.test(c)) return true;
+    }
+    return false;
   };
 
   const handleCreate = async (e) => {
@@ -352,8 +665,7 @@ const OrganizationLinks = () => {
           Items: [],
         };
         console.debug('OrganizationLinks.handleCreateResell - sending payload:', payload);
-        // Use positional args to ensure the API helper builds payload consistently
-        await orgApi.createResellRequest(payload.Main_organization_id, payload.Link_organization_id, payload.Item_type, payload.reseller, payload.Items);
+        await orgApi.createResellRequest(payload);
       }
 
       setShowResellCreate(false);
@@ -390,7 +702,39 @@ const OrganizationLinks = () => {
 
   const handleApproveResell = async (id) => {
     try {
-      await orgApi.approveResellRequest(id);
+      const resp = await orgApi.approveResellRequest(id);
+      const updated = resp?.data;
+
+      // Optimistically update the UI: mark reseller = true and status = APPROVED
+      setResellRequests(prev => prev.map(r => {
+        const rid = r.id || getLinkId(r);
+        if (rid === id || (updated && (getLinkId(updated) === rid || updated.id === rid))) {
+          return { ...r, ...(updated || {}), reseller: true, status: (updated && (updated.status || updated.Status)) || 'APPROVED' };
+        }
+        return r;
+      }));
+
+      // Persist `reseller: true` on the server if possible, then refresh
+      try {
+        if (typeof orgApi.updateResellRequest === 'function') {
+          await orgApi.updateResellRequest(id, { reseller: true });
+        } else {
+          await api.patch(`/resell-requests/${id}/`, { reseller: true });
+        }
+      } catch (persistErr) {
+        // Try a stronger fallback: some APIs reject PATCH but accept PUT with full payload
+        console.warn('PATCH persist reseller=true failed, attempting PUT fallback', id, persistErr);
+        try {
+          // prefer using the updated object returned from approve endpoint
+          const payload = updated && typeof updated === 'object' ? { ...updated, reseller: true } : { reseller: true };
+          await api.put(`/resell-requests/${id}/`, payload);
+          console.debug('PUT fallback succeeded for resell request', id);
+        } catch (putErr) {
+          console.warn('PUT fallback also failed for resell request', id, putErr);
+        }
+      }
+
+      // Refresh from server to get authoritative state
       fetchResellRequests();
     } catch (e) {
       console.error('approve resell error', e);
@@ -543,7 +887,12 @@ const OrganizationLinks = () => {
                 </div>
               </div>
               <div className="p-3 my-3 bg-white rounded shadow-sm">
-                <h6>Resell Requests</h6>
+                <div className="d-flex justify-content-between align-items-center">
+                  <h6 className="mb-0">Resell Requests</h6>
+                  <div>
+                    <Button size="sm" onClick={() => fetchResellRequests()} className="me-2">Refresh</Button>
+                  </div>
+                </div>
                 <Table hover responsive className="align-middle text-center mt-3">
                   <thead>
                     <tr>
@@ -626,7 +975,7 @@ const OrganizationLinks = () => {
                 required
                 value={form.main_org}
                 onChange={(e) => setForm((s) => ({ ...s, main_org: e.target.value }))}
-                disabled={!isAdmin}
+                disabled={!(isAdmin || isSuperAdmin)}
               >
                 <option value="">Select organization</option>
                 {organizations.map((o) => (
@@ -673,7 +1022,7 @@ const OrganizationLinks = () => {
                 required
                 value={resellForm.main_org}
                 onChange={(e) => setResellForm(s => ({ ...s, main_org: e.target.value }))}
-                disabled={resellPrefilled}
+                disabled={resellPrefilled || !(isAdmin || isSuperAdmin)}
               >
                 <option value="">Select organization</option>
                 {organizations.map((o) => (

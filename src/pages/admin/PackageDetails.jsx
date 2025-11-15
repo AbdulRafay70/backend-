@@ -22,14 +22,14 @@ const PackageDetails = () => {
             try {
                 setLoading(true);
                 const [bookingsRes, packageRes] = await Promise.all([
-                    axios.get(`http://127.0.0.1:8000/api/bookings/get_by_umrah_package/`, {
+                    axios.get(`https://api.saer.pk/api/bookings/get_by_umrah_package/`, {
                         params: { umrah_package_id: id, organization: orgId },
                         headers: {
                             Authorization: `Bearer ${token}`,
                             "Content-Type": "application/json",
                         },
                     }),
-                    axios.get(`http://127.0.0.1:8000/api/umrah-packages/get_by_id/`, {
+                    axios.get(`https://api.saer.pk/api/umrah-packages/get_by_id/`, {
                         params: { id, organization: orgId },
                         headers: {
                             Authorization: `Bearer ${token}`,

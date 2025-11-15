@@ -30,7 +30,7 @@ const ShimmerLoader = () => {
   );
 };
 
-const Agencies = () => {
+const AgencyRelations = () => {
   const AGENCIES_CACHE_KEY = "agencies_cache";
   const CACHE_EXPIRY_TIME = 30 * 60 * 1000;
 
@@ -1050,4 +1050,4 @@ const Agencies = () => {
   );
 };
 
-export default Agencies;
+export default AgencyRelations;

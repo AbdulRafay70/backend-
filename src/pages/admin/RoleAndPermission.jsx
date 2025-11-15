@@ -13,6 +13,7 @@ import { Gear } from "react-bootstrap-icons";
 import { Search } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
+import PartnersTabs from "../../components/PartnersTabs";
 import { Link, NavLink } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import AdminFooter from "../../components/AdminFooter";
@@ -79,7 +80,7 @@ const RoleAndPermissions = () => {
   const CACHE_EXPIRY_TIME = 5 * 60 * 1000;
 
   const axiosInstance = axios.create({
-    baseURL: "http://127.0.0.1:8000/api/",
+    baseURL: "https://api.saer.pk/api/",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${getAccessToken()}`,
@@ -480,15 +481,7 @@ const RoleAndPermissions = () => {
     }
   }, []);
 
-  const tabs = [
-    { name: "All Partners", path: "/partners" },
-    { name: "Request", path: "/partners/request" },
-    { name: "Group And Permissions", path: "/partners/role-permissions" },
-    { name: "Discounts", path: "/partners/discounts" },
-    { name: "Organizations", path: "/partners/organization" },
-    { name: "Branches", path: "/partners/branche" },
-    { name: "Agencies", path: "/partners/agencies" },
-  ];
+  // Navigation is rendered by shared PartnersTabs
 
   const filteredGroups = groups.filter((group) => {
     const name = group.name || "";
@@ -551,38 +544,7 @@ const RoleAndPermissions = () => {
               <Header />
               <div className="px-3 px-lg-4 my-3">
                 {/* Navigation Tabs */}
-                <div className="row ">
-                  <div className="d-flex flex-wrap justify-content-between align-items-center w-100">
-                    <nav className="nav flex-wrap gap-2">
-                      {tabs.map((tab, index) => (
-                        <NavLink
-                          key={index}
-                          to={tab.path}
-                          className={`nav-link btn btn-link text-decoration-none px-0 me-3 border-0 ${tab.name === "Group And Permissions"
-                              ? "text-primary fw-semibold"
-                              : "text-muted"
-                            }`}
-                          style={{ backgroundColor: "transparent" }}
-                        >
-                          {tab.name}
-                        </NavLink>
-                      ))}
-                    </nav>
-
-                    <div className="input-group" style={{ maxWidth: "300px" }}>
-                      <span className="input-group-text">
-                        <Search />
-                      </span>
-                      <input
-                        type="text"
-                        className="form-control"
-                        placeholder="Search groups..."
-                        value={searchTerm}
-                        onChange={handleSearchChange}
-                      />
-                    </div>
-                  </div>
-                </div>
+                <PartnersTabs />
 
                 {/* Table */}
                 <div className="p-3 my-3 bg-white rounded-4 shadow-sm">
