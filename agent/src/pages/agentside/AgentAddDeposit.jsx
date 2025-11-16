@@ -4,7 +4,7 @@ import AgentHeader from "../../components/AgentHeader";
 import { Link, NavLink } from "react-router-dom";
 import { Search } from "lucide-react";
 import axios from 'axios';
-import { toast } from 'react-toastify';
+import { toast, ToastContainer } from 'react-toastify';
 
 const AddDepositForm = () => {
   const tabs = [
@@ -25,6 +25,10 @@ const AddDepositForm = () => {
     modeOfPayment: "Bank Transfer",
     beneficiaryAccount: "",
     agentAccount: "",
+    // cash-specific fields
+    bankName: "",
+    cashDepositorName: "",
+    cashDepositorCnic: "",
     amount: "",
     date: "",
     notes: "",
@@ -58,9 +62,13 @@ const AddDepositForm = () => {
   const [agentBanks, setAgentBanks] = useState([]);
   const [orgBanks, setOrgBanks] = useState([]);
   const [bankMap, setBankMap] = useState({});
+  const [bankDetailsMap, setBankDetailsMap] = useState({});
   const [slipFile, setSlipFile] = useState(null);
   const [slipName, setSlipName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // pagination
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   // derive filtered payments from searchTerm (matches method, beneficiary, agent account, transaction, amount, status)
   const normalizedQuery = (searchTerm || '').toString().toLowerCase().trim();
@@ -121,12 +129,83 @@ const AddDepositForm = () => {
 
   const fullyFilteredPayments = applyAllFilters(payments);
 
+  // Client-side pagination for the aggregated dataset
+  const totalPayments = fullyFilteredPayments.length;
+  const totalPages = Math.max(1, Math.ceil(totalPayments / pageSize));
+  // keep page in range
+  React.useEffect(() => {
+    if (page > totalPages) setPage(1);
+  }, [totalPages]);
+
+  const startIndex = (page - 1) * pageSize;
+  const endIndex = Math.min(totalPayments, page * pageSize);
+  const paginatedPayments = fullyFilteredPayments.slice(startIndex, endIndex);
+
+  // helper to produce page numbers with ellipses
+  const getPageNumbers = (current, total) => {
+    const delta = 2;
+    const range = [];
+    for (let i = 1; i <= total; i++) {
+      if (i === 1 || i === total || (i >= current - delta && i <= current + delta)) {
+        range.push(i);
+      } else if (range[range.length - 1] !== '...') {
+        range.push('...');
+      }
+    }
+    return range;
+  };
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
+  };
+
+  // Friendly notification helper
+  const formatAxiosError = (err) => {
+    if (!err) return 'An unknown error occurred';
+    if (err.response && err.response.data) {
+      const d = err.response.data;
+      if (typeof d === 'string') return d;
+      if (d.detail) return d.detail;
+      // if it's a dict of field -> [msgs]
+      if (typeof d === 'object') {
+        try {
+          const parts = [];
+          Object.keys(d).forEach((k) => {
+            const v = d[k];
+            if (Array.isArray(v)) parts.push(`${k}: ${v.join(' ')}`);
+            else if (typeof v === 'string') parts.push(`${k}: ${v}`);
+            else parts.push(`${k}: ${JSON.stringify(v)}`);
+          });
+          if (parts.length) return parts.join(' | ');
+        } catch (e) {
+          // fallthrough
+        }
+      }
+    }
+    return err.message || String(err);
+  };
+
+  const showNotification = (type, payload) => {
+    const map = {
+      success: (m) => toast.success(m, { autoClose: 5000 }),
+      info: (m) => toast.info(m, { autoClose: 4000 }),
+      warning: (m) => toast.warn(m, { autoClose: 5000 }),
+      error: (m) => toast.error(m, { autoClose: 8000 }),
+    };
+    let msg = '';
+    if (!payload) msg = 'No details available';
+    else if (typeof payload === 'string') msg = payload;
+  else if (payload instanceof Error) msg = formatAxiosError(payload);
+  else if (payload && payload.response) msg = formatAxiosError(payload);
+  else if (payload && payload.message) msg = payload.message;
+    else msg = JSON.stringify(payload);
+
+    const fn = map[type] || map.info;
+    fn(msg);
   };
 
   const handleSubmit = (e) => {
@@ -150,13 +229,13 @@ const AddDepositForm = () => {
 
     // require beneficiary account
     if (!orgBankId) {
-      toast.error('Please select a beneficiary (organization) account');
+      showNotification('error', 'Please select a beneficiary (organization) account');
       return;
     }
 
     // require slip file
     if (!slipFile) {
-      toast.error('Please upload the slip file (required)');
+      showNotification('error', 'Please upload the slip file (required)');
       return;
     }
 
@@ -164,7 +243,7 @@ const AddDepositForm = () => {
     const orgExists = orgBanks.some(b => Number(b.id) === Number(orgBankId));
     if (!orgExists) {
       console.error('Selected organization bank id not found in orgBanks', { orgBankId, orgBanks });
-      toast.error('Selected beneficiary account is not valid for your organization. Please select a different account.');
+      showNotification('error', 'Selected beneficiary account is not valid for your organization. Please select a different account.');
       return;
     }
 
@@ -174,24 +253,35 @@ const AddDepositForm = () => {
     let agentBankId = null;
     let bankField = null; // will hold bank value (string or numeric string)
     if (mode === 'Cash') {
-      // accept either a bank name or numeric id for Cash
-      if (!agentBankValue) {
-        toast.error('Please enter the bank (name or id) for Cash');
+      // require cash-specific fields
+      const bName = (formData.bankName || '').toString().trim();
+      const depositor = (formData.cashDepositorName || '').toString().trim();
+      const depositorCnic = (formData.cashDepositorCnic || '').toString().trim();
+      if (!bName) {
+        showNotification('error', 'Please enter bank name for Cash payments');
         return;
       }
-      bankField = agentBankValue; // send as-is (string). backend may accept id or name
+      if (!depositor) {
+        showNotification('error', 'Please enter cash depositor name');
+        return;
+      }
+      if (!depositorCnic) {
+        showNotification('error', 'Please enter cash depositor CNIC');
+        return;
+      }
+      bankField = bName;
       agentBankId = null;
     } else {
       // expect an agent bank id selected from agentBanks
       agentBankId = agentBankValue ? Number(agentBankValue) : null;
       if (!agentBankId) {
-        toast.error('Please select an agent account');
+        showNotification('error', 'Please select an agent account');
         return;
       }
       const agentExists = agentBanks.some(b => Number(b.id) === Number(agentBankId));
       if (!agentExists) {
         console.error('Selected agent bank id not found in agentBanks', { agentBankId, agentBanks });
-        toast.error('Selected agent account is not valid for your user. Please select a different account.');
+        showNotification('error', 'Selected agent account is not valid for your user. Please select a different account.');
         return;
       }
       // normalize agentBankValue to the numeric id string for submission
@@ -247,26 +337,35 @@ const AddDepositForm = () => {
       form.append('agent_bank_account', String(agentBankId));
     }
 
-    // For Cash payments include the bank value (name or id). For non-cash this is not required and we omit it.
-    if (bankField && String(bankField).trim() !== '') {
+    // For Cash payments include the bank value (name) and depositor fields. For non-cash these are omitted.
+    if (mode === 'Cash') {
       form.append('bank', String(bankField));
+      form.append('depositor_name', String(formData.cashDepositorName || ''));
+      form.append('depositor_cnic', String(formData.cashDepositorCnic || ''));
     }
     form.append('kuickpay_trn', formData.kuickpay_trn || '');
 
     const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
     // validations passed — start submitting
-    toast.info('Submitting payment...');
+    showNotification('info', 'Submitting payment...');
     setIsSubmitting(true);
     console.debug('About to POST /api/payments/ with headers and FormData');
     axios.post('http://127.0.0.1:8000/api/payments/', form, { headers, timeout: 30000 })
       .then((res) => {
-        toast.success('Payment created');
+        // prefer server response details when available
+        const created = res.data || {};
+        const trn = created.transaction_number ? ` (${created.transaction_number})` : '';
+        const amt = created.amount ? ` Amount: ${created.amount}` : '';
+        showNotification('success', `Payment created${trn}.${amt}`);
         // reset form and slip
         setFormData({
           modeOfPayment: 'Bank Transfer',
           beneficiaryAccount: '',
           agentAccount: '',
+          bankName: '',
+          cashDepositorName: '',
+          cashDepositorCnic: '',
           amount: '',
           date: '',
           notes: '',
@@ -275,17 +374,12 @@ const AddDepositForm = () => {
         setSlipFile(null);
         setSlipName('');
         // add created payment to list
-        const created = res.data;
         setPayments((prev) => [created, ...prev]);
-        console.log('Payment response', created);
+        console.debug('Payment response', created);
       })
       .catch((err) => {
         console.error('Create payment failed', err);
-        if (err.response && err.response.data) {
-          toast.error('Failed to create payment: ' + (err.response.data.detail || JSON.stringify(err.response.data)));
-        } else {
-          toast.error('Failed to create payment');
-        }
+        showNotification('error', err);
       })
       .finally(() => {
         setIsSubmitting(false);
@@ -381,7 +475,16 @@ const AddDepositForm = () => {
 
         const agentOnly = agentOnlyAll.filter((a) => {
           const raw = a.raw || {};
-          // created_by may be an object or an id
+          // If agencyId present, prefer accounts linked to that agency
+          if (agencyId) {
+            const rawAgency = raw.agency && (raw.agency.id || raw.agency) ? (raw.agency.id || raw.agency) : raw.agency_id || raw.agency;
+            try {
+              return Number(rawAgency) === Number(agencyId);
+            } catch (e) {
+              return false;
+            }
+          }
+          // fallback: created_by may be an object or an id
           const createdById = raw.created_by && (raw.created_by.id || raw.created_by) ? (raw.created_by.id || raw.created_by) : null;
           if (!userId) return false;
           return Number(createdById) === Number(userId);
@@ -400,8 +503,13 @@ const AddDepositForm = () => {
         setOrgBanks(companyOnly);
 
         const map = {};
-        normalized.forEach(b => { map[b.id] = b.bankName || b.accountTitle || String(b.id); });
+        const details = {};
+        normalized.forEach(b => {
+          map[b.id] = b.bankName || b.accountTitle || String(b.id);
+          details[b.id] = { name: b.bankName || b.accountTitle || String(b.id), accountNumber: b.accountNumber || '' };
+        });
         setBankMap(map);
+        setBankDetailsMap(details);
 
         // set sensible defaults if none selected
         setFormData((prev) => ({
@@ -412,8 +520,9 @@ const AddDepositForm = () => {
       })
       .catch((err) => {
         console.error('Failed to fetch bank accounts for add-deposit', err);
+        showNotification('error', err);
       });
-  }, [orgId, agencyId]);
+  }, [orgId, agencyId, userId]);
 
   // fetch payments (transactions)
   React.useEffect(() => {
@@ -458,6 +567,7 @@ const AddDepositForm = () => {
       })
       .catch((err) => {
         console.error('Failed to fetch payments', err);
+        showNotification('error', err);
       });
   }, [orgId, agencyId, userId]);
 
@@ -472,6 +582,8 @@ const AddDepositForm = () => {
         <div className="col-12 col-lg-10">
           <div className="container">
             <AgentHeader />
+            {/* Toast container for in-app notifications */}
+            <ToastContainer position="top-right" autoClose={5000} theme="colored" />
             <div className="px-3 mt-3 px-lg-4">
               {/* Navigation Tabs */}
               <div className="row ">
@@ -553,13 +665,31 @@ const AddDepositForm = () => {
                         <div className="col-md-3">
                           {formData.modeOfPayment === 'Cash' ? (
                             <>
-                              <label htmlFor="" className="Control-label">Bank</label>
+                              <label htmlFor="" className="Control-label">Bank Name</label>
                               <input
                                 type="text"
                                 className="form-control shadow-none"
-                                name="agentAccount"
-                                placeholder="Enter bank name or id"
-                                value={formData.agentAccount}
+                                name="bankName"
+                                placeholder="Enter bank name"
+                                value={formData.bankName}
+                                onChange={handleInputChange}
+                              />
+                              <label htmlFor="" className="Control-label mt-2">Cash Depositor Name</label>
+                              <input
+                                type="text"
+                                className="form-control shadow-none"
+                                name="cashDepositorName"
+                                placeholder="Depositor full name"
+                                value={formData.cashDepositorName}
+                                onChange={handleInputChange}
+                              />
+                              <label htmlFor="" className="Control-label mt-2">Cash Depositor CNIC</label>
+                              <input
+                                type="text"
+                                className="form-control shadow-none"
+                                name="cashDepositorCnic"
+                                placeholder="12345-1234567-1"
+                                value={formData.cashDepositorCnic}
                                 onChange={handleInputChange}
                               />
                             </>
@@ -655,35 +785,35 @@ const AddDepositForm = () => {
                     </form>
 
                     {/* Filters and Rules Section */}
-                    <div className="row mb-3">
-                      <div className="col-md-3">
-                        <label className="Control-label">From</label>
-                        <input type="date" className="form-control shadow-none" value={filterFrom} onChange={(e) => setFilterFrom(e.target.value)} />
+
+
+                    {/* Pagination controls */}
+                    <div className="d-flex justify-content-between align-items-center mt-3">
+                      <div>
+                        <small className="text-muted">Showing {totalPayments === 0 ? 0 : startIndex + 1}–{endIndex} of {totalPayments}</small>
                       </div>
-                      <div className="col-md-3">
-                        <label className="Control-label">To</label>
-                        <input type="date" className="form-control shadow-none" value={filterTo} onChange={(e) => setFilterTo(e.target.value)} />
-                      </div>
-                      <div className="col-md-3">
-                        <label className="Control-label">Trans Type</label>
-                        <select className="form-select shadow-none" value={filterMethod} onChange={(e) => setFilterMethod(e.target.value)}>
-                          <option value="">All</option>
-                          {methodOptions.map((m) => (
-                            <option key={m} value={m}>{m}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="col-md-2">
-                        <label className="Control-label">Status</label>
-                        <select className="form-select shadow-none" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-                          <option value="">All</option>
-                          {statusOptions.map((s) => (
-                            <option key={s} value={s}>{s}</option>
-                          ))}
-                        </select>
-                      </div>
-                      <div className="col-md-1 d-flex align-items-end">
-                        <button type="button" className="btn btn-light" onClick={() => { setFilterFrom(''); setFilterTo(''); setFilterMethod(''); setFilterStatus(''); }}>Reset</button>
+
+                      <div className="d-flex align-items-center gap-3">
+                        <div>
+                          <select className="form-select form-select-sm" style={{ minWidth: 90 }} value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}>
+                            <option value={5}>5 / page</option>
+                            <option value={10}>10 / page</option>
+                            <option value={25}>25 / page</option>
+                            <option value={50}>50 / page</option>
+                          </select>
+                        </div>
+
+                        <nav aria-label="pagination">
+                          <ul className="pagination pagination-sm mb-0">
+                            <li className={`page-item ${page <= 1 ? 'disabled' : ''}`}><button className="page-link" onClick={() => setPage((p) => Math.max(1, p - 1))}>Prev</button></li>
+                            {getPageNumbers(page, totalPages).map((pn, idx) => (
+                              <li key={idx} className={`page-item ${pn === page ? 'active' : ''} ${pn === '...' ? 'disabled' : ''}`}>
+                                {pn === '...' ? <span className="page-link">&hellip;</span> : <button className="page-link" onClick={() => setPage(Number(pn))}>{pn}</button>}
+                              </li>
+                            ))}
+                            <li className={`page-item ${page >= totalPages ? 'disabled' : ''}`}><button className="page-link" onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>Next</button></li>
+                          </ul>
+                        </nav>
                       </div>
                     </div>
 
@@ -697,6 +827,20 @@ const AddDepositForm = () => {
                     </div>
 
                   </div>
+                  <div className="row mb-3">
+                    <div className="col-md-2">
+                      <label className="Control-label">Status</label>
+                      <select className="form-select shadow-none" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+                        <option value="">All</option>
+                        {statusOptions.map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="col-md-1 d-flex align-items-end">
+                      <button type="button" className="btn btn-light" onClick={() => { setFilterFrom(''); setFilterTo(''); setFilterMethod(''); setFilterStatus(''); }}>Reset</button>
+                    </div>
+                  </div>
 
                   {/* Transaction Table */}
 
@@ -706,32 +850,52 @@ const AddDepositForm = () => {
                         <thead className="table-light">
                           <tr>
                             <th className="fw-normal text-muted">Date</th>
+                            <th className="fw-normal text-muted">Transaction #</th>
                             <th className="fw-normal text-muted">Trans Type</th>
-                            <th className="fw-normal text-muted">Beneficiary ac</th>
-                            <th className="fw-normal text-muted">Agent Account</th>
-                            <th className="fw-normal text-muted">Transaction num</th>
+                            <th className="fw-normal text-muted">Beneficiary Account (label)</th>
+                            <th className="fw-normal text-muted">Beneficiary Account #</th>
+                            <th className="fw-normal text-muted">Agent Account (label)</th>
+                            <th className="fw-normal text-muted">Agent Account #</th>
                             <th className="fw-normal text-muted">Amount</th>
                             <th className="fw-normal text-muted">Status</th>
-                            <th className="fw-normal text-muted">slip</th>
+                            <th className="fw-normal text-muted">Slip</th>
+                            {/* <th className="fw-normal text-muted">Actions</th> */}
                           </tr>
                         </thead>
                         <tbody>
-                          {fullyFilteredPayments.map((p) => (
-                            <tr key={p.id}>
-                              <td>{p.date ? new Date(p.date).toLocaleString() : '-'}</td>
-                              <td>{p.method || '-'}</td>
-                              <td>{(p.organization_bank_account && bankMap[p.organization_bank_account]) || p.organization_bank_account || '-'}</td>
-                              <td>{(p.agent_bank_account && bankMap[p.agent_bank_account]) || p.agent_bank_account || '-'}</td><td>{p.transaction_number || '-'}</td>
-                              <td>{p.amount}</td>
-                              <td>{getStatusBadge(p.status)}</td>
-                              <td>
-                                {p.image ? (
-                                  // show link to uploaded slip
-                                  <a href={p.image} target="_blank" rel="noreferrer">View</a>
-                                ) : '-'}
-                              </td>
-                            </tr>
-                          ))}
+                          {paginatedPayments.map((p) => {
+                            const resolveId = (val) => {
+                              if (val == null) return null;
+                              if (typeof val === 'object') return (val.id || val.pk || val.account_number || null);
+                              return val;
+                            };
+                            const orgIdKey = resolveId(p.organization_bank_account);
+                            const agIdKey = resolveId(p.agent_bank_account);
+                            const orgDetails = bankDetailsMap[orgIdKey] || null;
+                            const agDetails = bankDetailsMap[agIdKey] || null;
+                            const dateOnly = p.date ? new Date(p.date).toISOString().split('T')[0] : '-';
+                            return (
+                              <tr key={p.id}>
+                                <td>{dateOnly}</td>
+                                <td>{p.transaction_number || '-'}</td>
+                                <td>{p.method || '-'}</td>
+                                <td>{(orgDetails && orgDetails.name) || (bankMap[orgIdKey]) || orgIdKey || '-'}</td>
+                                <td>{(orgDetails && orgDetails.accountNumber) || '-'}</td>
+                                <td>{(agDetails && agDetails.name) || (bankMap[agIdKey]) || agIdKey || '-'}</td>
+                                <td>{(agDetails && agDetails.accountNumber) || '-'}</td>
+                                <td>{p.amount}</td>
+                                <td>{getStatusBadge(p.status)}</td>
+                                <td>{p.image ? <a href={p.image} target="_blank" rel="noreferrer">View</a> : '-'}</td>
+                                <td>
+                                  {/* Actions placeholder: Edit / Download Slip / View Details */}
+                                  {/* <div className="d-flex gap-2">
+                                    <button type="button" className="btn btn-sm btn-outline-primary">View</button>
+                                    <a className="btn btn-sm btn-outline-secondary" href={p.image || '#'} target="_blank" rel="noreferrer">Slip</a>
+                                  </div> */}
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>

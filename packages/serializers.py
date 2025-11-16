@@ -341,11 +341,6 @@ class UmrahPackageSerializer(ModelSerializer):
     adult_price = serializers.SerializerMethodField(read_only=True)
     infant_price = serializers.SerializerMethodField(read_only=True)
     child_discount = serializers.SerializerMethodField(read_only=True)
-    quint_room_price = serializers.SerializerMethodField(read_only=True)
-    quad_room_price = serializers.SerializerMethodField(read_only=True)
-    triple_room_price = serializers.SerializerMethodField(read_only=True)
-    double_room_price = serializers.SerializerMethodField(read_only=True)
-    sharing_bed_price = serializers.SerializerMethodField(read_only=True)
     
     # New pricing breakdown
     total_price_breakdown = serializers.SerializerMethodField()
@@ -383,6 +378,22 @@ class UmrahPackageSerializer(ModelSerializer):
         if obj.created_by:
             return f"{obj.created_by.first_name} {obj.created_by.last_name}".strip() or obj.created_by.username
         return None
+
+    def to_representation(self, instance):
+        """Ensure transport and removed room-price fields are not present in output.
+
+        Some endpoints or legacy code may produce dicts or include fields outside
+        the serializer `exclude`. This defensive removal guarantees the API
+        never returns these keys.
+        """
+        data = super().to_representation(instance)
+        for k in (
+            'transport_price', 'transport_selling_price', 'transport_purchase_price',
+            'quint_room_price', 'quad_room_price', 'triple_room_price', 'double_room_price', 'sharing_bed_price',
+        ):
+            if k in data:
+                data.pop(k, None)
+        return data
     
     def get_total_price_breakdown(self, obj):
         """Return complete pricing breakdown for different passenger counts"""
@@ -509,20 +520,7 @@ class UmrahPackageSerializer(ModelSerializer):
             return None
         return getattr(first, field_name, None)
 
-    def get_quint_room_price(self, obj):
-        return self._first_hotel_field(obj, "quaint_bed_price")
-
-    def get_quad_room_price(self, obj):
-        return self._first_hotel_field(obj, "quad_bed_price")
-
-    def get_triple_room_price(self, obj):
-        return self._first_hotel_field(obj, "triple_bed_price")
-
-    def get_double_room_price(self, obj):
-        return self._first_hotel_field(obj, "double_bed_price")
-
-    def get_sharing_bed_price(self, obj):
-        return self._first_hotel_field(obj, "sharing_bed_price")
+    
 
 
 class PublicUmrahPackageHotelSummarySerializer(serializers.ModelSerializer):
@@ -627,21 +625,7 @@ class PublicUmrahPackageDetailSerializer(ModelSerializer):
         if not first:
             return None
         return getattr(first, field_name, None)
-
-    def get_quint_room_price(self, obj):
-        return self._first_hotel_field(obj, "quaint_bed_price")
-
-    def get_quad_room_price(self, obj):
-        return self._first_hotel_field(obj, "quad_bed_price")
-
-    def get_triple_room_price(self, obj):
-        return self._first_hotel_field(obj, "triple_bed_price")
-
-    def get_double_room_price(self, obj):
-        return self._first_hotel_field(obj, "double_bed_price")
-
-    def get_sharing_bed_price(self, obj):
-        return self._first_hotel_field(obj, "sharing_bed_price")
+    
 
 
 class CustomUmrahPackageHotelDetailsSerializer(ModelSerializer):

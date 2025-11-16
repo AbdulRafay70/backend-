@@ -115,57 +115,83 @@ const AgentPackages = () => {
   const [detailsPackage, setDetailsPackage] = useState(null);
   const token = localStorage.getItem('agentAccessToken');
 
-  const getOrgId = () => {
+  const getOrgIds = () => {
     const agentOrg = localStorage.getItem("agentOrganization");
-    if (!agentOrg) return null;
+    if (!agentOrg) return [];
     const orgData = JSON.parse(agentOrg);
-    return orgData.ids[0];
+    return Array.isArray(orgData.ids) ? orgData.ids : [];
   };
 
-  const orgId = getOrgId();
+  const orgIds = getOrgIds();
 
   useEffect(() => {
     const fetchData = async () => {
       console.log("🔍 Fetching packages...");
       console.log("  - Token:", token ? "✓ Present" : "✗ Missing");
-      console.log("  - Org ID:", orgId || "✗ Missing");
+      console.log("  - Org IDs:", orgIds && orgIds.length ? orgIds.join(',') : "✗ Missing");
 
-      // Don't fetch if we don't have token or orgId
-      if (!token || !orgId) {
-        console.warn("⚠️ Missing token or organization ID. Please log in again.");
+      // Don't fetch if we don't have token or any organization IDs
+      if (!token || !orgIds || orgIds.length === 0) {
+        console.warn("⚠️ Missing token or organization ID(s). Please log in again.");
         setLoading(false);
         return;
       }
 
       try {
         setLoading(true);
-        const [packageRes, airlinesRes] = await Promise.all([
-          axios.get(`http://127.0.0.1:8000/api/umrah-packages/?organization=${orgId}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }),
-          axios.get("http://127.0.0.1:8000/api/airlines/", {
-            params: { organization: orgId },
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }),
-        ]);
 
-        const packages = packageRes.data.filter(
-          (pkg) => pkg.organization === orgId
+        // Fetch packages and airlines for all organization IDs (agent may be linked to a parent org)
+        const packagePromises = orgIds.map((id) =>
+          axios.get(`http://127.0.0.1:8000/api/umrah-packages/?organization=${id}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          })
         );
-        
+
+        const airlinePromises = orgIds.map((id) =>
+          axios.get("http://127.0.0.1:8000/api/airlines/", {
+            params: { organization: id },
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          })
+        );
+
+        const packageResponses = orgIds.length ? await Promise.all(packagePromises) : [];
+        const airlineResponses = orgIds.length ? await Promise.all(airlinePromises) : [];
+
+        // Flatten and deduplicate packages by id
+        const allPackages = packageResponses
+          .map((r) => r.data || [])
+          .flat()
+          .filter(Boolean);
+        const packagesById = {};
+        allPackages.forEach((p) => {
+          if (!packagesById[p.id]) packagesById[p.id] = p;
+        });
+        const packages = Object.values(packagesById);
+
+        // Flatten and dedupe airlines by id
+        const allAirlines = airlineResponses
+          .map((r) => r.data || [])
+          .flat()
+          .filter(Boolean);
+        const airlinesById = {};
+        allAirlines.forEach((a) => {
+          if (!airlinesById[a.id]) airlinesById[a.id] = a;
+        });
+        const mergedAirlines = Object.values(airlinesById);
+
         if (packages.length === 0) {
-          console.warn("⚠️ No umrah packages found for organization ID:", orgId);
-          console.warn("� Please add packages for this organization in the Django admin panel.");
+          console.warn("⚠️ No umrah packages found for organization IDs:", orgIds);
+          console.warn("Please add packages for these organizations in the Django admin panel.");
         }
-        
+
         setPackageData(packages);
-        setAirlines(airlinesRes.data);
+        setAirlines(mergedAirlines);
       } catch (err) {
         console.error("❌ Failed to fetch packages:", err.message);
         if (err.response?.status === 401 || err.response?.status === 403) {
@@ -177,7 +203,7 @@ const AgentPackages = () => {
     };
 
     fetchData();
-  }, [token, orgId]);
+  }, [token, JSON.stringify(orgIds)]);
 
   const formatDateTime = (dateStr) => {
     const date = new Date(dateStr);
@@ -388,7 +414,7 @@ const AgentPackages = () => {
                         </div>
                         <h4 className="text-muted mb-3">No Umrah Packages Found</h4>
                         <p className="text-muted">
-                          There are currently no umrah packages available for your organization (ID: {orgId}).
+                          There are currently no umrah packages available for your organization (ID: {orgIds && orgIds.length ? orgIds.join(',') : 'N/A'}).
                         </p>
                         <p className="text-muted small">
                           Please contact your administrator to add packages to your organization.

@@ -1,4 +1,4 @@
-from organization.serializers import AgencySerializer
+from scripts.serializers import AgencySerializer
 from organization.models import Organization, Branch
 org = Organization.objects.create(name='OrgY')
 branch = Branch.objects.create(organization=org, name='MainY')

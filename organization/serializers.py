@@ -56,6 +56,11 @@ class AgencySerializer(serializers.ModelSerializer):
     branch_name = serializers.CharField(source="branch.name", read_only=True)
     files = AgencyFilesSerializer(many=True, required=False)
     contacts = AgencyContactSerializer(many=True, required=False)
+    # Make the M2M `user` field optional so clients can omit it on create/update
+    # (keep many=True so DRF will serialize M2M relations correctly).
+    user = serializers.PrimaryKeyRelatedField(
+        queryset=get_user_model().objects.all(), many=True, required=False, allow_empty=True
+    )
     assign_to = serializers.PrimaryKeyRelatedField(
         queryset=get_user_model().objects.all(), required=False, allow_null=True
     )
@@ -93,6 +98,61 @@ class AgencySerializer(serializers.ModelSerializer):
             AgencyContact.objects.create(agency=agency, **contact_data)
 
         return agency
+
+    def validate_user(self, value):
+        """Normalize incoming `user` payloads.
+
+        Accepts:
+        - None/empty/0 -> returns None (no users to set)
+        - single PK as str/int -> returns [int(pk)]
+        - list/QueryDict list -> returns cleaned list of ints (or None if empty)
+
+        This makes the endpoint tolerant to form-posted values (QueryDict lists),
+        clients that omit `user`, or clients that send '0' or empty strings.
+        """
+        # treat falsy/null/zero values as no users provided
+        if value is None:
+            return None
+        # handle common string representations
+        if isinstance(value, str):
+            v = value.strip()
+            if v == "" or v.lower() == "null" or v == "0":
+                return None
+            try:
+                return [int(v)]
+            except Exception:
+                return [v]
+
+        # if single int
+        if isinstance(value, int):
+            if value == 0:
+                return None
+            return [value]
+
+        # if it's a list-like (QueryDict yields lists)
+        if isinstance(value, (list, tuple)):
+            cleaned = []
+            for v in value:
+                if v is None:
+                    continue
+                if isinstance(v, str):
+                    s = v.strip()
+                    if s == "" or s.lower() == "null" or s == "0":
+                        continue
+                    try:
+                        cleaned.append(int(s))
+                    except Exception:
+                        cleaned.append(s)
+                elif isinstance(v, int):
+                    if v == 0:
+                        continue
+                    cleaned.append(v)
+                else:
+                    cleaned.append(v)
+            return cleaned if cleaned else None
+
+        # fallback - return as-is
+        return value
 
     def update(self, instance, validated_data):
         files_data = validated_data.pop("files", [])

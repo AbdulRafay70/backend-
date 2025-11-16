@@ -128,7 +128,7 @@ const UmrahPackageCard = () => {
         // Calculate total sharing
         const sharingPrices =
           (pkg.adault_visa_price || 0) +
-          (pkg.transport_selling_price || 0) +
+          (pkg.transport_price || 0) +
           (ticketInfo?.adult_price || 0) +
           (pkg.food_price || 0) +
           (pkg.makkah_ziyarat_price || 0) +

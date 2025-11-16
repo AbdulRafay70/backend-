@@ -22,7 +22,7 @@ from django.contrib.auth import get_user_model
 from .models import Booking, Payment
 from rest_framework.permissions import IsAdminUser, IsAuthenticated
 from organization.models import Agency
-from organization.serializers import AgencySerializer
+from scripts.serializers import AgencySerializer
 from django.views.decorators.http import require_http_methods
 from django.http import JsonResponse
 

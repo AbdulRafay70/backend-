@@ -107,7 +107,7 @@ const Partners = ({ embed = false }) => {
         );
       } else {
         const response = await axios.get(
-          `https://api.saer.pk/api/users/?organization=${getSelectedOrganization}`,
+          `https://api.saer.pk/api/users/?organization=${getSelectedOrganization()}`,
           axiosConfig
         );
         const data = response.data || [];
@@ -144,7 +144,7 @@ const Partners = ({ embed = false }) => {
         setAgencies(JSON.parse(cachedData));
       } else {
         const response = await axios.get(
-          `https://api.saer.pk/api/agencies/?organization=${getSelectedOrganization}`,
+          `https://api.saer.pk/api/agencies/?organization=${getSelectedOrganization()}`,
           axiosConfig
         );
         const data = response.data || [];
@@ -178,7 +178,7 @@ const Partners = ({ embed = false }) => {
         setGroups(JSON.parse(cachedData));
       } else {
         const response = await axios.get(
-          `https://api.saer.pk/api/groups/?organization=${getSelectedOrganization}`,
+          `https://api.saer.pk/api/groups/?organization=${getSelectedOrganization()}`,
           axiosConfig
         );
         const data = response.data || [];
@@ -384,13 +384,13 @@ const Partners = ({ embed = false }) => {
       let response;
       if (editingId) {
         response = await axios.put(
-          `https://api.saer.pk/api/users/${editingId}/?organization=${getSelectedOrganization}`,
+          `https://api.saer.pk/api/users/${editingId}/?organization=${getSelectedOrganization()}`,
           userPayload,
           axiosConfig
         );
       } else {
         response = await axios.post(
-          `https://api.saer.pk/api/users/?organization=${getSelectedOrganization}`,
+          `https://api.saer.pk/api/users/?organization=${getSelectedOrganization()}`,
           userPayload,
           axiosConfig
         );
@@ -413,7 +413,7 @@ const Partners = ({ embed = false }) => {
     if (window.confirm("Are you sure you want to delete this partner?")) {
       setIsLoading(true);
       try {
-        await axios.delete(`https://api.saer.pk/api/users/${id}/?organization=${getSelectedOrganization}`, axiosConfig);
+        await axios.delete(`https://api.saer.pk/api/users/${id}/?organization=${getSelectedOrganization()}`, axiosConfig);
 
         // Clear the partners cache since we've made changes
         localStorage.removeItem(PARTNERS_CACHE_KEY);
@@ -434,7 +434,7 @@ const Partners = ({ embed = false }) => {
     setIsLoading(true);
     try {
       await axios.patch(
-        `https://api.saer.pk/api/users/${id}/?organization=${getSelectedOrganization}`,
+        `https://api.saer.pk/api/users/${id}/?organization=${getSelectedOrganization()}`,
         { is_active: newStatus === "Active" },
         axiosConfig
       );
@@ -463,7 +463,7 @@ const Partners = ({ embed = false }) => {
         const userId = decoded.user_id || decoded.id;
 
         const response = await axios.get(
-          `https://api.saer.pk/api/users/${userId}/?organization=${getSelectedOrganization}`,
+          `https://api.saer.pk/api/users/${userId}/?organization=${getSelectedOrganization()}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }

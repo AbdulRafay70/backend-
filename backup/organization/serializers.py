@@ -70,7 +70,22 @@ class AgencySerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         files_data = validated_data.pop("files", [])
         contacts_data = validated_data.pop("contacts", [])
+        # handle many-to-many 'user' field: pop before create and set after
+        users_data = validated_data.pop("user", None) or validated_data.pop("users", None)
         agency = Agency.objects.create(**validated_data)
+
+        # assign M2M users if provided (expecting list of user IDs)
+        if users_data is not None:
+            User = get_user_model()
+            try:
+                user_qs = User.objects.filter(pk__in=users_data)
+                agency.user.set(user_qs)
+            except Exception:
+                # If users_data is already a queryset or instances, try to set directly
+                try:
+                    agency.user.set(users_data)
+                except Exception:
+                    pass
 
         for file_data in files_data:
             AgencyFiles.objects.create(agency=agency, **file_data)
@@ -82,10 +97,23 @@ class AgencySerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         files_data = validated_data.pop("files", [])
         contacts_data = validated_data.pop("contacts", [])
+        users_data = validated_data.pop("user", None) or validated_data.pop("users", None)
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
+
+        # update M2M users if provided
+        if users_data is not None:
+            User = get_user_model()
+            try:
+                user_qs = User.objects.filter(pk__in=users_data)
+                instance.user.set(user_qs)
+            except Exception:
+                try:
+                    instance.user.set(users_data)
+                except Exception:
+                    pass
 
         # Handle files
         existing_file_ids = [file["id"] for file in files_data if "id" in file]

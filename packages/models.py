@@ -661,6 +661,9 @@ class UmrahPackageTransportDetails(models.Model):
     )   
     vehicle_type = models.CharField(max_length=50, choices=VEHICLE_TYPE_CHOICES, blank=True, null=True)
     transport_type = models.CharField(max_length=50, choices=TRANSPORT_TYPE_CHOICES, blank=True, null=True)
+    # Per-transport selling and purchase prices (stored per transport row)
+    transport_selling_price = models.FloatField(default=0)
+    transport_purchase_price = models.FloatField(default=0)
     
     class Meta:
         verbose_name = "Transport Detail"
@@ -801,6 +804,9 @@ class CustomUmrahPackageTransportDetails(models.Model):
     # )   
     vehicle_type = models.CharField(max_length=50, choices=VEHICLE_TYPE_CHOICES, blank=True, null=True)
     transport_type = models.CharField(max_length=50, choices=TRANSPORT_TYPE_CHOICES, blank=True, null=True)
+    # Per-transport selling and purchase prices for custom packages
+    transport_selling_price = models.FloatField(default=0)
+    transport_purchase_price = models.FloatField(default=0)
     
     class Meta:
         verbose_name = "Custom Transport Detail"

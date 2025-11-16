@@ -6,7 +6,7 @@ Run with: python manage.py test_org_links
 
 from django.core.management.base import BaseCommand
 from organization.models import OrganizationLink
-from organization.serializers import OrganizationLinkSerializer
+from scripts.serializers import OrganizationLinkSerializer
 
 class Command(BaseCommand):
     help = 'Test organization links API data'

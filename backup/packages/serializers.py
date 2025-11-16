@@ -1,5 +1,5 @@
 from rest_framework.serializers import ModelSerializer
-from organization.serializers import OrganizationSerializer
+from scripts.serializers import OrganizationSerializer
 from .models import City
 from booking.models import VehicleType
 from users.serializers import UserSerializer
@@ -273,7 +273,18 @@ class UmrahPackageHotelDetailsSerializer(ModelSerializer):
 
     class Meta:
         model = UmrahPackageHotelDetails
-        exclude = ["package"]
+        # Exclude the raw/base bed price fields from API output and keep only
+        # the explicit selling/purchase fields (selling/purchase are useful
+        # for financial calculations while base display prices may be redundant).
+        exclude = [
+            "package",
+            # base bed prices (we keep selling/purchase fields only)
+            "quaint_bed_price",
+            "sharing_bed_price",
+            "quad_bed_price",
+            "triple_bed_price",
+            "double_bed_price",
+        ]
 
 
 class UmrahPackageTransportDetailsSerializer(ModelSerializer):
@@ -312,8 +323,11 @@ class UmrahPackageSerializer(ModelSerializer):
     )
     ticket_details = UmrahPackageTicketDetailsSerializer(many=True, required=False)
     discount_details = UmrahPackageDiscountDetailsSerializer(many=True, required=False)
-    inclusions = PackageInclusionSerializer(many=True, required=False)
-    exclusions = PackageExclusionSerializer(many=True, required=False)
+    # These nested fields are intentionally disabled for the public package list
+    # to avoid returning large nested inclusion/exclusion arrays. They are
+    # excluded by Meta.exclude below; setting to None prevents DRF assert.
+    inclusions = None
+    exclusions = None
     
     # Display fields
     organization_name = serializers.CharField(source='organization.name', read_only=True)
@@ -338,7 +352,31 @@ class UmrahPackageSerializer(ModelSerializer):
 
     class Meta:
         model = UmrahPackage
-        fields = "__all__"
+        # Exclude a number of detailed/internal fields from the public package list
+        # to avoid returning duplicate / unnecessary information in the list endpoint.
+        exclude = [
+            # The following fields were previously excluded from public list
+            # responses to reduce payload size. They are now exposed so create/
+            # update requests can set selling & purchase prices for extras.
+            # (Keep other internal fields excluded below.)
+
+            # activation flags / service & partial payment internals
+            'is_active', 'is_quaint_active', 'is_sharing_active', 'is_quad_active',
+            'is_triple_active', 'is_double_active',
+            'adault_service_charge', 'child_service_charge', 'infant_service_charge',
+            'is_service_charge_active',
+            'adault_partial_payment', 'child_partial_payment', 'infant_partial_payment',
+            'is_partial_payment_active', 'min_partial_percent', 'min_partial_amount',
+
+            # age/restriction & organisation internals
+            'filght_min_adault_age', 'filght_max_adault_age', 'max_chilld_allowed', 'max_infant_allowed',
+            'inventory_owner_organization_id',
+            # nested inclusions/exclusions are disabled separately by setting
+            # the declared fields to None (see above). Do NOT include them
+            # in Meta.exclude because they are not direct model fields.
+        ]
+
+        # Keep a few fields read-only as before
         read_only_fields = ('package_code', 'created_at', 'updated_at', 'left_seats')
     
     def get_created_by_name(self, obj):

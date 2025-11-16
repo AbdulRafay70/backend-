@@ -648,6 +648,72 @@ class AgencyViewSet(viewsets.ModelViewSet):
             query_filters &= Q(user=user_id)
         return Agency.objects.filter(query_filters).select_related("branch").prefetch_related("files")
 
+    def create(self, request, *args, **kwargs):
+        # Add temporary debug logging to inspect incoming data and validation errors
+        print("DEBUG AgencyViewSet.create - incoming request.data type:", type(request.data))
+        try:
+            print("DEBUG AgencyViewSet.create - request.data:", request.data)
+        except Exception:
+            print("DEBUG AgencyViewSet.create - request.data (unprintable)")
+
+        # Normalize request.data (QueryDict) into a plain dict and sanitize 'user'
+        raw = request.data
+        try:
+            data = raw.copy()
+        except Exception:
+            # fallback: if not copyable, convert to dict
+            try:
+                data = dict(raw)
+            except Exception:
+                data = raw
+
+        # If it's a QueryDict or has getlist, coerce 'user' into a flat list of ints
+        if hasattr(raw, "getlist"):
+            try:
+                vals = raw.getlist("user")
+            except Exception:
+                vals = None
+            # Only set `user` in data when the request actually provided values
+            # (QueryDict.getlist returns [] when key missing; avoid injecting empty list)
+            if vals:
+                # build list of valid ints > 0
+                users_flat = []
+                for u in vals:
+                    if u is None:
+                        continue
+                    try:
+                        uid = int(u)
+                    except Exception:
+                        # keep non-int values as-is for DRF to validate (e.g., UUIDs)
+                        users_flat.append(u)
+                        continue
+                    if uid and uid > 0:
+                        users_flat.append(uid)
+                data = data.copy() if hasattr(data, 'copy') else dict(data)
+                data["user"] = users_flat
+
+        # Also handle scalar 'user' values (e.g., JSON clients sending user: 0)
+        if isinstance(data, dict) and "user" in data and not isinstance(data["user"], (list, tuple)):
+            val = data.get("user")
+            try:
+                if val is None:
+                    data["user"] = []
+                else:
+                    uid = int(val)
+                    data["user"] = [uid] if uid and uid > 0 else []
+            except Exception:
+                # keep as-is (could be UUID or other type)
+                data["user"] = [val]
+
+        serializer = self.get_serializer(data=data)
+        if not serializer.is_valid():
+            print("DEBUG AgencyViewSet.create - serializer.errors:", serializer.errors)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
 
 class AgencyProfileView(APIView):
     permission_classes = [IsAuthenticated]

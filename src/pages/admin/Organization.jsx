@@ -32,7 +32,7 @@ const ShimmerLoader = () => {
 };
 
 const Organization = () => {
-  const API_URL = "https://api.saer.pk/api/organizations/";
+  const API_URL = "http://127.0.0.1:8000/api/organizations/";
   const CACHE_KEY = "organizations_cache";
   const CACHE_TIMESTAMP_KEY = "organizations_cache_timestamp";
   const CACHE_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes cache expiry
@@ -60,7 +60,7 @@ const Organization = () => {
   const accessToken = localStorage.getItem("accessToken");
 
   const api = axios.create({
-    baseURL: "https://api.saer.pk",
+    baseURL: "http://127.0.0.1:8000",
     headers: {
       Authorization: `Bearer ${accessToken}`,
       "Content-Type": "multipart/form-data",
@@ -363,16 +363,10 @@ const Organization = () => {
                             <td>{org.email}</td>
                             <td>{org.address}</td>
                             <td>
-                              {org.logo && (
-                                <img
-                                  src={org.logo}
-                                  alt="Organization logo"
-                                  style={{
-                                    width: "50px",
-                                    height: "50px",
-                                    objectFit: "cover",
-                                  }}
-                                />
+                              {org.logo ? (
+                                <a href={org.logo} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline-primary">View</a>
+                              ) : (
+                                <span className="text-muted">—</span>
                               )}
                             </td>
                             <td>

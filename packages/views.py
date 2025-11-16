@@ -680,8 +680,7 @@ class UmrahPackageViewSet(ModelViewSet):
                 keys = [
                     'food_selling_price','food_purchase_price',
                     'makkah_ziyarat_selling_price','makkah_ziyarat_purchase_price',
-                    'madinah_ziyarat_selling_price','madinah_ziyarat_purchase_price',
-                    'transport_selling_price','transport_purchase_price',
+                    'madinah_ziyarat_selling_price','madinah_ziarat_purchase_price',
                     'adault_visa_selling_price','adault_visa_purchase_price',
                     'child_visa_selling_price','child_visa_purchase_price',
                     'infant_visa_selling_price','infant_visa_purchase_price',
@@ -768,8 +767,7 @@ class UmrahPackageViewSet(ModelViewSet):
                 keys = [
                     'food_selling_price','food_purchase_price',
                     'makkah_ziyarat_selling_price','makkah_ziyarat_purchase_price',
-                    'madinah_ziyarat_selling_price','madinah_ziyarat_purchase_price',
-                    'transport_selling_price','transport_purchase_price',
+                    'madinah_ziarat_selling_price','madinah_ziarat_purchase_price',
                     'adault_visa_selling_price','adault_visa_purchase_price',
                     'child_visa_selling_price','child_visa_purchase_price',
                     'infant_visa_selling_price','infant_visa_purchase_price',

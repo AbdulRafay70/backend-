@@ -1,4 +1,4 @@
-from organization.serializers import AgencySerializer
+from scripts.serializers import AgencySerializer
 from organization.models import Organization, Branch
 from django.contrib.auth import get_user_model
 User = get_user_model()

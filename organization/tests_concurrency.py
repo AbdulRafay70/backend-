@@ -3,7 +3,7 @@ from threading import Thread
 from django.db import transaction
 from decimal import Decimal
 
-from .serializers import WalkInBookingSerializer
+from ..scripts.serializers import WalkInBookingSerializer
 from .models import Organization, WalkInBooking
 from tickets.models import Hotels, HotelRooms, RoomDetails
 from django.contrib.auth import get_user_model

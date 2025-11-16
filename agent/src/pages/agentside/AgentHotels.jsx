@@ -126,8 +126,18 @@ const Hotels = () => {
         throw new Error("User has no organizations assigned");
       }
 
-      // 3. Fetch hotels - different approaches based on number of orgs
+      // 3. Fetch hotels - support paginated responses and annotate with org info
       let allHotels = [];
+
+      const normalize = (resp) => {
+        if (!resp) return [];
+        const d = resp.data;
+        if (!d) return [];
+        if (Array.isArray(d)) return d;
+        if (Array.isArray(d?.results)) return d.results;
+        if (Array.isArray(d?.data)) return d.data;
+        return [];
+      };
 
       if (organizationIds.length === 1) {
         // Single organization - simple request
@@ -137,17 +147,23 @@ const Hotels = () => {
             organization: organizationIds[0],
           },
         });
-        allHotels = response.data;
+        const orgId = organizationIds[0];
+        const orgName = orgDetails.find((o) => o.id === orgId)?.name || null;
+        allHotels = normalize(response).map((h) => ({ ...h, orgId, orgName }));
       } else {
         // Multiple organizations - fetch in parallel
-        const requests = organizationIds.map(orgId =>
+        const requests = organizationIds.map((orgId) =>
           axios.get(`http://127.0.0.1:8000/api/hotels/`, {
             ...config,
             params: { organization: orgId },
           })
         );
         const responses = await Promise.all(requests);
-        allHotels = responses.flatMap(response => response.data);
+        allHotels = responses.flatMap((response, idx) => {
+          const orgId = organizationIds[idx];
+          const orgName = orgDetails.find((o) => o.id === orgId)?.name || null;
+          return normalize(response).map((h) => ({ ...h, orgId, orgName }));
+        });
       }
 
       const normalize = (city) => city?.toString().trim().toLowerCase() || "";
@@ -359,6 +375,11 @@ const Hotels = () => {
                               <strong>{hotel.name}</strong>
                               <br />
                               <small className="text-muted">{hotel.distance}M</small>
+                              {hotel.orgName ? (
+                                <div>
+                                  <small className="text-muted">Org: {hotel.orgName}</small>
+                                </div>
+                              ) : null}
                             </td>
                             <td rowSpan={sortedGroups.length}>{hotel.category}</td>
                             <td rowSpan={sortedGroups.length} style={{ color: "#1B78CE" }}>

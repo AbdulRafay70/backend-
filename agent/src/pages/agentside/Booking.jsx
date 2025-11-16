@@ -8,12 +8,15 @@ import { Bag } from "react-bootstrap-icons";
 import axios from "axios";
 import AdminFooter from "../../components/AdminFooter";
 
-const getOrgId = () => {
+const getOrgIds = () => {
   const agentOrg = localStorage.getItem("agentOrganization");
-  if (!agentOrg) return null;
-
-  const orgData = JSON.parse(agentOrg);
-  return orgData.ids[0]; // Get the first organization ID
+  if (!agentOrg) return [];
+  try {
+    const orgData = JSON.parse(agentOrg);
+    return Array.isArray(orgData.ids) ? orgData.ids : [];
+  } catch (e) {
+    return [];
+  }
 };
 
 const FlightCard = ({ ticket, airlineMap, cityMap }) => {
@@ -26,13 +29,14 @@ const FlightCard = ({ ticket, airlineMap, cityMap }) => {
   const tripDetails = ticket.trip_details || [];
   const stopoverDetails = ticket.stopover_details || [];
 
-  // FIX: Updated trip_type values to match backend data
-  const outboundTrip = tripDetails.find((t) => t.trip_type === "Departure");
-  const returnTrip = tripDetails.find((t) => t.trip_type === "Return");
+  // Determine outbound/return trips. Some APIs omit per-trip `trip_type`,
+  // so fall back to using the first item as outbound and second as return.
+  let outboundTrip = tripDetails.find((t) => t.trip_type === "Departure");
+  let returnTrip = tripDetails.find((t) => t.trip_type === "Return");
+  if (!outboundTrip && tripDetails.length > 0) outboundTrip = tripDetails[0];
+  if (!returnTrip && tripDetails.length > 1) returnTrip = tripDetails[1];
 
-  const outboundStopover = stopoverDetails.find(
-    (s) => s.trip_type === "Departure"
-  );
+  const outboundStopover = stopoverDetails.find((s) => s.trip_type === "Departure");
   const returnStopover = stopoverDetails.find((s) => s.trip_type === "Return");
 
   if (!outboundTrip) {
@@ -360,7 +364,7 @@ const FlightCard = ({ ticket, airlineMap, cityMap }) => {
             </span>
 
             <span className="small" style={{ color: "#699FC9" }}>
-              <Bag /> {ticket.weight}kg Baggage ({ticket.pieces} pieces)
+              <Bag /> {ticket.weight ?? ticket.baggage_weight}kg Baggage ({ticket.pieces ?? ticket.baggage_pieces} pieces)
             </span>
 
             <span
@@ -374,7 +378,7 @@ const FlightCard = ({ ticket, airlineMap, cityMap }) => {
           <div className="col-md-5 text-md-end text-center d-flex align-items-center justify-content-end">
             <div className="d-flex flex-column me-3 align-items-center">
               <div className="fw-bold">
-                PKR {ticket.adult_price}{" "}
+                PKR {ticket.adult_price ?? ticket.adult_fare}{" "}
                 <span className="text-muted fw-normal">/per person</span>
               </div>
             </div>
@@ -559,8 +563,8 @@ const TicketBooking = () => {
   });
 
   const token = localStorage.getItem("agentAccessToken");
-  // const selectedOrg = JSON.parse();
-  const orgId = getOrgId();
+  const orgIds = getOrgIds();
+  const uniqueOrgIds = Array.from(new Set((orgIds || []).filter(Boolean).map(String)));
 
   const [cityCodeMap, setCityCodeMap] = useState({});
   const [routeFilters, setRouteFilters] = useState({}); // Changed to empty object
@@ -576,17 +580,14 @@ const TicketBooking = () => {
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
 
-  const isCacheValid = (cachedData) => {
-    if (!cachedData || !cachedData.timestamp) return false;
-    const oneHour = 60 * 60 * 1000; // 1 hour in milliseconds
-    return Date.now() - cachedData.timestamp < oneHour;
-  };
 
   const getTicketRoute = useCallback(
     (ticket) => {
       const tripDetails = ticket.trip_details || [];
-      const outboundTrip = tripDetails.find((t) => t.trip_type === "Departure");
-      const returnTrip = tripDetails.find((t) => t.trip_type === "Return");
+      let outboundTrip = tripDetails.find((t) => t.trip_type === "Departure");
+      let returnTrip = tripDetails.find((t) => t.trip_type === "Return");
+      if (!outboundTrip && tripDetails.length > 0) outboundTrip = tripDetails[0];
+      if (!returnTrip && tripDetails.length > 1) returnTrip = tripDetails[1];
 
       if (!outboundTrip) return "UNK-UNK";
 
@@ -612,8 +613,8 @@ const TicketBooking = () => {
   // Fetch all data in parallel
   useEffect(() => {
     const fetchData = async () => {
-      if (!orgId || !token) {
-        setError("Organization ID or token not found");
+      if ((!uniqueOrgIds || uniqueOrgIds.length === 0) || !token) {
+        setError("Organization ID(s) or token not found");
         setIsLoading(false);
         return;
       }
@@ -622,84 +623,90 @@ const TicketBooking = () => {
         setIsLoading(true);
         setError(null);
 
-        // Check if we have valid cached data
-        const cacheKey = `ticketData-${orgId}`;
-        const cachedData = JSON.parse(localStorage.getItem(cacheKey));
-
-        if (cachedData && isCacheValid(cachedData)) {
-          // Use cached data
-          setTickets(cachedData.tickets);
-          setAirlineMap(cachedData.airlineMap);
-          setCityMap(cachedData.cityMap);
-          setCityCodeMap(cachedData.cityCodeMap);
-
-          // Initialize airline filters
-          const initialAirlineFilters = {};
-          Object.keys(cachedData.airlineMap).forEach((airlineId) => {
-            const airlineName = cachedData.airlineMap[airlineId].name;
-            initialAirlineFilters[airlineName] = false;
-          });
-          setAirlineFilters(initialAirlineFilters);
-
-          setIsLoading(false);
-          return;
-        }
+        // Always fetch fresh data from API (no local cache)
 
         // No valid cache, fetch fresh data
-        const [ticketsResponse, airlinesResponse, citiesResponse] =
-          await Promise.all([
-            api.get(`http://127.0.0.1:8000/api/tickets/?organization=${orgId}`),
-            api.get(`http://127.0.0.1:8000/api/airlines/?organization=${orgId}`),
-            api.get(`http://127.0.0.1:8000/api/cities/?organization=${orgId}`),
-          ]);
+        // Fetch tickets, airlines and cities for all organizations in parallel
+        const ticketsPromises = uniqueOrgIds.map((id) => api.get(`http://127.0.0.1:8000/api/tickets/?organization=${id}`));
+        const airlinesPromises = uniqueOrgIds.map((id) => api.get(`http://127.0.0.1:8000/api/airlines/?organization=${id}`));
+        const citiesPromises = uniqueOrgIds.map((id) => api.get(`http://127.0.0.1:8000/api/cities/?organization=${id}`));
 
-        const ticketsData = ticketsResponse.data;
-        const airlinesData = airlinesResponse.data;
-        const citiesData = citiesResponse.data;
+        const ticketsResponses = uniqueOrgIds.length ? await Promise.all(ticketsPromises) : [];
+        const airlinesResponses = uniqueOrgIds.length ? await Promise.all(airlinesPromises) : [];
+        const citiesResponses = uniqueOrgIds.length ? await Promise.all(citiesPromises) : [];
+
+        // Flatten and dedupe. Support direct arrays or paginated responses with `results`.
+        const normalize = (resp) => {
+          if (!resp) return [];
+          const d = resp.data;
+          if (!d) return [];
+          if (Array.isArray(d)) return d;
+          if (Array.isArray(d?.results)) return d.results;
+          // If API returns an object that directly contains items under a key, try to detect common keys
+          if (Array.isArray(d?.data)) return d.data;
+          return [];
+        };
+
+        const ticketsData = ticketsResponses.map((r) => normalize(r)).flat().filter(Boolean);
+        const airlinesData = airlinesResponses.map((r) => normalize(r)).flat().filter(Boolean);
+        const citiesData = citiesResponses.map((r) => normalize(r)).flat().filter(Boolean);
 
         // Create airline map with names and logos
-        const airlineMapData = airlinesData.reduce((map, airline) => {
-          map[airline.id] = {
-            name: airline.name,
-            logo: airline.logo,
-          };
+        // dedupe airlines by id
+        const airlinesById = {};
+        airlinesData.forEach((airline) => {
+          if (!airlinesById[airline.id]) airlinesById[airline.id] = airline;
+        });
+        const airlineMapData = Object.values(airlinesById).reduce((map, airline) => {
+          map[airline.id] = { name: airline.name, logo: airline.logo };
           return map;
         }, {});
 
         // Create city map (for names)
-        const cityMapData = citiesData.reduce((map, city) => {
+        // dedupe cities by id
+        const citiesById = {};
+        citiesData.forEach((city) => {
+          if (!citiesById[city.id]) citiesById[city.id] = city;
+        });
+        const cityMapData = Object.values(citiesById).reduce((map, city) => {
           map[city.id] = city.name;
           return map;
         }, {});
 
         // Create city code map
-        const cityCodeMapData = citiesData.reduce((map, city) => {
+        const cityCodeMapData = Object.values(citiesById).reduce((map, city) => {
           map[city.id] = city.code;
           return map;
         }, {});
 
         // Initialize airline filters
         const initialAirlineFilters = {};
-        airlinesData.forEach((airline) => {
+        Object.values(airlineMapData).forEach((airline) => {
           initialAirlineFilters[airline.name] = false;
         });
 
+        // Debug: log counts
+        // console.debug can be inspected in browser devtools if needed
+        console.debug('Ticket fetch counts:', {
+          orgs: uniqueOrgIds.length,
+          tickets: ticketsData.length,
+          airlines: airlinesData.length,
+          cities: citiesData.length,
+        });
+
         // Update state
-        setTickets(ticketsData);
+        // dedupe tickets by id
+        const ticketsById = {};
+        ticketsData.forEach((t) => {
+          if (!ticketsById[t.id]) ticketsById[t.id] = t;
+        });
+        setTickets(Object.values(ticketsById));
         setAirlineMap(airlineMapData);
         setCityMap(cityMapData);
         setCityCodeMap(cityCodeMapData);
         setAirlineFilters(initialAirlineFilters);
 
-        // Cache the data with a timestamp
-        const dataToCache = {
-          tickets: ticketsData,
-          airlineMap: airlineMapData,
-          cityMap: cityMapData,
-          cityCodeMap: cityCodeMapData,
-          timestamp: Date.now(),
-        };
-        localStorage.setItem(cacheKey, JSON.stringify(dataToCache));
+        // Do not cache response locally; always use fresh API data
       } catch (err) {
         let errorMessage = "Failed to load data";
 
@@ -728,7 +735,7 @@ const TicketBooking = () => {
     };
 
     fetchData();
-  }, [token, orgId]);
+  }, [token, JSON.stringify(uniqueOrgIds)]);
 
   // Filter and sort tickets
   useEffect(() => {
@@ -745,13 +752,7 @@ const TicketBooking = () => {
     let result = [...tickets];
 
     // Filter out tickets without trip details
-    result = result.filter(
-      (ticket) =>
-        ticket.trip_details &&
-        Array.isArray(ticket.trip_details) &&
-        // FIX: Updated to match backend trip_type value
-        ticket.trip_details.some((t) => t.trip_type === "Departure")
-    );
+    result = result.filter((ticket) => ticket.trip_details && Array.isArray(ticket.trip_details) && ticket.trip_details.length > 0);
 
     // PNR search
     if (pnr) {
@@ -765,9 +766,7 @@ const TicketBooking = () => {
       const destUpper = destination.toUpperCase();
       result = result.filter((ticket) => {
         // FIX: Updated to match backend trip_type value
-        const outbound = ticket.trip_details?.find(
-          (t) => t.trip_type === "Departure"
-        );
+        const outbound = ticket.trip_details?.find((t) => t.trip_type === "Departure") || ticket.trip_details?.[0];
         if (!outbound) return false;
         const arrivalCity = cityMap[outbound.arrival_city] || "";
         return arrivalCity.toUpperCase().includes(destUpper);
@@ -779,9 +778,7 @@ const TicketBooking = () => {
       const selectedDate = new Date(travelDate);
       result = result.filter((ticket) => {
         // FIX: Updated to match backend trip_type value
-        const outbound = ticket.trip_details?.find(
-          (t) => t.trip_type === "Departure"
-        );
+        const outbound = ticket.trip_details?.find((t) => t.trip_type === "Departure") || ticket.trip_details?.[0];
         if (!outbound) return false;
         const depDate = new Date(outbound.departure_date_time);
         return (
@@ -837,18 +834,10 @@ const TicketBooking = () => {
               break;
             case "departureDate": {
               // FIX: Updated to match backend trip_type value
-              const outboundA = a.trip_details?.find(
-                (t) => t.trip_type === "Departure"
-              );
-              const outboundB = b.trip_details?.find(
-                (t) => t.trip_type === "Departure"
-              );
-              const dateA = outboundA
-                ? new Date(outboundA.departure_date_time)
-                : 0;
-              const dateB = outboundB
-                ? new Date(outboundB.departure_date_time)
-                : 0;
+              const outboundA = a.trip_details?.find((t) => t.trip_type === "Departure") || a.trip_details?.[0];
+              const outboundB = b.trip_details?.find((t) => t.trip_type === "Departure") || b.trip_details?.[0];
+              const dateA = outboundA ? new Date(outboundA.departure_date_time) : 0;
+              const dateB = outboundB ? new Date(outboundB.departure_date_time) : 0;
               cmp = dateA - dateB;
               break;
             }
@@ -1167,7 +1156,7 @@ const TicketBooking = () => {
                     <div className="alert alert-danger my-5">
                       <h5>Error Loading Data</h5>
                       <p className="mb-1">{error}</p>
-                      <p className="small mb-0">Organization ID: {orgId}</p>
+                      <p className="small mb-0">Organization ID: {uniqueOrgIds && uniqueOrgIds.length ? uniqueOrgIds.join(',') : 'N/A'}</p>
                       <div className="mt-3">
                         <button
                           className="btn btn-sm btn-outline-danger me-2"
@@ -1176,7 +1165,7 @@ const TicketBooking = () => {
                           Retry
                         </button>
                         <a
-                          href={`http://127.0.0.1:8000/api/tickets/?organization=${orgId}`}
+                          href={`http://127.0.0.1:8000/api/tickets/?organization=${uniqueOrgIds && uniqueOrgIds.length ? uniqueOrgIds[0] : ''}`}
                           className="btn btn-sm btn-outline-primary"
                           target="_blank"
                           rel="noreferrer"

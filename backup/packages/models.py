@@ -294,6 +294,8 @@ class FoodPrice(models.Model):
     per_pex= models.IntegerField(default=0) 
     active = models.BooleanField(default=False)
     price = models.FloatField(default=0)
+    # Purchase/cost to the seller (frontend uses this for package cost)
+    purchase_price = models.FloatField(default=0)
     def __str__(self):
         return f"({self.city.name})"
 
@@ -324,6 +326,8 @@ class ZiaratPrice(models.Model):
     )
     min_pex = models.FloatField(default=0) 
     max_pex = models.FloatField(default=0)
+    # Purchase/cost to the seller for ziarat
+    purchase_price = models.FloatField(default=0)
     def __str__(self):
         return f"{self.ziarat_title} ({self.city.name})"
 
@@ -421,10 +425,16 @@ class UmrahPackage(models.Model):
     # Explicit selling / purchase fields for makkah ziarat
     makkah_ziyarat_selling_price = models.FloatField(default=0)
     makkah_ziarat_purchase_price = models.FloatField(default=0)
+    # Normalized spelling for consistency across codebase (preferred)
+    # NOTE: new field `makkah_ziyarat_purchase_price` will be added by migration
+    makkah_ziyarat_purchase_price = models.FloatField(default=0)
     madinah_ziyarat_price = models.FloatField(default=0)
     # Explicit selling / purchase fields for madinah ziarat
     madinah_ziyarat_selling_price = models.FloatField(default=0)
     madinah_ziarat_purchase_price = models.FloatField(default=0)
+    # Normalized spelling for consistency across codebase (preferred)
+    # NOTE: new field `madinah_ziyarat_purchase_price` will be added by migration
+    madinah_ziyarat_purchase_price = models.FloatField(default=0)
     transport_price = models.FloatField(default=0)
     # Explicit selling / purchase fields for transport
     transport_selling_price = models.FloatField(default=0)

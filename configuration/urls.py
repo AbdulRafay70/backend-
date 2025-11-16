@@ -11,6 +11,8 @@ from drf_spectacular.views import (
 )
 from django.conf import settings
 from django.conf.urls.static import static
+from django.urls import re_path
+from .media_views import serve_media_with_fallback
 from django.views.generic import RedirectView   # ✅ added import
 
 
@@ -58,4 +60,14 @@ urlpatterns = [
         SpectacularRedocView.as_view(url_name="schema"),
         name="redoc",
     ),
-] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+]
+
+# Development media serving with fallback: serve actual media when present,
+# otherwise return a small inline SVG placeholder to reduce noisy 404s.
+if settings.DEBUG:
+    # register our custom media handler before the default static mapping
+    urlpatterns += [
+        re_path(r'^%s(?P<path>.*)$' % (settings.MEDIA_URL.lstrip('/')), serve_media_with_fallback),
+    ]
+    # still include the standard static() mapping as a fallback for other behaviours
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -530,7 +530,14 @@ class ResellRequest(models.Model):
         ordering = ["-created_at"]
 
     def approve(self):
+        # Mark request as approved and persist that this was approved for reseller
         self.status = self.STATUS_APPROVED
+        # When a resell request is approved, it implies reseller permission granted
+        try:
+            self.reseller = True
+        except Exception:
+            # Be defensive: if the field doesn't exist for some reason, ignore
+            pass
         self.save()
 
     def reject_and_delete(self):

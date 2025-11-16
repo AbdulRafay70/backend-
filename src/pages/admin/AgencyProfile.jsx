@@ -8,9 +8,32 @@ import {
   FileText, Edit, Trash2, Plus, Search, Filter, Eye, Star,
   ThumbsUp, ThumbsDown, BarChart3, PieChart, Activity
 } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
 import { getAgencies, getAgencyProfile, createAgency } from "../../services/agencyService";
 import api from "../../utils/Api";
+
+// Lightweight JWT decoder used across components
+const decodeJwt = (token) => {
+  if (!token || typeof token !== "string") return {};
+  try {
+    const base64Url = token.split(".")[1];
+    if (!base64Url) return {};
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const binary = atob(base64);
+    const jsonPayload = decodeURIComponent(
+      Array.prototype.map
+        .call(binary, (c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    try {
+      return JSON.parse(atob(token.split(".")[1]));
+    } catch (e2) {
+      return {};
+    }
+  }
+};
 
 const AgencyProfile = () => {
   const { id } = useParams(); // route param from /agency-profile/:id
@@ -78,10 +101,13 @@ const AgencyProfile = () => {
     phone_number: "",
     email: "",
     address: "",
-    branch: "", // Changed from branch_name to branch (ID required)
+    branch: "", // branch will be taken from logged-in user if available
     agreement_status: true,
-    logo: null
+    logo: null,
+    agency_type: "Area Agency"
   });
+
+
 
   const [branches, setBranches] = useState([]);
 
@@ -141,9 +167,38 @@ const AgencyProfile = () => {
     }
   }, [id, agencies]);
 
+  // Support navigation via location.state (e.g., from BranchesDetails)
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const agencyId = location?.state?.agencyId;
+    const action = location?.state?.action;
+    if (!agencyId) return;
+    if (agencies.length === 0) return; // wait until agencies loaded
+
+    // Load the profile for the agency passed in navigation state
+    (async () => {
+      try {
+        await loadAgencyProfile(Number(agencyId));
+        if (action === 'edit') {
+          // open edit modal after profile loads
+          const agency = agencies.find(a => Number(a.id) === Number(agencyId)) || null;
+          if (agency) openProfileModal(agency, 'update');
+        }
+      } catch (e) {
+        // ignore; loadAgencyProfile handles alerts
+      } finally {
+        // clear navigation state so it doesn't re-trigger on refresh
+        try { navigate(location.pathname, { replace: true, state: null }); } catch (e) {}
+      }
+    })();
+  }, [location, agencies]);
+
   const loadAgencyProfile = async (agencyId) => {
     setLoading(true);
     try {
+      console.debug('loadAgencyProfile called with agencyId:', agencyId);
       // Step 1: Get basic agency info from list
       const agency = agencies.find(a => a.id === agencyId);
       if (!agency) {
@@ -154,6 +209,7 @@ const AgencyProfile = () => {
 
       // Step 2: Fetch detailed profile from second API
       const profileData = await getAgencyProfile(agencyId);
+      console.debug('loadAgencyProfile - profileData received:', profileData);
       
       // Step 3: Fetch agency users based on user IDs in agency data
       let usersData = [];
@@ -173,29 +229,95 @@ const AgencyProfile = () => {
       }
       
       // Step 4: Merge all responses
+      // Spread the profileData so we display whatever the API returns in the main content.
+      // Provide safe defaults for nested fields the UI expects.
+      // Normalize ids to numeric values where possible
+      const canonicalId = Number((profileData && (profileData.agency || profileData.agency_id || profileData.id)) || agency.id || agency.pk || agency.agency_id) || null;
+      const canonicalAgencyId = Number((profileData && (profileData.agency || profileData.agency_id || profileData.id)) || agency.agency_id || agency.id || agency.pk) || null;
+
       setSelectedAgency({
-        // Basic info from agencies list (API 1)
         ...agency,
-        // Detailed info from profile API (API 2)
-        relationship_status: profileData.relationship_status || "active",
-        relation_history: profileData.relation_history || [],
-        working_with_companies: profileData.working_with_companies || [],
-        performance_summary: profileData.performance_summary || {
+        id: canonicalId,
+        agency_id: canonicalAgencyId,
+        // Spread profile data (API 2) to avoid missing fields
+        ...(profileData || {}),
+        // Ensure arrays/objects the UI expects are present
+        relation_history: (profileData && profileData.relation_history) || (profileData && profileData.relation_history === null ? [] : profileData?.relation_history) || [],
+        working_with_companies: (profileData && profileData.working_with_companies) || [],
+        performance_summary: (profileData && profileData.performance_summary) || {
           total_bookings: 0,
           on_time_payments: 0,
           late_payments: 0,
           disputes: 0,
           remarks: "No performance data available."
         },
-        recent_communication: profileData.recent_communication || [],
-        conflict_history: profileData.conflict_history || [],
-        users: usersData
+        recent_communication: (profileData && profileData.recent_communication) || [],
+        conflict_history: (profileData && profileData.conflict_history) || [],
+        // Attach users: prefer users returned in profileData, otherwise fall back to resolved usersData
+        users: (profileData && profileData.users) || usersData
+      });
+      console.debug('selectedAgency after merge:', {
+        id: canonicalId,
+        agency_id: canonicalAgencyId,
+        relation_history: (profileData && profileData.relation_history) || [],
+        working_with_companies: (profileData && profileData.working_with_companies) || [],
+        performance_summary: (profileData && profileData.performance_summary) || {},
+        recent_communication: (profileData && profileData.recent_communication) || [],
+        conflict_history: (profileData && profileData.conflict_history) || [],
+        users: (profileData && profileData.users) || usersData
       });
       
       showAlert("success", "Agency profile loaded successfully!");
+      // If a query param 'action=edit' is present, open the edit modal for this agency
+      try {
+        const params = new URLSearchParams(location.search);
+        const qAction = params.get('action');
+        if (qAction === 'edit') {
+          const agencyObj = agencies.find(a => Number(a.id) === Number(agencyId)) || null;
+          if (agencyObj) {
+            openProfileModal(agencyObj, 'update');
+          }
+        }
+      } catch (e) {
+        // ignore URL parsing errors
+      }
     } catch (error) {
       console.error("Error loading agency profile:", error);
-      showAlert("danger", `Failed to load agency profile: ${error.message || 'Unknown error'}`);
+      const status = error?.response?.status;
+      // If profile endpoint returns 404, fall back to showing basic agency info and prompt creation
+      if (status === 404) {
+        // Find basic agency record
+        const agency = agencies.find(a => a.id === agencyId) || { id: agencyId };
+        setSelectedAgency({
+          ...agency,
+          // minimal defaults so UI sections render
+          relation_history: [],
+          working_with_companies: [],
+          performance_summary: {
+            total_bookings: 0,
+            on_time_payments: 0,
+            late_payments: 0,
+            disputes: 0,
+            remarks: "No performance data available."
+          },
+          recent_communication: [],
+          conflict_history: [],
+          users: [],
+          profileMissing: true
+        });
+        // If query param asks to edit, open create/update modal even when profile is missing
+        try {
+          const params = new URLSearchParams(location.search);
+          const qAction = params.get('action');
+          if (qAction === 'edit') {
+            const agencyObj = agencies.find(a => Number(a.id) === Number(agencyId)) || { id: agencyId };
+            openProfileModal(agencyObj, 'update');
+          }
+        } catch (e) {}
+        showAlert("warning", "Agency profile not found — showing basic agency info. Please create the profile.");
+      } else {
+        showAlert("danger", `Failed to load agency profile: ${error.message || 'Unknown error'}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -219,8 +341,10 @@ const AgencyProfile = () => {
       const updatedHistory = [historyForm, ...(selectedAgency.relation_history || [])];
 
       // Update the profile via PUT API
+      // Determine canonical agency id to send (defensive: prefer selectedAgency, then profileAgency)
+      const targetAgencyId_history = Number(selectedAgency?.agency || selectedAgency?.agency_id || selectedAgency?.id || profileAgency?.agency || profileAgency?.id || 0) || 0;
       const profileData = {
-        agency_id: selectedAgency.id,
+        agency_id: targetAgencyId_history,
         relationship_status: selectedAgency.relationship_status || "active",
         relation_history: updatedHistory,
         working_with_companies: selectedAgency.working_with_companies || [],
@@ -235,6 +359,7 @@ const AgencyProfile = () => {
         conflict_history: selectedAgency.conflict_history || []
       };
 
+      console.debug('Posting updated history profileData (targetAgencyId):', targetAgencyId_history, profileData, { selectedAgency, profileAgency });
       await api.post("/agency/profile", profileData);
 
       // Update local state
@@ -278,8 +403,9 @@ const AgencyProfile = () => {
       const updatedConflicts = [conflictForm, ...(selectedAgency.conflict_history || [])];
 
       // Update the profile via PUT API
+      const targetAgencyId_conflict = Number(selectedAgency?.agency || selectedAgency?.agency_id || selectedAgency?.id || profileAgency?.agency || profileAgency?.id || 0) || 0;
       const profileData = {
-        agency_id: selectedAgency.id,
+        agency_id: targetAgencyId_conflict,
         relationship_status: selectedAgency.relationship_status || "active",
         relation_history: selectedAgency.relation_history || [],
         working_with_companies: selectedAgency.working_with_companies || [],
@@ -294,6 +420,7 @@ const AgencyProfile = () => {
         conflict_history: updatedConflicts
       };
 
+      console.debug('Posting updated conflicts profileData (targetAgencyId):', targetAgencyId_conflict, profileData, { selectedAgency, profileAgency });
       await api.post("/agency/profile", profileData);
 
       // Update local state
@@ -343,8 +470,9 @@ const AgencyProfile = () => {
       const updatedCommunications = [commWithType, ...(selectedAgency.recent_communication || [])];
 
       // Update the profile via PUT API
+      const targetAgencyId_comm = Number(selectedAgency?.agency || selectedAgency?.agency_id || selectedAgency?.id || profileAgency?.agency || profileAgency?.id || 0) || 0;
       const profileData = {
-        agency_id: selectedAgency.id,
+        agency_id: targetAgencyId_comm,
         relationship_status: selectedAgency.relationship_status || "active",
         relation_history: selectedAgency.relation_history || [],
         working_with_companies: selectedAgency.working_with_companies || [],
@@ -359,6 +487,7 @@ const AgencyProfile = () => {
         conflict_history: selectedAgency.conflict_history || []
       };
 
+      console.debug('Posting updated communications profileData (targetAgencyId):', targetAgencyId_comm, profileData, { selectedAgency, profileAgency });
       await api.post("/agency/profile", profileData);
 
       // Update local state
@@ -407,9 +536,10 @@ const AgencyProfile = () => {
 
       const updatedCompanies = [...(selectedAgency.working_with_companies || []), newCompany];
 
-      // Update the profile via PUT API
+      // Update the profile via POST API — ensure we send the canonical agency id
+      const targetAgencyId_company = Number(selectedAgency?.agency || selectedAgency?.agency_id || selectedAgency?.id || profileAgency?.agency || profileAgency?.id || 0) || 0;
       const profileData = {
-        agency_id: selectedAgency.id,
+        agency_id: targetAgencyId_company,
         relationship_status: selectedAgency.relationship_status || "active",
         relation_history: selectedAgency.relation_history || [],
         working_with_companies: updatedCompanies,
@@ -424,6 +554,7 @@ const AgencyProfile = () => {
         conflict_history: selectedAgency.conflict_history || []
       };
 
+      console.debug('Posting updated companies profileData (targetAgencyId):', targetAgencyId_company, profileData, { selectedAgency, profileAgency });
       await api.post("/agency/profile", profileData);
 
       // Update local state
@@ -463,7 +594,106 @@ const AgencyProfile = () => {
       
       // Required fields
       formData.append("name", newAgencyForm.name);
-      formData.append("branch", newAgencyForm.branch); // Branch ID as integer
+      // Determine branch from multiple possible places (selectedBranch, selectedOrganization, token)
+      const getBranchFromContext = () => {
+        try {
+          // try selectedBranch object
+          try {
+            const sb = JSON.parse(localStorage.getItem("selectedBranch") || "null");
+            if (sb && (sb.id || sb.branch_id || sb.branch)) return sb.id || sb.branch_id || sb.branch;
+          } catch (e) { }
+
+          // try selectedBranchId key
+          const sbId = localStorage.getItem("selectedBranchId");
+          if (sbId) return sbId;
+
+          // try selectedOrganization
+          try {
+            const so = JSON.parse(localStorage.getItem("selectedOrganization") || "null");
+            if (so && (so.branch_id || so.branch)) return so.branch_id || so.branch;
+          } catch (e) { }
+
+          // try to decode token
+          const token = localStorage.getItem("accessToken");
+          const decoded = decodeJwt(token || "");
+          if (decoded) {
+            if (decoded.branch_id) return decoded.branch_id;
+            if (decoded.branch) return decoded.branch;
+            if (decoded.branchId) return decoded.branchId;
+            if (decoded.user && (decoded.user.branch || decoded.user.branch_id)) return decoded.user.branch || decoded.user.branch_id;
+          }
+
+          // fallback to form value
+          return newAgencyForm.branch || null;
+        } catch (e) {
+          return newAgencyForm.branch || null;
+        }
+      };
+
+      let selectedBranchId = getBranchFromContext();
+
+      // If branch not found in localStorage/token, try fetching user's details from API
+      if (!selectedBranchId) {
+        const getUserIdFromContext = () => {
+          try {
+            try {
+              const u = JSON.parse(localStorage.getItem("user") || "null");
+              if (u && (u.id || u.pk)) return u.id || u.pk;
+            } catch (e) { }
+            const token = localStorage.getItem("accessToken");
+            const decoded = decodeJwt(token || "");
+            if (decoded) {
+              if (decoded.user_id) return decoded.user_id;
+              if (decoded.id) return decoded.id;
+              if (decoded.user && (decoded.user.id || decoded.user.pk)) return decoded.user.id || decoded.user.pk;
+            }
+            return 0;
+          } catch (e) { return 0; }
+        };
+
+        const userIdForLookup = getUserIdFromContext();
+        if (userIdForLookup && Number(userIdForLookup) > 0) {
+          try {
+            const token = localStorage.getItem("accessToken");
+            const resp = await api.get(`/users/${userIdForLookup}/`, {
+              headers: token ? { Authorization: `Bearer ${token}` } : {}
+            });
+            const ud = resp.data || {};
+            // try common properties for branch
+            if (ud.branch || ud.branch_id) selectedBranchId = ud.branch || ud.branch_id;
+            else if (Array.isArray(ud.branches) && ud.branches.length > 0) {
+              // branches may be array of objects or ids
+              const b = ud.branches[0];
+              selectedBranchId = (typeof b === 'object') ? (b.id || b.branch_id || b.pk) : b;
+            }
+          } catch (e) {
+            console.error('Failed to fetch user details for branch lookup', e);
+          }
+        }
+      }
+
+     
+
+      formData.append("branch", selectedBranchId);
+
+      // determine user id to send in payload; prefer stored user or token, fallback to 0
+      const getUserIdFromContext = () => {
+        try {
+          try {
+            const u = JSON.parse(localStorage.getItem("user") || "null");
+            if (u && (u.id || u.pk)) return u.id || u.pk;
+          } catch (e) { }
+          const token = localStorage.getItem("accessToken");
+          const decoded = decodeJwt(token || "");
+          if (decoded) {
+            if (decoded.user_id) return decoded.user_id;
+            if (decoded.id) return decoded.id;
+            if (decoded.user && (decoded.user.id || decoded.user.pk)) return decoded.user.id || decoded.user.pk;
+          }
+          return 0;
+        } catch (e) { return 0; }
+      };
+      // do not include `user` in payload (backend will associate by branch/user context)
       
       // Optional fields - only append if they have values
       if (newAgencyForm.ageny_name) formData.append("ageny_name", newAgencyForm.ageny_name);
@@ -472,6 +702,11 @@ const AgencyProfile = () => {
       if (newAgencyForm.address) formData.append("address", newAgencyForm.address);
       if (newAgencyForm.agreement_status !== undefined) {
         formData.append("agreement_status", newAgencyForm.agreement_status);
+      }
+
+      // agency type
+      if (newAgencyForm.agency_type) {
+        formData.append("agency_type", newAgencyForm.agency_type);
       }
       
       // File upload - append logo if selected
@@ -505,7 +740,8 @@ const AgencyProfile = () => {
         address: "",
         branch: "",
         agreement_status: true,
-        logo: null
+        logo: null,
+        agency_type: "Area Agency"
       });
       setShowAddModal(false);
     } catch (error) {
@@ -580,8 +816,10 @@ const AgencyProfile = () => {
     try {
       setLoading(true);
       
+      // Determine canonical agency id for save
+      const targetAgencyId_save = Number(selectedAgency?.agency || selectedAgency?.agency_id || selectedAgency?.id || profileAgency?.agency || profileAgency?.id || 0) || 0;
       const profileData = {
-        agency_id: profileAgency.id,
+        agency_id: targetAgencyId_save,
         relationship_status: profileForm.relationship_status,
         relation_history: profileForm.relation_history,
         working_with_companies: profileForm.working_with_companies,
@@ -590,7 +828,7 @@ const AgencyProfile = () => {
         conflict_history: profileForm.conflict_history
       };
 
-      console.log("Saving agency profile:", profileData);
+      console.log("Saving agency profile (targetAgencyId):", targetAgencyId_save, profileData, { selectedAgency, profileAgency });
       
       // Check if token exists before making request
       const token = localStorage.getItem("accessToken");
@@ -687,6 +925,8 @@ const AgencyProfile = () => {
                 {alert.message}
               </Alert>
             )}
+
+            {/* Rules widget removed */}
 
             <Row className="g-4">
               {/* Agencies List - Left Sidebar */}
@@ -819,17 +1059,20 @@ const AgencyProfile = () => {
                         <div className="d-flex justify-content-between align-items-start mb-3">
                           <div className="d-flex gap-3 align-items-start">
                             {selectedAgency.logo && (
-                              <img
-                                src={selectedAgency.logo}
-                                alt={selectedAgency.ageny_name || selectedAgency.name}
-                                style={{
-                                  width: "80px",
-                                  height: "80px",
-                                  objectFit: "contain",
-                                  borderRadius: "8px",
-                                  border: "1px solid #e9ecef"
-                                }}
-                              />
+                              <div className="d-flex align-items-center">
+                                <img
+                                  src={selectedAgency.logo}
+                                  alt={selectedAgency.ageny_name || selectedAgency.name}
+                                  style={{
+                                    width: "80px",
+                                    height: "80px",
+                                    objectFit: "contain",
+                                    borderRadius: "8px",
+                                    border: "1px solid #e9ecef"
+                                  }}
+                                />
+                                <a href={selectedAgency.logo} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline-primary ms-2">View</a>
+                              </div>
                             )}
                             <div>
                               <h3 style={{ fontWeight: 600, color: "#2c3e50" }}>
@@ -850,6 +1093,13 @@ const AgencyProfile = () => {
                                   </span>
                                 )}
                               </div>
+                              {selectedAgency.profileMissing && (
+                                <div className="mt-2">
+                                  <Badge bg="warning" text="dark" style={{ padding: '6px 12px' }}>
+                                    Profile Missing — Please create profile
+                                  </Badge>
+                                </div>
+                              )}
                               {selectedAgency.address && (
                                 <p className="text-muted mb-0 mt-2" style={{ fontSize: "14px" }}>
                                   📍 {selectedAgency.address}
@@ -874,9 +1124,10 @@ const AgencyProfile = () => {
                                 variant="outline-primary"
                                 size="sm"
                                 style={{ borderRadius: "8px" }}
+                                onClick={() => openProfileModal(selectedAgency, selectedAgency?.relationship_status ? 'update' : 'create')}
                               >
                                 <Edit size={16} className="me-1" />
-                                Edit Profile
+                                {selectedAgency?.relationship_status ? 'Edit Profile' : 'Create Profile'}
                               </Button>
                             </div>
                           </div>
@@ -1367,7 +1618,7 @@ const AgencyProfile = () => {
             </Form.Group>
 
             <Row>
-              <Col md={6}>
+              <Col md={4}>
                 <Form.Group className="mb-3">
                   <Form.Label>Branch *</Form.Label>
                   <Form.Select
@@ -1376,15 +1627,46 @@ const AgencyProfile = () => {
                     required
                   >
                     <option value="">Select Branch</option>
-                    {branches.map((branch) => (
-                      <option key={branch.id} value={branch.id}>
-                        {branch.name || branch.branch_name || `Branch ${branch.id}`}
-                      </option>
-                    ))}
+                    {(function(){
+                      try {
+                        const so = JSON.parse(localStorage.getItem('selectedOrganization') || 'null') || {};
+                        const orgId = so?.id || so?.organization_id || so?.org || null;
+                        if (!orgId) return branches.map(b => (
+                          <option key={b.id} value={b.id}>{b.name || b.branch_name || `Branch ${b.id}`}</option>
+                        ));
+                        // filter branches belonging to this organization
+                        const filtered = (branches || []).filter(b => {
+                          if (!b) return false;
+                          if (b.organization && (b.organization === orgId || b.organization.id === orgId || b.organization.pk === orgId)) return true;
+                          if (b.organization_id && String(b.organization_id) === String(orgId)) return true;
+                          if (b.org && String(b.org) === String(orgId)) return true;
+                          if (b.branch && (b.branch.organization_id === orgId || b.branch.organization === orgId)) return true;
+                          return false;
+                        });
+                        return filtered.map(b => (
+                          <option key={b.id} value={b.id}>{b.name || b.branch_name || `Branch ${b.id}`}</option>
+                        ));
+                      } catch (e) { return branches.map(b => (
+                        <option key={b.id} value={b.id}>{b.name || b.branch_name || `Branch ${b.id}`}</option>
+                      )); }
+                    })()}
+                  </Form.Select>
+                  <Form.Text className="text-muted">Branches shown for your organization only</Form.Text>
+                </Form.Group>
+              </Col>
+              <Col md={4}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Agency Type</Form.Label>
+                  <Form.Select
+                    value={newAgencyForm.agency_type}
+                    onChange={(e) => setNewAgencyForm({ ...newAgencyForm, agency_type: e.target.value })}
+                  >
+                    <option value="Full Agency">Full Agency</option>
+                    <option value="Area Agency">Area Agency</option>
                   </Form.Select>
                 </Form.Group>
               </Col>
-              <Col md={6}>
+              <Col md={4}>
                 <Form.Group className="mb-3">
                   <Form.Label>Agreement Status</Form.Label>
                   <Form.Select

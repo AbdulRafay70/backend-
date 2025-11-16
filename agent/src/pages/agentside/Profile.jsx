@@ -439,7 +439,7 @@ const Profile = () => {
                                 <img
                                   src={
                                     typeof profileData.logo === "string"
-                                      ? `http://127.0.0.1:8000${profileData.logo}`
+                                      ? `http://127.0.0.1:8000/${profileData.logo}`
                                       : URL.createObjectURL(profileData.logo)
                                   }
                                   alt="Logo Preview"
