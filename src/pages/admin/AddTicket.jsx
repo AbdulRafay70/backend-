@@ -40,6 +40,8 @@ const FlightBookingForm = () => {
   returnStopTime1: "",
   returnStopLocation2: "",
   returnStopTime2: "",
+    flightNumber: "",
+    returnFlightNumber: "",
     adultSellingPrice: "",
     adultPurchasePrice: "",
     childSellingPrice: "",
@@ -63,6 +65,27 @@ const FlightBookingForm = () => {
       infantSellingPrice: editData.infantSellingPrice || editData.infant_fare || "",
       infantPurchasePrice: editData.infantPurchasePrice || editData.infant_purchase_price || editData.infant_price || "",
       // Map other API fields if needed
+      // Extract numeric suffixes from per-trip flight numbers when available
+      flightNumber: (function(v){
+        try {
+          if(!v) return "";
+          const extract = (s) => { if(!s && s !== 0) return ""; const str = String(s); return (str.includes('-') ? str.split('-').pop() : str).replace(/\D/g, ''); };
+          // prefer trip_details Departure entry
+          const td = Array.isArray(v.trip_details) && v.trip_details.length ? (v.trip_details.find(t=>t.trip_type==='Departure') || v.trip_details[0]) : null;
+          if (td) return extract(td.flight_number || td.flightNumber || td.number || td.flight || v.flight_number);
+          return extract(v.flight_number || v.departure_flight_number || "");
+        } catch(e){ return "" }
+      })(editData),
+      returnFlightNumber: (function(v){
+        try {
+          if(!v) return "";
+          const extract = (s) => { if(!s && s !== 0) return ""; const str = String(s); return (str.includes('-') ? str.split('-').pop() : str).replace(/\D/g, ''); };
+          // prefer trip_details Return entry (or second index)
+          const td = Array.isArray(v.trip_details) && v.trip_details.length ? (v.trip_details.find(t=>t.trip_type==='Return') || v.trip_details[1]) : null;
+          if (td) return extract(td.flight_number || td.flightNumber || td.number || td.flight || v.return_flight_number);
+          return extract(v.return_flight_number || v.returnFlightNumber || "");
+        } catch(e){ return "" }
+      })(editData),
       meal: editData.is_meal_included ? "Yes" : "No",
       ticketType: editData.is_refundable ? "Refundable" : "Non-Refundable",
       umrahSeat: editData.is_umrah_seat ? "Yes" : "No",
@@ -92,7 +115,20 @@ const FlightBookingForm = () => {
         !!editData.resellingAllowed,
     };
 
-    setFormData((prev) => ({ ...prev, ...editData, ...normalized }));
+    // Ensure trip-level flight numbers map into the editable numeric suffix fields
+    const mapFlightSuffix = (data) => {
+      const extract = (s) => { if(!s && s !== 0) return ""; const str = String(s); return (str.includes('-') ? str.split('-').pop() : str).replace(/\D/g, ''); };
+      const outTrip = Array.isArray(data.trip_details) && data.trip_details.length ? (data.trip_details.find(t=>t.trip_type==='Departure') || data.trip_details[0]) : null;
+      const retTrip = Array.isArray(data.trip_details) && data.trip_details.length ? (data.trip_details.find(t=>t.trip_type==='Return') || data.trip_details[1]) : null;
+      return {
+        flightNumber: outTrip ? extract(outTrip.flight_number || outTrip.flightNumber || outTrip.number || outTrip.flight || data.flight_number) : extract(data.flight_number || data.departure_flight_number),
+        returnFlightNumber: retTrip ? extract(retTrip.flight_number || retTrip.flightNumber || retTrip.number || retTrip.flight || data.return_flight_number) : extract(data.return_flight_number || data.returnFlightNumber),
+      };
+    };
+
+    const flightSuffixes = mapFlightSuffix(editData);
+
+    setFormData((prev) => ({ ...prev, ...editData, ...normalized, ...flightSuffixes }));
   }, [editData]);
 
   // Debug: log incoming editData and formData for troubleshooting reselling flag
@@ -189,7 +225,7 @@ const FlightBookingForm = () => {
         setLoading((prev) => ({ ...prev, airlines: true }));
         setError((prev) => ({ ...prev, airlines: null }));
         const airlinesResponse = await axios.get(
-          "https://api.saer.pk/api/airlines/",
+          "http://127.0.0.1:8000/api/airlines/",
           {
             params: { organization: organizationId },
             headers: { Authorization: `Bearer ${token}` },
@@ -201,7 +237,7 @@ const FlightBookingForm = () => {
         setLoading((prev) => ({ ...prev, cities: true }));
         setError((prev) => ({ ...prev, cities: null }));
         const citiesResponse = await axios.get(
-          "https://api.saer.pk/api/cities/",
+          "http://127.0.0.1:8000/api/cities/",
           {
             params: { organization: organizationId },
             headers: { Authorization: `Bearer ${token}` },
@@ -341,6 +377,23 @@ const FlightBookingForm = () => {
         stopover_details: [],
       };
 
+      // Include explicit flight number suffix so backend can set ticket.flight_number
+      // Backend expects `flight_number_suffix` (numeric) to combine with airline code.
+      if (formData.flightNumber) {
+        payload.flight_number_suffix = (formData.flightNumber || "").toString().replace(/\D/g, '');
+        // Also include full flight_number (AIRLINECODE-123) to avoid backend fallback generation.
+        try {
+          const selAir = airlines.find((a) => String(a.id) === String(formData.airline) || Number(a.id) === Number(formData.airline));
+          const code = selAir && (selAir.code || selAir.airline_code || selAir.iata_code || selAir.code_name) ? (selAir.code || selAir.airline_code || selAir.iata_code || selAir.code_name) : null;
+          if (code) {
+            const suffix = (formData.flightNumber || "").toString().replace(/\D/g, '');
+            if (suffix) payload.flight_number = `${code}-${suffix}`;
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+
       // Add departure trip details
       payload.trip_details.push({
         departure_date_time: new Date(formData.departureDateTime).toISOString(),
@@ -348,6 +401,7 @@ const FlightBookingForm = () => {
         trip_type: "Departure",
         departure_city: parseInt(formData.departure),
         arrival_city: parseInt(formData.arrival),
+        flight_number: formData.flightNumber || "",
       });
 
       console.log('Final payload being sent:', payload);
@@ -364,7 +418,12 @@ const FlightBookingForm = () => {
           trip_type: "Return",
           departure_city: parseInt(formData.returnDeparture),
           arrival_city: parseInt(formData.returnArrival),
+          flight_number: formData.returnFlightNumber || "",
         });
+        // Also include a return suffix if present (optional - backend currently uses first trip)
+        if (formData.returnFlightNumber) {
+          payload.return_flight_number_suffix = (formData.returnFlightNumber || "").toString().replace(/\D/g, '');
+        }
       }
 
       // Add stopover details
@@ -392,7 +451,7 @@ const FlightBookingForm = () => {
       if (ticketId) {
         // Update existing ticket
         response = await axios.put(
-          `https://api.saer.pk/api/tickets/${ticketId}/`,
+          `http://127.0.0.1:8000/api/tickets/${ticketId}/`,
           payload,
           {
             params: { organization: organizationId },
@@ -405,7 +464,7 @@ const FlightBookingForm = () => {
       } else {
         // Create new ticket
         response = await axios.post(
-          "https://api.saer.pk/api/tickets/",
+          "http://127.0.0.1:8000/api/tickets/",
           payload,
           {
             headers: {
@@ -424,6 +483,28 @@ const FlightBookingForm = () => {
           ? "Ticket updated successfully!"
           : "Ticket created successfully!",
       });
+      // Invalidate tickets cache so TicketBooking reloads fresh data
+      try {
+        const orgDataForCache = JSON.parse(localStorage.getItem("selectedOrganization"));
+        const orgIdForCache = orgDataForCache?.id;
+        if (orgIdForCache) {
+          const cacheKey = `ticketData-${orgIdForCache}`;
+          localStorage.removeItem(cacheKey);
+          console.log('Removed cache key', cacheKey);
+        }
+      } catch (e) {
+        console.debug('Failed to clear ticket cache', e);
+      }
+      // Also set a refresh flag so TicketBooking will bypass cache if needed
+      try {
+        const orgDataForFlag = JSON.parse(localStorage.getItem("selectedOrganization"));
+        const orgIdForFlag = orgDataForFlag?.id;
+        if (orgIdForFlag) {
+          localStorage.setItem(`ticket_refresh_${orgIdForFlag}`, "1");
+        }
+      } catch (e) {
+        console.debug('Failed to set ticket refresh flag', e);
+      }
       // Handle redirects based on action
       if (ticketId || action === "saveAndClose") {
         // Redirect after 1.5 seconds for updates or saveAndClose
@@ -448,7 +529,6 @@ const FlightBookingForm = () => {
           infantPurchasePrice: "",
           resellingAllowed: false,
         });
-        setResellingTouched(false);
       }
     } catch (error) {
       console.error("API Error:", error);
@@ -900,8 +980,29 @@ const FlightBookingForm = () => {
                         </div>
                       </div>
 
+                      <div className="row g-3 mt-2">
+                        <div className="col-md-3">
+                          <label htmlFor="" className="Control-label">
+                            Flight Number
+                          </label>
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            className="form-control rounded shadow-none  px-1 py-2"
+                            placeholder="e.g. 202"
+                            value={formData.flightNumber}
+                            onChange={(e) =>
+                              // sanitize input to digits only
+                              handleInputChange("flightNumber", (e.target.value || "").replace(/\D/g, ''))
+                            }
+                          />
+                        </div>
+                      </div>
+
                       {/* Round Trip Additional Fields */}
                       {formData.tripType === "Round-trip" && (
+                        <>
                         <div className="row g-3 mt-2">
                           <div className="col-md-3">
                             <label htmlFor="" className="Control-label">
@@ -956,6 +1057,25 @@ const FlightBookingForm = () => {
                             )}
                           </div>
                         </div>
+                        <div className="row g-3 mt-2">
+                          <div className="col-md-3">
+                            <label htmlFor="" className="Control-label">
+                              Return Flight Number
+                            </label>
+                            <input
+                              type="text"
+                              inputMode="numeric"
+                              pattern="[0-9]*"
+                              className="form-control rounded shadow-none  px-1 py-2"
+                              placeholder="e.g. 203"
+                              value={formData.returnFlightNumber}
+                              onChange={(e) =>
+                                handleInputChange("returnFlightNumber", (e.target.value || "").replace(/\D/g, ''))
+                              }
+                            />
+                          </div>
+                        </div>
+                        </>
                       )}
                     </div>
 

@@ -23,8 +23,11 @@ const getOrgId = (org) => {
 const FlightCard = ({ ticket, airlineMap, cityMap, orgId }) => {
   if (!ticket) return null;
 
-  // Get airline info
-  const airlineInfo = airlineMap[ticket.airline] || {};
+  // Get airline info (try both numeric/string keys) and prepare fallbacks
+  const airlineInfo =
+    (ticket && (airlineMap[ticket.airline] || airlineMap[String(ticket.airline)])) || {};
+
+  // Airline display fallback will be resolved after `fallbackAirlines` is available.
 
   // Robust resolver for city display name. Handles:
   // - city id (number/string) mapped via `cityMap`
@@ -105,6 +108,15 @@ const FlightCard = ({ ticket, airlineMap, cityMap, orgId }) => {
 
   // Fallback map for city names fetched lazily when current org doesn't have the city list
   const [fallbackCities, setFallbackCities] = useState({});
+  // Fallback map for airline info fetched lazily when current org doesn't have the airline list
+  const [fallbackAirlines, setFallbackAirlines] = useState({});
+
+  // If the resolved display name looks like a numeric id, try fallbackAirlines or airlineMap by id
+  // This runs after `fallbackAirlines` is declared to avoid TDZ ReferenceError.
+  // NOTE: removed a premature IIFE that referenced `displayAirlineName`
+  // before it was defined. That could cause a ReferenceError and prevent
+  // fallbacks from being applied. We now rely on the fetch-effect to
+  // populate `fallbackAirlines` and on `computeAirlineDisplay()` below.
 
   // If this ticket belongs to another organization (shared inventory), try to fetch any missing
   // city names by id from the owning organization so linked org can display names.
@@ -223,6 +235,186 @@ const FlightCard = ({ ticket, airlineMap, cityMap, orgId }) => {
       })();
     });
   }, [ticket, outboundTrip, returnTrip, outboundStopover, returnStopover]);
+
+  // Compute display airline name/logo using available sources in order of preference:
+  // 1. airlineInfo (from local airlineMap)
+  // 2. fallbackAirlines (fetched from owning org when airline is an id)
+  // 3. ticket-level readable fields (airline_name, airlineName)
+  // 4. placeholder
+  const computeAirlineDisplay = () => {
+    const fromMap = airlineInfo && (airlineInfo.name || airlineInfo.logo) ? { name: airlineInfo.name, logo: airlineInfo.logo } : null;
+
+    // try to determine an airline id if present
+    const potentialIds = [];
+    if (ticket.airline !== undefined && ticket.airline !== null) potentialIds.push(ticket.airline);
+    if (ticket.airline_id !== undefined && ticket.airline_id !== null) potentialIds.push(ticket.airline_id);
+    if (outboundTrip && (outboundTrip.airline !== undefined && outboundTrip.airline !== null)) potentialIds.push(outboundTrip.airline);
+    if (outboundTrip && (outboundTrip.airline_id !== undefined && outboundTrip.airline_id !== null)) potentialIds.push(outboundTrip.airline_id);
+    if (returnTrip && (returnTrip.airline !== undefined && returnTrip.airline !== null)) potentialIds.push(returnTrip.airline);
+    if (returnTrip && (returnTrip.airline_id !== undefined && returnTrip.airline_id !== null)) potentialIds.push(returnTrip.airline_id);
+
+    // normalize to string keys and check fallbackAirlines/airlineMap
+    for (const idRaw of potentialIds) {
+      const idStr = String(idRaw).trim();
+      if (/^\d+$/.test(idStr)) {
+        if (fallbackAirlines[idStr] && fallbackAirlines[idStr].name) {
+          console.log("computeAirlineDisplay: matched fallbackAirlines", { ticketId: ticket && ticket.id, id: idStr, entry: fallbackAirlines[idStr] });
+          return { name: fallbackAirlines[idStr].name, logo: fallbackAirlines[idStr].logo || fromMap?.logo || "" };
+        }
+        if (airlineMap[idStr] && airlineMap[idStr].name) {
+          console.log("computeAirlineDisplay: matched airlineMap", { ticketId: ticket && ticket.id, id: idStr, entry: airlineMap[idStr] });
+          return { name: airlineMap[idStr].name, logo: airlineMap[idStr].logo || fromMap?.logo || "" };
+        }
+      }
+    }
+
+    // fallback to readable ticket fields
+    const nameFromTicket = ticket.airline_name || ticket.airlineName || ticket.airline_name_display || ticket.airline_label || null;
+    const logoFromTicket = ticket.airline_logo || ticket.airline_logo_url || ticket.airlineLogo || null;
+    if (fromMap) return { name: fromMap.name || nameFromTicket || "Unknown Airline", logo: fromMap.logo || logoFromTicket || "" };
+    if (nameFromTicket || logoFromTicket) return { name: nameFromTicket || "Unknown Airline", logo: logoFromTicket || "" };
+
+    // last resort: show numeric id as string if present, else Unknown
+    if (ticket.airline !== undefined && ticket.airline !== null) {
+      console.log("computeAirlineDisplay: falling back to numeric airline id", { ticketId: ticket && ticket.id, airline: ticket.airline });
+      return { name: String(ticket.airline), logo: "" };
+    }
+    return { name: "Unknown Airline", logo: "" };
+  };
+
+  const { name: displayAirlineName, logo: displayAirlineLogo } = computeAirlineDisplay();
+
+  // If this ticket belongs to another organization, fetch missing airline info (name/logo)
+  useEffect(() => {
+    if (!ticket) return;
+    const ownerOrgId = getOrgId(ticket.organization) || ticket.organization_id || ticket.inventory_owner_organization_id;
+    if (!ownerOrgId) return;
+    if (String(ownerOrgId) === String(orgId)) return;
+
+    const token = localStorage.getItem("accessToken");
+    if (!token) return;
+
+    const candidateIds = new Set();
+    const collect = (ref) => {
+      if (ref === null || ref === undefined) return;
+      if (typeof ref === 'object') {
+        const idVal = ref.id || ref.airline || ref.airline_id || ref.airlineId;
+        if (idVal !== undefined && (typeof idVal === 'number' || (typeof idVal === 'string' && /^\d+$/.test(String(idVal).trim())))) {
+          const key = String(idVal).trim();
+          if (!airlineMap[key] && !fallbackAirlines[key]) candidateIds.add(key);
+        }
+        return;
+      }
+
+      if (typeof ref === 'number' || (typeof ref === 'string' && /^\d+$/.test(String(ref).trim()))) {
+        const key = String(ref).trim();
+        if (!airlineMap[key] && !fallbackAirlines[key]) candidateIds.add(key);
+      }
+    };
+
+    collect(ticket.airline);
+    collect(ticket.airline_id);
+    collect(outboundTrip?.airline);
+    collect(outboundTrip?.airline_id);
+    collect(returnTrip?.airline);
+    collect(returnTrip?.airline_id);
+
+    if (candidateIds.size === 0) return;
+    // Debugging: log what airline ids we're going to fetch from owner org
+    console.log("TicketBooking: airline fallback candidateIds", {
+      ticketId: ticket && ticket.id,
+      ownerOrgId,
+      candidateIds: Array.from(candidateIds),
+      tokenPresent: !!token,
+    });
+
+    candidateIds.forEach((id) => {
+      (async () => {
+        try {
+          const url = `http://127.0.0.1:8000/api/airlines/${encodeURIComponent(id)}/`;
+          const res = await axios.get(url, {
+            params: { organization: ownerOrgId },
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const data = res?.data || {};
+          const name = data.name || data.airline_name || data.display_name || String(data || "");
+          const logo = data.logo || data.image || data.logo_url || data.airline_logo || "";
+          console.log("TicketBooking: airline fetch result (owner single)", { id, status: res.status, data });
+          if (name || logo) {
+            setFallbackAirlines((s) => {
+              const next = { ...s, [id]: { name, logo } };
+              console.log("TicketBooking: setFallbackAirlines (owner single)", { id, entry: next[id] });
+              return next;
+            });
+            return;
+          }
+        } catch (e) {
+          console.log("TicketBooking: airline fetch error (owner single)", { id, err: (e && e.message) || e });
+        }
+
+        // If single fetch failed or returned no name/logo, try the owner's airlines list
+        try {
+          const listRes = await axios.get(`http://127.0.0.1:8000/api/airlines/`, {
+            params: { organization: ownerOrgId },
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const list = Array.isArray(listRes?.data) ? listRes.data : (Array.isArray(listRes?.data?.results) ? listRes.data.results : []);
+          const found = list.find((a) => String(a.id) === String(id) || String(a.pk) === String(id));
+          console.log("TicketBooking: airline list fetch result (owner list)", { id, listCount: list.length, found });
+          if (found) {
+            const name = found.name || found.airline_name || found.display_name || String(found || "");
+            const logo = found.logo || found.image || found.logo_url || found.airline_logo || "";
+            setFallbackAirlines((s) => ({ ...s, [id]: { name, logo } }));
+            return;
+          }
+        } catch (listErr) {
+          console.log("TicketBooking: airline fetch error (owner list)", { id, err: (listErr && listErr.message) || listErr });
+        }
+
+        // Try fetching the airline without organization (global single)
+        try {
+          const res2 = await axios.get(`http://127.0.0.1:8000/api/airlines/${encodeURIComponent(id)}/`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const data2 = res2?.data || {};
+          const name2 = data2.name || data2.airline_name || data2.display_name || String(data2 || "");
+          const logo2 = data2.logo || data2.image || data2.logo_url || data2.airline_logo || "";
+          console.log("TicketBooking: airline fetch result (global single)", { id, status: res2.status, data: data2 });
+          if (name2 || logo2) {
+            setFallbackAirlines((s) => ({ ...s, [id]: { name: name2, logo: logo2 } }));
+            return;
+          }
+        } catch (globalSingleErr) {
+          console.log("TicketBooking: airline fetch error (global single)", { id, err: (globalSingleErr && globalSingleErr.message) || globalSingleErr });
+        }
+
+        // Finally, try fetching the global airlines list and match id
+        try {
+          const globalListRes = await axios.get(`http://127.0.0.1:8000/api/airlines/`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const globalList = Array.isArray(globalListRes?.data) ? globalListRes.data : (Array.isArray(globalListRes?.data?.results) ? globalListRes.data.results : []);
+          const foundGlobal = globalList.find((a) => String(a.id) === String(id) || String(a.pk) === String(id));
+          console.log("TicketBooking: airline list fetch result (global list)", { id, listCount: globalList.length, found: foundGlobal });
+          if (foundGlobal) {
+            const name = foundGlobal.name || foundGlobal.airline_name || foundGlobal.display_name || String(foundGlobal || "");
+            const logo = foundGlobal.logo || foundGlobal.image || foundGlobal.logo_url || foundGlobal.airline_logo || "";
+            setFallbackAirlines((s) => ({ ...s, [id]: { name, logo } }));
+            return;
+          }
+        } catch (globalListErr) {
+          console.log("TicketBooking: airline fetch error (global list)", { id, err: (globalListErr && globalListErr.message) || globalListErr });
+        }
+      })();
+    });
+  }, [ticket, outboundTrip, returnTrip, airlineMap, fallbackAirlines, orgId]);
+
+  // Debug: print fallbackAirlines whenever it updates
+  useEffect(() => {
+    if (Object.keys(fallbackAirlines).length > 0) {
+      console.log("TicketBooking: fallbackAirlines changed", fallbackAirlines);
+    }
+  }, [fallbackAirlines]);
 
   if (!outboundTrip) {
     return (
@@ -404,14 +596,19 @@ const FlightCard = ({ ticket, airlineMap, cityMap, orgId }) => {
         <div className="d-flex justify-conter-between align-items-center gy-3">
           <div className="col-md-2 text-center">
             <img
-              src={airlineInfo.logo}
-              alt={`${airlineInfo.name || "Airline"} logo`}
+              src={displayAirlineLogo || flightlogo}
+              alt={`${displayAirlineName} logo`}
               className="img-fluid"
               style={{ maxHeight: "60px", objectFit: "contain" }}
             />
             <div className="text-muted mt-2 small fw-medium">
-              {airlineInfo.name || "Unknown Airline"}
+              {displayAirlineName}
             </div>
+            {fallbackAirlines && fallbackAirlines[String(ticket.airline)] && (
+              <div className="text-success mt-1 small">
+                Resolved: {fallbackAirlines[String(ticket.airline)].name}
+              </div>
+            )}
             <div className="text-muted mt-1 small">
               PNR: {ticket && (ticket.pnr || ticket.pnr_number || ticket.pnr_no || "N/A")}
             </div>
@@ -525,14 +722,19 @@ const FlightCard = ({ ticket, airlineMap, cityMap, orgId }) => {
             <div className="d-flex justify-conter-between align-items-center gy-3 mt-3">
               <div className="col-md-2 text-center">
                   <img
-                    src={airlineInfo.logo}
-                    alt={`${airlineInfo.name || "Airline"} logo`}
+                    src={displayAirlineLogo || flightlogo}
+                    alt={`${displayAirlineName} logo`}
                     className="img-fluid"
                     style={{ maxHeight: "60px", objectFit: "contain" }}
                   />
                 <div className="text-muted mt-2 small fw-medium">
-                  {airlineInfo.name || "Unknown Airline"}
+                  {displayAirlineName}
                 </div>
+                {fallbackAirlines && fallbackAirlines[String(ticket.airline)] && (
+                  <div className="text-success mt-1 small">
+                    Resolved: {fallbackAirlines[String(ticket.airline)].name}
+                  </div>
+                )}
                 {returnFlightNumber && (
                   <div className="flight-number mt-1">{returnFlightNumber}</div>
                 )}

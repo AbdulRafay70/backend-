@@ -147,10 +147,12 @@ class Ticket(models.Model):
             # Generate a unique ticket number like TKT-XXXXXX
             self.ticket_number = f"TKT-{str(uuid.uuid4())[:8].upper()}"
         
-        # Generate flight number if not set
-        if not self.flight_number and self.airline:
-            import random
-            self.flight_number = f"{self.airline.code}-{random.randint(100, 999)}"
+        # Avoid generating random flight numbers.
+        # When a flight number is not provided, prefer an explicit "N/A" value
+        # rather than inventing a random code which can be confusing.
+        if not self.flight_number:
+            # Keep as blank/NULL or use a canonical placeholder. We use "N/A" for clarity.
+            self.flight_number = "N/A"
         
         super().save(*args, **kwargs)
     
@@ -181,6 +183,8 @@ class TicketTripDetails(models.Model):
     ticket = models.ForeignKey(
         Ticket, on_delete=models.CASCADE, related_name="trip_details"
     )
+    # Per-leg flight number (allow storing different numbers for outbound/return)
+    flight_number = models.CharField(max_length=20, blank=True, null=True)
     departure_date_time = models.DateTimeField()
     arrival_date_time = models.DateTimeField()
     departure_city = models.ForeignKey(
@@ -244,8 +248,6 @@ class Hotels(models.Model):
     contact_number = models.CharField(max_length=20, blank=True, null=True)
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='standard')
     distance = models.FloatField(default=0)
-    # Walking time in minutes from reference point (migration 0025 adds this)
-    walking_time_minutes = models.IntegerField(blank=True, help_text='Walking time in minutes from reference point', null=True)
     is_active = models.BooleanField(default=True)
     available_start_date = models.DateField(blank=True, null=True)
     available_end_date = models.DateField(blank=True, null=True)
@@ -259,11 +261,6 @@ class Hotels(models.Model):
         verbose_name = "Hotel"
         verbose_name_plural = "Hotels"
         ordering = ['name']
-
-    @property
-    def walking_time(self):
-        """Compatibility property: return walking time in minutes as `walking_time`."""
-        return self.walking_time_minutes
 
 
 class HotelPrices(models.Model):

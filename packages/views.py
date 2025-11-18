@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter, OrderingFilter
-from drf_spectacular.utils import extend_schema, OpenApiParameter, extend_schema_view
+from drf_spectacular.utils import extend_schema, OpenApiParameter, extend_schema_view, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
 from .models import (
     Visa,
@@ -189,7 +189,142 @@ class VisaViewSet(ModelViewSet):
                 description='Show only available packages with seats (true/false)'
             ),
         ],
-        description='List all Umrah packages for the specified organization'
+        description='List all Umrah packages for the specified organization',
+        responses=UmrahPackageSerializer,
+        examples=[
+            OpenApiExample(
+                'ExamplePackageList',
+                value=[
+                    {
+                        "id": 0,
+                        "organization_name": "string",
+                        "created_by_name": "string",
+                        "package_code": "string",
+                        "title": "string",
+                        "description": "string",
+                        "package_type": "umrah",
+                        "status": "active",
+                        "price_per_person": "-.8",
+                        "adult_price": "string",
+                        "infant_price": "string",
+                        "child_discount": "string",
+                        "markup_percent": "-36",
+                        "tax_rate": "5",
+                        "rules": "string",
+
+                        "start_date": "2025-11-18",
+                        "end_date": "2025-11-18",
+                        "available_start_date": "2025-11-18",
+                        "available_end_date": "2025-11-18",
+
+                        "max_capacity": 2147483647,
+                        "total_seats": 9223372036854776000,
+                        "left_seats": 0,
+                        "booked_seats": 9223372036854776000,
+                        "confirmed_seats": 9223372036854776000,
+                        "available_slots": 0,
+
+                        "is_public": True,
+                        "reselling_allowed": True,
+                        "status_display": "string",
+                        "package_type_display": "string",
+                        "excluded_tickets": "string",
+                        "total_price_breakdown": "string",
+
+                        "created_at": "2025-11-18T18:32:07.206Z",
+                        "updated_at": "2025-11-18T18:32:07.206Z",
+
+                        "hotel_details": [
+                            {
+                                "id": 0,
+                                "hotel_info": {
+                                    "id": 0,
+                                    "name": "string",
+                                    "address": "string",
+                                    "category": "economy",
+                                    "google_location": "string",
+                                    "contact_number": "string",
+                                    "distance": 0,
+                                    "photos_data": "string",
+                                    "video": "string",
+                                    "is_active": True,
+                                    "reselling_allowed": True
+                                },
+                                "check_in_date": "2025-11-18",
+                                "check_out_date": "2025-11-18",
+                                "number_of_nights": 2147483647,
+                                "hotel": 0
+                            }
+                        ],
+
+                        "transport_details": [
+                            {
+                                "id": 0,
+                                "transport_type": "private",
+                                "vehicle_type": "sedan",
+                                "transport_selling_price": 0,
+                                "transport_purchase_price": 0
+                            }
+                        ],
+
+                        "ticket_details": [
+                            {
+                                "id": 0,
+                                "ticket_info": {
+                                    "id": 0,
+                                    "flight_number": "string",
+                                    "departure_date": "2025-11-18",
+                                    "arrival_date": "2025-11-18",
+                                    "seat_type": "economy",
+                                    "adult_fare": 0,
+                                    "child_fare": 0,
+                                    "infant_fare": 0,
+                                    "baggage_weight": 0,
+                                    "refund_rule": "non_refundable",
+                                    "is_refundable": True,
+                                    "is_meal_included": True,
+                                    "pnr": "string",
+                                    "ticket_number": "string",
+                                    "total_seats": 2147483647,
+                                    "left_seats": 2147483647
+                                }
+                            }
+                        ],
+
+                        "discount_details": [
+                            {
+                                "id": 0,
+                                "adult_from": 2147483647,
+                                "adult_to": 2147483647,
+                                "max_discount": 0
+                            }
+                        ],
+
+                        "visas": {
+                            "adult_selling_price": 0,
+                            "adult_purchase_price": 0,
+                            "child_selling_price": 0,
+                            "child_purchase_price": 0,
+                            "infant_selling_price": 0,
+                            "infant_purchase_price": 0
+                        },
+
+                        "food_prices": {
+                            "selling_price": 0,
+                            "purchase_price": 0
+                        },
+
+                        "ziyarat_prices": {
+                            "makkah_selling": 0,
+                            "makkah_purchase": 0,
+                            "madinah_selling": 0,
+                            "madinah_purchase": 0
+                        }
+                    }
+                ],
+                response_only=True,
+            )
+        ],
     ),
     retrieve=extend_schema(
         parameters=[
@@ -201,7 +336,140 @@ class VisaViewSet(ModelViewSet):
                 description='Organization ID'
             ),
         ],
-        description='Get detailed information about a specific Umrah package'
+        description='Get detailed information about a specific Umrah package',
+        responses=UmrahPackageSerializer,
+        examples=[
+            OpenApiExample(
+                'ExamplePackage',
+                value={
+                    "id": 0,
+                    "organization_name": "string",
+                    "created_by_name": "string",
+                    "package_code": "string",
+                    "title": "string",
+                    "description": "string",
+                    "package_type": "umrah",
+                    "status": "active",
+                    "price_per_person": "-.8",
+                    "adult_price": "string",
+                    "infant_price": "string",
+                    "child_discount": "string",
+                    "markup_percent": "-36",
+                    "tax_rate": "5",
+                    "rules": "string",
+
+                    "start_date": "2025-11-18",
+                    "end_date": "2025-11-18",
+                    "available_start_date": "2025-11-18",
+                    "available_end_date": "2025-11-18",
+
+                    "max_capacity": 2147483647,
+                    "total_seats": 9223372036854776000,
+                    "left_seats": 0,
+                    "booked_seats": 9223372036854776000,
+                    "confirmed_seats": 9223372036854776000,
+                    "available_slots": 0,
+
+                    "is_public": True,
+                    "reselling_allowed": True,
+                    "status_display": "string",
+                    "package_type_display": "string",
+                    "excluded_tickets": "string",
+                    "total_price_breakdown": "string",
+
+                    "created_at": "2025-11-18T18:32:07.206Z",
+                    "updated_at": "2025-11-18T18:32:07.206Z",
+
+                    "hotel_details": [
+                        {
+                            "id": 0,
+                            "hotel_info": {
+                                "id": 0,
+                                "name": "string",
+                                "address": "string",
+                                "category": "economy",
+                                "google_location": "string",
+                                "contact_number": "string",
+                                "distance": 0,
+                                "photos_data": "string",
+                                "video": "string",
+                                "is_active": True,
+                                "reselling_allowed": True
+                            },
+                            "check_in_date": "2025-11-18",
+                            "check_out_date": "2025-11-18",
+                            "number_of_nights": 2147483647,
+                            "hotel": 0
+                        }
+                    ],
+
+                    "transport_details": [
+                        {
+                            "id": 0,
+                            "transport_type": "private",
+                            "vehicle_type": "sedan",
+                            "transport_selling_price": 0,
+                            "transport_purchase_price": 0
+                        }
+                    ],
+
+                    "ticket_details": [
+                        {
+                            "id": 0,
+                            "ticket_info": {
+                                "id": 0,
+                                "flight_number": "string",
+                                "departure_date": "2025-11-18",
+                                "arrival_date": "2025-11-18",
+                                "seat_type": "economy",
+                                "adult_fare": 0,
+                                "child_fare": 0,
+                                "infant_fare": 0,
+                                "baggage_weight": 0,
+                                "refund_rule": "non_refundable",
+                                "is_refundable": True,
+                                "is_meal_included": True,
+                                "pnr": "string",
+                                "ticket_number": "string",
+                                "total_seats": 2147483647,
+                                "left_seats": 2147483647
+                            }
+                        }
+                    ],
+
+                    "discount_details": [
+                        {
+                            "id": 0,
+                            "adult_from": 2147483647,
+                            "adult_to": 2147483647,
+                            "max_discount": 0
+                        }
+                    ],
+
+                    "visas": {
+                        "adult_selling_price": 0,
+                        "adult_purchase_price": 0,
+                        "child_selling_price": 0,
+                        "child_purchase_price": 0,
+                        "infant_selling_price": 0,
+                        "infant_purchase_price": 0
+                    },
+
+                    "food_prices": {
+                        "selling_price": 0,
+                        "purchase_price": 0
+                    },
+
+                    "ziyarat_prices": {
+                        "makkah_selling": 0,
+                        "makkah_purchase": 0,
+                        "madinah_selling": 0,
+                        "madinah_purchase": 0
+                    }
+                },
+                response_only=True,
+            )
+        ],
     ),
 )
 class PackageViewSet(ModelViewSet):
@@ -474,6 +742,12 @@ class AirlinesViewSet(ModelViewSet):
 
     def get_queryset(self):
         from organization.models import OrganizationLink
+        from django.db.models import Q
+        # booking.AllowedReseller controls explicit reseller allowances
+        try:
+            from booking.models import AllowedReseller
+        except Exception:
+            AllowedReseller = None
         
         # Check if user is superuser
         if self.request.user.is_superuser:
@@ -489,18 +763,73 @@ class AirlinesViewSet(ModelViewSet):
         if not organization_id:
             raise PermissionDenied("Missing 'organization' query parameter.")
         
-        # Check if user has access to this organization
-        user_organizations = self.request.user.organizations.values_list('id', flat=True)
-        if int(organization_id) not in user_organizations:
-            raise PermissionDenied("You don't have access to this organization.")
-        
-        # Get linked organizations
-        linked_org_ids = OrganizationLink.get_linked_organizations(int(organization_id))
-        
-        # Include airlines from the user's organization and linked organizations
-        allowed_org_ids = {int(organization_id)} | linked_org_ids
-        
-        return Airlines.objects.filter(organization_id__in=allowed_org_ids)
+        # Determine caller organizations (the org(s) the requesting user belongs to)
+        user_org_ids = set(self.request.user.organizations.values_list('id', flat=True))
+        owner_org_id = int(organization_id)
+
+        # If caller belongs to the owner org, allow (and include linked orgs for list view)
+        if owner_org_id in user_org_ids:
+            linked_org_ids = OrganizationLink.get_linked_organizations(owner_org_id)
+            allowed_org_ids = {owner_org_id} | linked_org_ids
+            return Airlines.objects.filter(organization_id__in=allowed_org_ids)
+
+        # Caller does not belong to owner org. Allow if there is an active OrganizationLink
+        # between owner_org_id and any of the caller's organizations, or an AllowedReseller entry.
+        # Check for active mutual link
+        try:
+            active_link_exists = OrganizationLink.objects.filter(
+                (
+                    Q(main=owner_org_id, link__in=user_org_ids) |
+                    Q(main__in=user_org_ids, link=owner_org_id)
+                ) & Q(request_status=True)
+            ).exists()
+        except Exception:
+            active_link_exists = False
+
+        allowed_via_resell = False
+        if AllowedReseller is not None:
+            try:
+                # Find AllowedReseller rows where any of the caller orgs is the reseller
+                ar_qs = AllowedReseller.objects.filter(
+                    reseller_company_id__in=list(user_org_ids),
+                    requested_status_by_reseller="ACCEPTED",
+                )
+                for ar in ar_qs:
+                    inv = getattr(ar, "inventory_owner_company", None)
+                    if not inv:
+                        continue
+                    # inventory_owner_company may reference a Booking app OrganizationLink structure
+                    inv_org_id = getattr(inv, "organization_id", None) or getattr(inv, "main_organization_id", None) or None
+                    if inv_org_id and int(inv_org_id) == owner_org_id:
+                        # if AllowedReseller grants org-level access (no allowed_items), treat as allowed
+                        try:
+                            items = getattr(ar, "allowed_items", None) or []
+                        except Exception:
+                            items = []
+                        if not items:
+                            # check allowed types includes airlines token if available or treat general
+                            allowed_via_resell = True
+                            break
+                        else:
+                            # if specific allowed_items include airline ids, allow
+                            for it in items:
+                                try:
+                                    if it.get("type") in ("airline", "airlines") and int(it.get("id")) > 0:
+                                        allowed_via_resell = True
+                                        break
+                                except Exception:
+                                    continue
+                            if allowed_via_resell:
+                                break
+            except Exception:
+                allowed_via_resell = False
+
+        if active_link_exists or allowed_via_resell:
+            # allow access to the owner organization's airlines
+            return Airlines.objects.filter(organization_id=owner_org_id)
+
+        # otherwise deny
+        raise PermissionDenied("You don't have access to this organization's airlines.")
 
 
 class CityViewSet(ModelViewSet):
@@ -988,12 +1317,12 @@ class PublicUmrahPackageListAPIView(generics.ListAPIView):
         price_max = self.request.query_params.get("price_max")
         if price_min:
             try:
-                qs = qs.filter(Q(price_per_person__gte=price_min) | Q(adault_visa_price__gte=price_min))
+                qs = qs.filter(Q(price_per_person_gte=price_min) | Q(adault_visa_selling_price_gte=price_min))
             except Exception:
                 pass
         if price_max:
             try:
-                qs = qs.filter(Q(price_per_person__lte=price_max) | Q(adault_visa_price__lte=price_max))
+                qs = qs.filter(Q(price_per_person_lte=price_max) | Q(adault_visa_selling_price_lte=price_max))
             except Exception:
                 pass
 

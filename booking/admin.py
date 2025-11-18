@@ -966,8 +966,45 @@ class PaymentAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Booking, BookingAdmin)
-admin.site.register(Discount)
-admin.site.register(DiscountGroup)
+class DiscountInline(admin.TabularInline):
+	model = Discount
+	extra = 1
+	fields = (
+		'things', 'room_type', 'per_night_discount', 'group_ticket_discount_amount', 'umrah_package_discount_amount',
+		'currency', 'get_discounted_hotels'
+	)
+	readonly_fields = ('get_discounted_hotels',)
+
+	def get_discounted_hotels(self, obj):
+		try:
+			return ", ".join([str(h.id) for h in obj.discounted_hotels.all()])
+		except Exception:
+			return ""
+	get_discounted_hotels.short_description = 'Discounted Hotels (IDs)'
+
+
+class DiscountAdmin(admin.ModelAdmin):
+	list_display = ('id', 'discount_group', 'things', 'room_type', 'per_night_discount', 'group_ticket_discount_amount', 'umrah_package_discount_amount')
+	search_fields = ('discount_group__name', 'things', 'room_type')
+	list_filter = ('things', 'room_type')
+
+
+class DiscountGroupAdmin(admin.ModelAdmin):
+	list_display = ('id', 'name', 'group_type', 'organization', 'is_active', 'discounts_count')
+	search_fields = ('name', 'group_type')
+	list_filter = ('group_type', 'is_active', 'organization')
+	inlines = [DiscountInline]
+	readonly_fields = ('discounts_count',)
+
+	def discounts_count(self, obj):
+		try:
+			return obj.discounts.count()
+		except Exception:
+			return 0
+	discounts_count.short_description = 'Discounts'
+
+admin.site.register(Discount, DiscountAdmin)
+admin.site.register(DiscountGroup, DiscountGroupAdmin)
 admin.site.register(Markup)
 admin.site.register(BankAccount)
 admin.site.register(AllowedReseller)

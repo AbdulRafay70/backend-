@@ -403,11 +403,8 @@ class UmrahPackage(models.Model):
         help_text="Base price per person"
     )
     
-    # Visa Pricing
+    # Visa Pricing — keep explicit selling/purchase fields; remove legacy single price fields
     rules = models.TextField(blank=True, null=True)
-    child_visa_price = models.FloatField(default=0)
-    infant_visa_price = models.FloatField(default=0)
-    adault_visa_price = models.FloatField(default=0)
     # Explicit selling / purchase fields for top-level visa prices
     adault_visa_selling_price = models.FloatField(default=0)
     adault_visa_purchase_price = models.FloatField(default=0)
@@ -416,27 +413,17 @@ class UmrahPackage(models.Model):
     infant_visa_selling_price = models.FloatField(default=0)
     infant_visa_purchase_price = models.FloatField(default=0)
     
-    # Additional Services
-    food_price = models.FloatField(default=0)
-    # Explicit selling / purchase fields for food
+    # Additional Services — keep explicit selling/purchase fields only
+    # Food
     food_selling_price = models.FloatField(default=0)
     food_purchase_price = models.FloatField(default=0)
-    makkah_ziyarat_price = models.FloatField(default=0)
-    # Explicit selling / purchase fields for makkah ziarat
+    # Makkah Ziyarat (selling/purchase)
     makkah_ziyarat_selling_price = models.FloatField(default=0)
-    makkah_ziarat_purchase_price = models.FloatField(default=0)
-    # Normalized spelling for consistency across codebase (preferred)
-    # NOTE: new field `makkah_ziyarat_purchase_price` will be added by migration
     makkah_ziyarat_purchase_price = models.FloatField(default=0)
-    madinah_ziyarat_price = models.FloatField(default=0)
-    # Explicit selling / purchase fields for madinah ziarat
+    # Madinah Ziyarat (selling/purchase)
     madinah_ziyarat_selling_price = models.FloatField(default=0)
-    madinah_ziarat_purchase_price = models.FloatField(default=0)
-    # Normalized spelling for consistency across codebase (preferred)
-    # NOTE: new field `madinah_ziyarat_purchase_price` will be added by migration
     madinah_ziyarat_purchase_price = models.FloatField(default=0)
-    transport_price = models.FloatField(default=0)
-    # Explicit selling / purchase fields for transport
+    # Transport (selling/purchase)
     transport_selling_price = models.FloatField(default=0)
     transport_purchase_price = models.FloatField(default=0)
     
@@ -532,9 +519,10 @@ class UmrahPackage(models.Model):
         total += adults * float(self.price_per_person)
         
         # Add visa prices
-        total += adults * float(self.adault_visa_price or 0)
-        total += children * float(self.child_visa_price or 0)
-        total += infants * float(self.infant_visa_price or 0)
+        # use explicit selling price fields (removed legacy single-price fields)
+        total += adults * float(getattr(self, 'adault_visa_selling_price', 0) or 0)
+        total += children * float(getattr(self, 'child_visa_selling_price', 0) or 0)
+        total += infants * float(getattr(self, 'infant_visa_selling_price', 0) or 0)
         
         # Add service charges if active
         if self.is_service_charge_active:
@@ -551,6 +539,89 @@ class UmrahPackage(models.Model):
             total += total * (float(self.tax_rate) / 100)
         
         return round(total, 2)
+
+    # --- New helper pricing methods matching requested formulas ---
+    def _first_ticket_obj(self):
+        """Return the first Ticket object included in this package, if any."""
+        first = self.ticket_details.first()
+        if not first or not getattr(first, 'ticket', None):
+            return None
+        return first.ticket
+
+    def infant_price(self):
+        """INFANT PRICE = INFANT TICKET SELLING PRICE + INFANT VISA SELLING PRICE"""
+        ticket = self._first_ticket_obj()
+        ticket_infant = 0
+        if ticket:
+            ticket_infant = getattr(ticket, 'infant_price', 0) or 0
+        visa_infant = float(getattr(self, 'infant_visa_selling_price', 0) or 0)
+        return float(ticket_infant) + visa_infant
+
+    def child_discount(self):
+        """CHILD DISCOUNT = ADULT TICKET SELLING PRICE - CHILD TICKET SELLING PRICE"""
+        ticket = self._first_ticket_obj()
+        if not ticket:
+            return 0
+        adult_ticket = getattr(ticket, 'adult_price', 0) or 0
+        child_ticket = getattr(ticket, 'child_price', 0) or 0
+        return float(adult_ticket) - float(child_ticket)
+
+    def adult_cost(self):
+        """Adult cost = food + makkah + madinah + transport + adult visa + adult ticket"""
+        food = float(getattr(self, 'food_selling_price', 0) or 0)
+        makkah = float(getattr(self, 'makkah_ziyarat_selling_price', 0) or 0)
+        madinah = float(getattr(self, 'madinah_ziyarat_selling_price', 0) or 0)
+        transport = float(getattr(self, 'transport_selling_price', 0) or 0)
+        visa = float(getattr(self, 'adault_visa_selling_price', 0) or 0)
+        ticket = self._first_ticket_obj()
+        ticket_adult = float(getattr(ticket, 'adult_price', 0) or 0) if ticket else 0
+        return food + makkah + madinah + transport + visa + ticket_adult
+
+    def _sum_hotel_room_component(self, room_field_name):
+        """Sum across all hotel_details: hotel.<room_field_name>_selling_price * number_of_nights"""
+        total = 0
+        for hd in self.hotel_details.all():
+            price = getattr(hd, room_field_name, None)
+            nights = getattr(hd, 'number_of_nights', 0) or 0
+            if price is None:
+                continue
+            total += float(price or 0) * int(nights)
+        return total
+
+    def room_cost(self, room_type):
+        """Compute total cost for a room type per your formulas.
+
+        room_type: one of 'sharing','quad','quint','double','triple'
+        """
+        base = float(self.adult_cost() or 0)
+        # Map requested room types to model field names
+        mapping = {
+            'sharing': 'sharing_bed_selling_price',
+            'quad': 'quad_bed_selling_price',
+            'quint': 'quaint_bed_selling_price',  # model uses 'quaint' (typo) for quint
+            'double': 'double_bed_selling_price',
+            'triple': 'triple_bed_selling_price',
+        }
+        field = mapping.get(room_type)
+        if not field:
+            return base
+        hotel_component = self._sum_hotel_room_component(field)
+        return base + hotel_component
+
+    def sharing_cost(self):
+        return self.room_cost('sharing')
+
+    def quad_cost(self):
+        return self.room_cost('quad')
+
+    def quint_cost(self):
+        return self.room_cost('quint')
+
+    def double_cost(self):
+        return self.room_cost('double')
+
+    def triple_cost(self):
+        return self.room_cost('triple')
     
     def get_available_slots(self):
         """Get current available slots"""

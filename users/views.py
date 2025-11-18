@@ -40,7 +40,85 @@ class UserViewSet(viewsets.ModelViewSet):
             # Return structured errors to help frontend debug
             return Response({"success": False, "errors": serializer.errors}, status=400)
 
+        # create the user (and nested profile if provided)
         self.perform_create(serializer)
+
+        # Post-create: enforce behavior based on profile.type (user category)
+        try:
+            user = serializer.instance
+            # profile type may be in payload or created profile on user
+            ptype = None
+            try:
+                ptype = (data.get('profile') or {}).get('type')
+            except Exception:
+                ptype = None
+            if not ptype:
+                try:
+                    ptype = getattr(user.profile, 'type', None)
+                except Exception:
+                    ptype = None
+
+            if ptype:
+                ptype_norm = str(ptype).strip().lower()
+
+                # mapping rules
+                agent_types = {'agent', 'area agent', 'area_agent', 'area-agent', 'areaagent'}
+                admin_types = {'employee', 'branch', 'admin'}
+
+                # default: do not modify groups if caller supplied explicit groups
+                caller_groups = data.get('groups')
+
+                # helper to ensure group exists and return it
+                def get_or_create_group(name):
+                    try:
+                        g, created = Group.objects.get_or_create(name=name)
+                        return g
+                    except Exception:
+                        return None
+
+                if ptype_norm in agent_types:
+                    # Agents should not be staff or superuser; ensure agent group
+                    user.is_staff = False
+                    user.is_superuser = False
+                    if not caller_groups:
+                        g = get_or_create_group('agent')
+                        if g:
+                            user.groups.set([g])
+                elif ptype_norm in admin_types:
+                    # Employees/branch/admin get staff access (admin portal)
+                    user.is_staff = True
+                    # admin type is not superuser unless explicitly requested
+                    user.is_superuser = False
+                    if not caller_groups:
+                        g = get_or_create_group(ptype_norm)
+                        if g:
+                            user.groups.set([g])
+                elif ptype_norm == 'superadmin':
+                    # full admin
+                    user.is_staff = True
+                    user.is_superuser = True
+                    if not caller_groups:
+                        g = get_or_create_group('superadmin')
+                        if g:
+                            user.groups.set([g])
+                else:
+                    # unknown type: do not elevate; just save the profile.type
+                    pass
+
+                try:
+                    # ensure profile.type stored
+                    if hasattr(user, 'profile') and user.profile:
+                        user.profile.type = ptype
+                        user.profile.save()
+                except Exception:
+                    pass
+
+                # save user flags
+                user.save()
+        except Exception:
+            # be lenient on post-create adjustments; don't fail the request
+            pass
+
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=201, headers=headers)
 
@@ -60,6 +138,79 @@ class UserViewSet(viewsets.ModelViewSet):
             query_filters &= Q(branches=branch_id)
         queryset = User.objects.filter(query_filters)
         return queryset
+
+    def update(self, request, *args, **kwargs):
+        # Allow partial updates and then enforce profile.type behavior
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        data = request.data.copy() if hasattr(request, 'data') else {}
+
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        # Post-update: mirror same logic as create to set flags/groups by profile.type
+        try:
+            user = serializer.instance
+            ptype = None
+            try:
+                ptype = (data.get('profile') or {}).get('type')
+            except Exception:
+                ptype = None
+            if not ptype:
+                try:
+                    ptype = getattr(user.profile, 'type', None)
+                except Exception:
+                    ptype = None
+
+            if ptype:
+                ptype_norm = str(ptype).strip().lower()
+                agent_types = {'agent', 'area agent', 'area_agent', 'area-agent', 'areaagent'}
+                admin_types = {'employee', 'branch', 'admin'}
+
+                def get_or_create_group(name):
+                    try:
+                        g, created = Group.objects.get_or_create(name=name)
+                        return g
+                    except Exception:
+                        return None
+
+                caller_groups = data.get('groups')
+
+                if ptype_norm in agent_types:
+                    user.is_staff = False
+                    user.is_superuser = False
+                    if not caller_groups:
+                        g = get_or_create_group('agent')
+                        if g:
+                            user.groups.set([g])
+                elif ptype_norm in admin_types:
+                    user.is_staff = True
+                    user.is_superuser = False
+                    if not caller_groups:
+                        g = get_or_create_group(ptype_norm)
+                        if g:
+                            user.groups.set([g])
+                elif ptype_norm == 'superadmin':
+                    user.is_staff = True
+                    user.is_superuser = True
+                    if not caller_groups:
+                        g = get_or_create_group('superadmin')
+                        if g:
+                            user.groups.set([g])
+
+                try:
+                    if hasattr(user, 'profile') and user.profile:
+                        user.profile.type = ptype
+                        user.profile.save()
+                except Exception:
+                    pass
+
+                user.save()
+        except Exception:
+            pass
+
+        return Response(serializer.data)
 
 
 class GroupViewSet(viewsets.ModelViewSet):

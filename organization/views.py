@@ -249,6 +249,41 @@ class OrganizationLinkViewSet(viewsets.ModelViewSet):
         link.request_status = False
         link.save()
         print(f"[{current_time}] Reject operation completed successfully")
+
+        # Cleanup: when a link is rejected (even single-sided), ensure any resell
+        # requests and AllowedReseller entries between these two organizations are removed
+        try:
+            # Delete any ResellRequest records involving these two orgs
+            ResellRequest.objects.filter(
+                (Q(main_organization=link.main_organization) & Q(link_organization=link.link_organization)) |
+                (Q(main_organization=link.link_organization) & Q(link_organization=link.main_organization))
+            ).delete()
+        except Exception:
+            # best-effort only; continue even if delete fails
+            print(f"[{current_time}] Warning: failed to delete related ResellRequest records")
+
+        try:
+            from booking.models import AllowedReseller, OrganizationLink as BookingOrgLink
+        except Exception:
+            AllowedReseller = None
+            BookingOrgLink = None
+
+        if AllowedReseller is not None:
+            try:
+                # Find any booking-side OrganizationLink records that reference either organization
+                org_ids = [link.main_organization_id, link.link_organization_id]
+                booking_links = BookingOrgLink.objects.filter(
+                    Q(organization_id__in=org_ids) | Q(this_organization_id__in=org_ids)
+                ) if BookingOrgLink is not None else []
+
+                # Delete AllowedReseller entries where reseller_company is either org
+                # or where inventory_owner_company references a booking link involving either org
+                AllowedReseller.objects.filter(
+                    Q(reseller_company__in=org_ids) |
+                    Q(inventory_owner_company__in=[bl for bl in booking_links])
+                ).delete()
+            except Exception:
+                print(f"[{current_time}] Warning: failed to delete AllowedReseller entries")
         response = Response(self.get_serializer(link).data, status=status.HTTP_200_OK)
         # Add cache control headers to prevent browser caching
         response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
@@ -264,7 +299,35 @@ class OrganizationLinkViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         print(f"[{current_time}] \"DELETE /api/organization-links/{instance.id}/\" - User: {request.user.username if request.user.is_authenticated else 'Anonymous'}")
         print(f"[{current_time}] Deleting link: Main={instance.main_organization.name}, Link={instance.link_organization.name}")
-        
+        # Before deleting the link, remove any resell/allowed-reseller records
+        try:
+            ResellRequest.objects.filter(
+                (Q(main_organization=instance.main_organization) & Q(link_organization=instance.link_organization)) |
+                (Q(main_organization=instance.link_organization) & Q(link_organization=instance.main_organization))
+            ).delete()
+        except Exception:
+            print(f"[{current_time}] Warning: failed to delete related ResellRequest records before link deletion")
+
+        try:
+            from booking.models import AllowedReseller, OrganizationLink as BookingOrgLink
+        except Exception:
+            AllowedReseller = None
+            BookingOrgLink = None
+
+        if AllowedReseller is not None:
+            try:
+                org_ids = [instance.main_organization_id, instance.link_organization_id]
+                booking_links = BookingOrgLink.objects.filter(
+                    Q(organization_id__in=org_ids) | Q(this_organization_id__in=org_ids)
+                ) if BookingOrgLink is not None else []
+
+                AllowedReseller.objects.filter(
+                    Q(reseller_company__in=org_ids) |
+                    Q(inventory_owner_company__in=[bl for bl in booking_links])
+                ).delete()
+            except Exception:
+                print(f"[{current_time}] Warning: failed to delete AllowedReseller entries before link deletion")
+
         self.perform_destroy(instance)
         print(f"[{current_time}] Organization link deleted successfully")
         
@@ -280,15 +343,15 @@ class OrganizationLinkViewSet(viewsets.ModelViewSet):
 # Other APIs (Organization, Branch, Agency)
 # -------------------------------------------------------------------
 
-class OrganizationViewSet(viewsets.ReadOnlyModelViewSet):
-    """Read-only API for Organizations.
+class OrganizationViewSet(viewsets.ModelViewSet):
+    """API for Organizations.
 
-    Creation/updating of organizations via public API endpoints is disabled.
-    Organizations are automatically created when an auth.User is added via
-    the Django admin (or other user-creation flows) — see organization.signals.
+    - Creation via this endpoint is restricted to admin users.
+    - Optional: provide `user_ids` in the request body to attach existing
+      `User` accounts to the newly created organization.
     """
     serializer_class = OrganizationSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsAuthenticated, IsAdminUser]
 
     def get_queryset(self):
         user_id = self.request.query_params.get("user_id")
@@ -296,6 +359,38 @@ class OrganizationViewSet(viewsets.ReadOnlyModelViewSet):
         if user_id:
             query_filters &= Q(user=user_id)
         return Organization.objects.filter(query_filters)
+
+    def create(self, request, *args, **kwargs):
+        """Create an Organization (admin-only).
+
+        Accepts normal Organization fields in the request body. Optionally,
+        include `user_ids: [1,2,3]` to attach existing users to the org's M2M
+        `user` relation after creation.
+        """ 
+        data = request.data
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        org = serializer.save()
+
+        # Optional: attach users by id list
+        user_ids = None
+        try:
+            user_ids = data.get('user_ids') or data.get('users')
+        except Exception:
+            user_ids = None
+
+        if user_ids:
+            try:
+                from django.contrib.auth import get_user_model
+                User = get_user_model()
+                qs = User.objects.filter(pk__in=user_ids)
+                org.user.set(qs)
+            except Exception:
+                # don't fail creation for M2M attach errors; continue
+                pass
+
+        out_serializer = self.get_serializer(org)
+        return Response(out_serializer.data, status=status.HTTP_201_CREATED)
 
 
 class BranchViewSet(viewsets.ModelViewSet):

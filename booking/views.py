@@ -1883,6 +1883,75 @@ class InternalNoteViewSet(viewsets.ModelViewSet):
 class BankAccountViewSet(viewsets.ModelViewSet):
     queryset = BankAccount.objects.all().order_by("-id")
     serializer_class = BankAccountSerializer
+
+    def get_queryset(self):
+        # Default qs
+        user = getattr(self.request, 'user', None)
+        qs = BankAccount.objects.all().order_by("-id")
+
+        # Read params early so a provided organization filter always applies
+        params = self.request.query_params
+        organization_id = params.get('organization') or params.get('organization_id')
+
+        # If org not provided, try to infer from user's first group extended attribute
+        if not organization_id:
+            try:
+                user_group = user.groups.first()
+                if user_group and hasattr(user_group, 'extended'):
+                    organization_id = user_group.extended.organization_id
+            except Exception:
+                organization_id = None
+
+        # If user is superuser and no organization param provided, return all
+        try:
+            if user and user.is_superuser and not organization_id:
+                return qs
+        except Exception:
+            pass
+
+        if not organization_id:
+            raise PermissionDenied("Missing 'organization' query parameter and user has no organization assigned.")
+
+        # Validate user has access to this organization (skip for superuser)
+        if not (user and getattr(user, 'is_superuser', False)):
+            user_orgs = set()
+            try:
+                # organizations attached via group extensions
+                for group in user.groups.all():
+                    if hasattr(group, 'extended') and group.extended.organization:
+                        user_orgs.add(group.extended.organization.id)
+            except Exception:
+                pass
+
+            try:
+                # organizations attached directly to the user (M2M)
+                for o in user.organizations.all():
+                    user_orgs.add(o.id)
+            except Exception:
+                pass
+
+            if int(organization_id) not in user_orgs:
+                raise PermissionDenied("You don't have access to this organization.")
+
+        qs = qs.filter(organization_id=organization_id)
+
+        # Optional branch filter
+        branch_id = params.get('branch_id')
+        if branch_id is not None:
+            # Frontend sometimes sends branch_id=0 to indicate 'organization-level' accounts
+            if str(branch_id).lower() in ['', 'none', 'null']:
+                # no branch filter
+                pass
+            elif str(branch_id) == '0':
+                # treat 0 as 'no branch' (branch is NULL)
+                qs = qs.filter(branch__isnull=True)
+            else:
+                try:
+                    qs = qs.filter(branch_id=int(branch_id))
+                except Exception:
+                    qs = qs.filter(branch_id=branch_id)
+
+        return qs
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -1950,6 +2019,82 @@ class AllowedResellerViewSet(viewsets.ModelViewSet):
     serializer_class = AllowedResellerSerializer
     permission_classes = [IsAdminUser]
 
+@extend_schema_view(
+    create=extend_schema(
+        request=OpenApiTypes.OBJECT,
+        responses={201: OpenApiTypes.OBJECT},
+        examples=[
+            OpenApiExample(
+                'DiscountGroupCreateExample',
+                value={
+                    "name": "Summer Promo",
+                    "group_type": "seasonal",
+                    "organization": 11,
+                    "is_active": True,
+                    "discounts": {
+                        "group_ticket_discount_amount": "10.5",
+                        "umrah_package_discount_amount": "25"
+                    },
+                    "hotel_night_discounts": [
+                        {
+                            "quint_per_night_discount": "150",
+                            "double_per_night_discount": "75.5",
+                            "discounted_hotels": [12, 34, 56]
+                        },
+                        {
+                            "other_per_night_discount": "20",
+                            "discounted_hotels": [78]
+                        }
+                    ]
+                },
+                request_only=True,
+                response_only=False,
+            ),
+            OpenApiExample(
+                'DiscountGroupResponseExample',
+                value={
+                    "id": 7,
+                    "name": "Summer Promo",
+                    "group_type": "seasonal",
+                    "organization": 11,
+                    "is_active": True,
+                    "discounts": {
+                        "group_ticket_discount_amount": "10.5",
+                        "umrah_package_discount_amount": "25"
+                    },
+                    "hotel_night_discounts": [
+                        {
+                            "quint_per_night_discount": "150",
+                            "quad_per_night_discount": "",
+                            "triple_per_night_discount": "",
+                            "double_per_night_discount": "75.5",
+                            "sharing_per_night_discount": "",
+                            "other_per_night_discount": "",
+                            "discounted_hotels": [12, 34, 56]
+                        },
+                        {
+                            "quint_per_night_discount": "",
+                            "quad_per_night_discount": "",
+                            "triple_per_night_discount": "",
+                            "double_per_night_discount": "",
+                            "sharing_per_night_discount": "",
+                            "other_per_night_discount": "20",
+                            "discounted_hotels": [78]
+                        }
+                    ]
+                },
+                request_only=False,
+                response_only=True,
+            ),
+        ],
+    ),
+    retrieve=extend_schema(
+        responses={200: OpenApiTypes.OBJECT},
+    ),
+    list=extend_schema(
+        responses={200: OpenApiTypes.OBJECT},
+    )
+)
 class DiscountGroupViewSet(viewsets.ModelViewSet):
     queryset = DiscountGroup.objects.all().prefetch_related("discounts")
     serializer_class = DiscountGroupSerializer

@@ -15,7 +15,7 @@ class Command(BaseCommand):
         regen = options.get('regenerate')
         limit = options.get('limit') or 0
         print_qr = options.get('print_qr')
-        base_url = options.get('base_url') or getattr(settings, 'PUBLIC_BOOKING_BASE_URL', None) or 'https://saer.pk/order-status/'
+        base_url = options.get('base_url') or getattr(settings, 'PUBLIC_BOOKING_BASE_URL', None) or 'http://127.0.0.1:8000/order-status/'
 
         qs = Booking.objects.all().order_by('id')
         if not regen:

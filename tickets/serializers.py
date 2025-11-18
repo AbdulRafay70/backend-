@@ -81,7 +81,45 @@ class TicketSerializer(serializers.ModelSerializer):
             if k_from in validated_data and k_to not in validated_data:
                 validated_data[k_to] = validated_data.pop(k_from)
 
+        # Extract trip details (departure/return legs)
         trip_details_data = validated_data.pop("trip_details", [])
+
+        # Support frontend sending only numeric flight suffix (e.g. "123").
+        # If provided as `flight_number_suffix` combine with the airline code
+        # to form the stored `flight_number` (e.g. PIA-123).
+        flight_suffix = validated_data.pop("flight_number_suffix", None)
+
+        # If no explicit suffix provided, check trip_details for a per-leg flight_number
+        # (frontend often sends numeric-only values inside trip_details.flight_number).
+        if not flight_suffix and trip_details_data:
+            first_trip_fn = None
+            try:
+                first_trip_fn = trip_details_data[0].get("flight_number")
+            except Exception:
+                first_trip_fn = None
+            if first_trip_fn:
+                # prefer the trip-level value as the suffix
+                flight_suffix = first_trip_fn
+
+        if flight_suffix:
+            try:
+                airline_obj = validated_data.get("airline")
+                # airline may be an instance or a PK; handle both
+                if hasattr(airline_obj, "code"):
+                    code = airline_obj.code
+                else:
+                    from packages.models import Airlines
+                    a = Airlines.objects.filter(id=int(airline_obj)).first()
+                    code = a.code if a else str(airline_obj)
+
+                # Keep only numeric chars from suffix
+                import re
+                suffix_clean = re.sub(r"\D", "", str(flight_suffix))
+                if suffix_clean:
+                    validated_data["flight_number"] = f"{code}-{suffix_clean}"
+            except Exception:
+                # If anything fails, fall back to leaving `flight_number` unset
+                pass
         stopover_details_data = validated_data.pop("stopover_details", [])
 
         # Extract fields from trip_details if not provided
@@ -156,6 +194,29 @@ class TicketSerializer(serializers.ModelSerializer):
         trip_details_data = validated_data.pop("trip_details", None)
         stopover_details_data = validated_data.pop("stopover_details", None)
 
+        # If frontend provided a numeric flight suffix at top-level or inside trip_details,
+        # ensure the instance.flight_number is updated accordingly so list endpoints
+        # return the expected airline-code + suffix string.
+        flight_suffix = validated_data.pop("flight_number_suffix", None)
+        if not flight_suffix and trip_details_data and len(trip_details_data) > 0:
+            flight_suffix = trip_details_data[0].get("flight_number")
+
+        if flight_suffix:
+            try:
+                airline_obj = validated_data.get("airline") or instance.airline_id
+                if hasattr(airline_obj, "code"):
+                    code = airline_obj.code
+                else:
+                    from packages.models import Airlines
+                    a = Airlines.objects.filter(id=int(airline_obj)).first()
+                    code = a.code if a else str(airline_obj)
+                import re
+                suffix_clean = re.sub(r"\D", "", str(flight_suffix))
+                if suffix_clean:
+                    validated_data["flight_number"] = f"{code}-{suffix_clean}"
+            except Exception:
+                pass
+
         # If organization is updated, ensure owner fields remain consistent when not explicitly provided
         if 'organization' in validated_data:
             org_val = validated_data.get('organization')
@@ -206,8 +267,6 @@ class HotelsSerializer(serializers.ModelSerializer):
     contact_details = HotelContactDetailsSerializer(many=True, required=False)
     photos = serializers.ListField(child=serializers.CharField(), write_only=True, required=False)
     photos_data = serializers.SerializerMethodField(read_only=True)
-    # expose walking_time (minutes) for frontend compatibility — backed by model field `walking_time_minutes`
-    walking_time = serializers.IntegerField(source='walking_time_minutes', required=False, allow_null=True)
 
     class Meta:
         model = Hotels
@@ -266,44 +325,10 @@ class HotelsSerializer(serializers.ModelSerializer):
 
     def get_photos_data(self, obj):
         photos_qs = obj.photos.all() if hasattr(obj, "photos") else []
-        result = []
-        # Guard access to file storage when building URLs — missing files or
-        # storage misconfiguration can raise exceptions when accessing `.url`.
-        try:
-            from django.core.files.storage import default_storage
-        except Exception:
-            default_storage = None
-
-        for p in photos_qs:
-            image_url = None
-            try:
-                img_field = getattr(p, "image", None)
-                # Only attempt to access .url when we have a stored filename
-                if img_field and getattr(img_field, "name", None):
-                    fname = img_field.name
-                    if default_storage:
-                        try:
-                            if default_storage.exists(fname):
-                                image_url = img_field.url
-                        except Exception:
-                            # storage backend may raise; fall back to safe None
-                            image_url = None
-                    else:
-                        # no storage available in this context; try .url but guard
-                        try:
-                            image_url = img_field.url
-                        except Exception:
-                            image_url = None
-            except Exception:
-                image_url = None
-
-            result.append({
-                "id": p.id,
-                "caption": p.caption,
-                "image": image_url,
-            })
-
-        return result
+        return [
+            {"id": p.id, "caption": p.caption, "image": p.image.url if getattr(p, 'image', None) else None}
+            for p in photos_qs
+        ]
 
 
 class HotelRoomDetailsSerializer(serializers.ModelSerializer):
@@ -369,6 +394,7 @@ class TicketListSerializer(serializers.ModelSerializer):
         # explicit list of fields the user requested (trimmed)
         fields = (
             "id",
+            "flight_number",
             "trip_details",
             "stopover_details",
             "adult_fare",
@@ -401,8 +427,11 @@ class TicketListSerializer(serializers.ModelSerializer):
         details = []
         # Always iterate the related manager queryset to avoid TypeError
         for td in obj.trip_details.all():
+            # prefer the per-trip flight_number stored on the TicketTripDetails record
+            # (if the frontend provided a numeric suffix and it was stored there)
+            fn = getattr(td, 'flight_number', None) or getattr(obj, 'flight_number', None)
             details.append({
-                'flight_number': getattr(obj, 'flight_number', None),
+                'flight_number': fn,
                 'departure_date_time': getattr(td, 'departure_date_time', None),
                 'arrival_date_time': getattr(td, 'arrival_date_time', None),
                 'departure_city': getattr(td, 'departure_city_id', None),

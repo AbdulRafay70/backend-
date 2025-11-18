@@ -496,22 +496,36 @@ class UmrahPackageSerializer(ModelSerializer):
         return TicketSerializer(qs, many=True).data
 
     def get_adult_price(self, obj):
-        """Get adult price from adault_visa_price field"""
-        return getattr(obj, "adault_visa_price", None)
+        """Adult price / cost computed from components (food, ziarat, transport, visa, ticket)."""
+        try:
+            return obj.adult_cost()
+        except Exception:
+            return getattr(obj, 'adault_visa_selling_price', None)
 
     def get_infant_price(self, obj):
-        """Get infant price: infant_visa_price + ticket price"""
-        base = getattr(obj, "infant_visa_price", 0) or 0
-        first_ticket = obj.ticket_details.first()
-        ticket_price = 0
-        if first_ticket and getattr(first_ticket, "ticket", None):
-            ticket_obj = first_ticket.ticket
-            ticket_price = getattr(ticket_obj, "adult_price", 0) or 0
-        return base + ticket_price
+        """INFANT PRICE = INFANT TICKET SELLING PRICE + INFANT VISA SELLING PRICE"""
+        try:
+            return obj.infant_price()
+        except Exception:
+            # fallback similar to previous logic
+            base = getattr(obj, "infant_visa_selling_price", 0) or 0
+            first_ticket = obj.ticket_details.first()
+            ticket_price = 0
+            if first_ticket and getattr(first_ticket, "ticket", None):
+                ticket_obj = first_ticket.ticket
+                ticket_price = getattr(ticket_obj, "infant_price", 0) or 0
+            return base + ticket_price
 
     def get_child_discount(self, obj):
-        """Get child discount/price from child_visa_price"""
-        return getattr(obj, "child_visa_price", None)
+        """CHILD DISCOUNT = ADULT TICKET SELLING PRICE - CHILD TICKET SELLING PRICE"""
+        try:
+            return obj.child_discount()
+        except Exception:
+            ticket = obj.ticket_details.first()
+            if not ticket or not getattr(ticket, 'ticket', None):
+                return 0
+            t = ticket.ticket
+            return (getattr(t, 'adult_price', 0) or 0) - (getattr(t, 'child_price', 0) or 0)
 
     def _first_hotel_field(self, obj, field_name):
         """Helper to get field from first hotel detail"""
@@ -558,7 +572,7 @@ class PublicUmrahPackageListSerializer(serializers.ModelSerializer):
             return obj.price_per_person
         # try adult price fields
         try:
-            return obj.adault_visa_price + (obj.adault_service_charge or 0)
+            return getattr(obj, 'adault_visa_selling_price', 0) + (obj.adault_service_charge or 0)
         except Exception:
             return None
 
@@ -576,9 +590,9 @@ class PublicUmrahPackageDetailSerializer(ModelSerializer):
             "rules",
             "price",
             "price_per_person",
-            "adault_visa_price",
-            "child_visa_price",
-            "infant_visa_price",
+            "adault_visa_selling_price",
+            "child_visa_selling_price",
+            "infant_visa_selling_price",
             "total_seats",
             "left_seats",
             "booked_seats",
@@ -598,17 +612,17 @@ class PublicUmrahPackageDetailSerializer(ModelSerializer):
         if getattr(obj, "price_per_person", None):
             return obj.price_per_person
         try:
-            return obj.adault_visa_price + (obj.adault_service_charge or 0)
+            return getattr(obj, 'adault_visa_selling_price', 0) + (obj.adault_service_charge or 0)
         except Exception:
             return None
 
     def get_adult_price(self, obj):
         # keep the original (typo'd) field name as the source
-        return getattr(obj, "adault_visa_price", None)
+        return getattr(obj, "adault_visa_selling_price", None)
 
     def get_infant_price(self, obj):
         # infant_price = infant_visa_price + ticket price (use first included ticket if present)
-        base = getattr(obj, "infant_visa_price", 0) or 0
+        base = getattr(obj, "infant_visa_selling_price", 0) or 0
         first_ticket = obj.ticket_details.first()
         ticket_price = 0
         if first_ticket and getattr(first_ticket, "ticket", None):
@@ -618,7 +632,7 @@ class PublicUmrahPackageDetailSerializer(ModelSerializer):
 
     def get_child_discount(self, obj):
         # use child_visa_price as the flat child discount/price if present
-        return getattr(obj, "child_visa_price", None)
+        return getattr(obj, "child_visa_selling_price", None)
 
     def _first_hotel_field(self, obj, field_name):
         first = obj.hotel_details.first()

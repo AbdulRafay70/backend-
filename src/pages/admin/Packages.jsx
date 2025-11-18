@@ -251,6 +251,112 @@ const UmrahPackage = () => {
     return `${d} ${t}`;
   };
 
+  // Compute package price totals using backend selling-price fields with fallbacks
+  const computePackageTotals = (pkg, hotelsList, airlinesList) => {
+    // build hotelDetails with resilient price lookups
+    const hotelDetails = (pkg?.hotel_details || []).map((hotelEntry) => {
+      const hotelInfo = hotelsList.find((h) => h.id === hotelEntry.hotel_info?.id) || {};
+      const nights = hotelEntry?.number_of_nights || 0;
+
+      // possible field names for bed prices, from package hotel entry first then hotel master data
+      const pick = (obj, keys) => {
+        for (const k of keys) {
+          if (obj && typeof obj[k] !== 'undefined' && obj[k] !== null) return obj[k];
+        }
+        return 0;
+      };
+
+      const priceSources = [hotelEntry, hotelInfo?.prices?.[0] || {}, hotelInfo || {}];
+
+      const sharing = pick(priceSources[0], ['sharing_bed_price','sharing_selling_price','sharing_price']) ||
+                      pick(priceSources[1], ['sharing_bed_price','sharing_selling_price','sharing_price']);
+      const quaint = pick(priceSources[0], ['quaint_bed_price','quaint_selling_price','quaint_price']) ||
+                    pick(priceSources[1], ['quaint_bed_price','quaint_selling_price','quaint_price']);
+      const quad = pick(priceSources[0], ['quad_bed_price','quad_selling_price','quad_price']) ||
+                   pick(priceSources[1], ['quad_bed_price','quad_selling_price','quad_price']);
+      const triple = pick(priceSources[0], ['triple_bed_price','triple_selling_price','triple_price']) ||
+                     pick(priceSources[1], ['triple_bed_price','triple_selling_price','triple_price']);
+      const doubleBed = pick(priceSources[0], ['double_bed_price','double_selling_price','double_price']) ||
+                        pick(priceSources[1], ['double_bed_price','double_selling_price','double_price']);
+
+      return {
+        ...hotelEntry,
+        hotel_info: hotelInfo,
+        nights,
+        sharing_per_night: Number(sharing) || 0,
+        quaint_per_night: Number(quaint) || 0,
+        quad_per_night: Number(quad) || 0,
+        triple_per_night: Number(triple) || 0,
+        double_per_night: Number(doubleBed) || 0,
+      };
+    });
+
+    // helper to sum per-night prices across hotels
+    const sumPerNight = (key) =>
+      hotelDetails.reduce((s, h) => s + (Number(h[key] || 0) * (Number(h.nights || 0) || 0)), 0);
+
+    // resolve package-level selling price fields with fallbacks
+    const pkgPick = (keys) => {
+      for (const k of keys) {
+        if (typeof pkg?.[k] !== 'undefined' && pkg?.[k] !== null) return Number(pkg[k]) || 0;
+      }
+      return 0;
+    };
+
+    const food = pkgPick(['food_selling_price','food_price','food_selling_price']);
+    const makkah = pkgPick(['makkah_ziyarat_selling_price','makkah_ziyarat_price']);
+    const madinah = pkgPick(['madinah_ziyarat_selling_price','madinah_ziyarat_price']);
+    const transport = pkgPick(['transport_selling_price','transport_price']);
+    const visaAdult = pkgPick(['adault_visa_selling_price','adault_visa_price']);
+
+    const ticketInfo = pkg?.ticket_details?.[0]?.ticket_info || {};
+    const ticketAdult = Number(ticketInfo?.adult_price || ticketInfo?.adult_selling_price || 0) || 0;
+
+    const adultCost = food + makkah + madinah + transport + visaAdult + ticketAdult;
+
+    // hotel totals per bed-type
+    const sharingHotelTotal = sumPerNight('sharing_per_night');
+    const quaintHotelTotal = sumPerNight('quaint_per_night');
+    const quadHotelTotal = sumPerNight('quad_per_night');
+    const tripleHotelTotal = sumPerNight('triple_per_night');
+    const doubleHotelTotal = sumPerNight('double_per_night');
+
+    const totalSharing = adultCost + sharingHotelTotal;
+    const totalQuint = adultCost + quaintHotelTotal;
+    const totalQuad = adultCost + quadHotelTotal;
+    const totalTriple = adultCost + tripleHotelTotal;
+    const totalDouble = adultCost + doubleHotelTotal;
+
+    const infantTicket = Number(ticketInfo?.infant_price || ticketInfo?.infant_selling_price || 0) || 0;
+    const infantVisa = pkgPick(['infant_visa_selling_price','infant_visa_price']);
+    const totalInfant = infantTicket + infantVisa;
+
+    const ticketChild = Number(ticketInfo?.child_price || ticketInfo?.child_selling_price || 0) || 0;
+    const childDiscount = Math.max(0, ticketAdult - ticketChild);
+
+    const tripDetails = ticketInfo?.trip_details || [];
+    const flightFrom = tripDetails[0];
+    const flightTo = tripDetails[1];
+
+    const airline = airlinesList.find((a) => a.id === ticketInfo?.airline) || {};
+
+    return {
+      hotelDetails,
+      adultCost,
+      totalSharing,
+      totalQuint,
+      totalQuad,
+      totalTriple,
+      totalDouble,
+      totalInfant,
+      childDiscount,
+      ticketInfo,
+      flightFrom,
+      flightTo,
+      airline,
+    };
+  };
+
   const handleFilterChange = (filterName) => {
     setFilters(prev => ({
       ...prev,
@@ -280,6 +386,20 @@ const UmrahPackage = () => {
       console.error("Error deleting package:", error);
       toast.error("Failed to delete package.");
     }
+  };
+
+  // Modal for professional warning when linked organization attempts forbidden actions
+  const [showModal, setShowModal] = useState(false);
+  const [modalMessage, setModalMessage] = useState("");
+
+  const showForbiddenModal = (message) => {
+    setModalMessage(message);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setModalMessage("");
   };
 
   if (loading) {
@@ -566,124 +686,21 @@ const UmrahPackage = () => {
                             </div>
                           ) : (
                             filteredPackages.map((pkg, index) => {
-                              const hotelDetails = pkg?.hotel_details?.map((hotelEntry) => {
-                                const hotelInfo = hotels.find(
-                                  (h) => h.id === hotelEntry.hotel_info?.id
-                                );
-                                return {
-                                  city: hotelInfo?.city || "N/A",
-                                  name: hotelInfo?.name || "N/A",
-                                  nights: hotelEntry?.number_of_nights || 0,
-                                  prices: hotelInfo?.prices?.[0] || {},
-                                  // include hotel-level reselling flag for display
-                                  reselling_allowed: hotelInfo?.reselling_allowed || false,
-                                };
-                              });
-
-                              const ticketInfo = pkg?.ticket_details?.[0]?.ticket_info;
-                              const tripDetails = ticketInfo?.trip_details || [];
-
-                              // Calculate sharing hotel cost
-                              const sharingHotelTotal = pkg?.hotel_details?.reduce((sum, hotel) => {
-                                const perNight = hotel.sharing_bed_price || 0;
-                                const nights = hotel.number_of_nights || 0;
-                                return sum + perNight * nights;
-                              }, 0);
-
-                              // Calculate total sharing
-                              const sharingPrices =
-                                (pkg.adault_visa_price || 0) +
-                                (pkg.transport_price || 0) +
-                                (ticketInfo?.adult_price || 0) +
-                                (pkg.food_price || 0) +
-                                (pkg.makkah_ziyarat_price || 0) +
-                                (pkg.madinah_ziyarat_price || 0);
-
-                              const totalSharing = sharingHotelTotal + sharingPrices;
-
-                              // Calculate total QUINT price
-                              const quintPrices =
-                                (pkg.adault_visa_price || 0) +
-                                (pkg.transport_price || 0) +
-                                (ticketInfo?.adult_price || 0) +
-                                (pkg.food_price || 0) +
-                                (pkg.makkah_ziyarat_price || 0) +
-                                (pkg.madinah_ziyarat_price || 0);
-
-                              const quintHotels = pkg?.hotel_details?.reduce((sum, hotel) => {
-                                const perNight =
-                                  hotel.quaint_bed_price || hotel.quaint_bed_price || 0;
-                                const nights = hotel.number_of_nights || 0;
-                                return sum + perNight * nights;
-                              }, 0);
-
-                              const totalQuint = quintPrices + quintHotels;
-
-                              // Calculate total QUAD price
-                              const quadPrices =
-                                (pkg.adault_visa_price || 0) +
-                                (pkg.transport_price || 0) +
-                                (ticketInfo?.adult_price || 0) +
-                                (pkg.food_price || 0) +
-                                (pkg.makkah_ziyarat_price || 0) +
-                                (pkg.madinah_ziyarat_price || 0);
-
-                              const quadHotels = pkg?.hotel_details?.reduce((sum, hotel) => {
-                                const perNight = hotel.quad_bed_price || 0;
-                                const nights = hotel.number_of_nights || 0;
-                                return sum + perNight * nights;
-                              }, 0);
-
-                              const totalQuad = quadPrices + quadHotels;
-
-                              // TRIPLE BED calculation
-                              const triplePrices =
-                                (pkg.adault_visa_price || 0) +
-                                (pkg.transport_price || 0) +
-                                (ticketInfo?.adult_price || 0) +
-                                (pkg.food_price || 0) +
-                                (pkg.makkah_ziyarat_price || 0) +
-                                (pkg.madinah_ziyarat_price || 0);
-
-                              const tripleHotels = pkg?.hotel_details?.reduce((sum, hotel) => {
-                                const perNight = hotel.triple_bed_price || 0;
-                                const nights = hotel.number_of_nights || 0;
-                                return sum + perNight * nights;
-                              }, 0);
-
-                              const totalTriple = triplePrices + tripleHotels;
-
-                              // DOUBLE BED calculation
-                              const doublePrices =
-                                (pkg.adault_visa_price || 0) +
-                                (pkg.transport_price || 0) +
-                                (ticketInfo?.adult_price || 0) +
-                                (pkg.food_price || 0) +
-                                (pkg.makkah_ziyarat_price || 0) +
-                                (pkg.madinah_ziyarat_price || 0);
-
-                              const doubleHotels = pkg?.hotel_details?.reduce((sum, hotel) => {
-                                const perNight = hotel.double_bed_price || 0;
-                                const nights = hotel.number_of_nights || 0;
-                                return sum + perNight * nights;
-                              }, 0);
-
-                              const totalDouble = doublePrices + doubleHotels;
-
-                              const infantPrices =
-                                (ticketInfo?.infant_price || 0)
-
-                              const infantHotels = pkg?.infant_visa_price;
-
-                              const totalinfant = infantPrices + infantHotels;
-
-                              const childPrices =
-                                (pkg?.adault_visa_price || 0) -
-                                (pkg?.child_visa_price || 0);
-
-                              const flightFrom = tripDetails[0];
-                              const flightTo = tripDetails[1];
-                              const airline = airlines.find((a) => a.id === ticketInfo?.airline);
+                              const {
+                                hotelDetails,
+                                adultCost,
+                                totalSharing,
+                                totalQuint,
+                                totalQuad,
+                                totalTriple,
+                                totalDouble,
+                                totalInfant,
+                                childDiscount,
+                                ticketInfo,
+                                flightFrom,
+                                flightTo,
+                                airline,
+                              } = computePackageTotals(pkg, hotels, airlines);
 
                               const matchedAirline = airlines.find(
                                 (a) => a.code?.toLowerCase() === airline?.code?.toLowerCase()
@@ -737,16 +754,15 @@ const UmrahPackage = () => {
                                               <div className="col-6 col-sm-4 col-md-2 mb-2">
                                                 <p className="fw-bold mb-1 small">ZAYARAT:</p>
                                                 <div>
-                                                  {pkg?.makkah_ziyarat_price ||
-                                                    pkg?.madinah_ziyarat_price
-                                                    ? "YES"
-                                                    : "N/A"}
+                                                      {(pkg?.makkah_ziyarat_selling_price || pkg?.makkah_ziyarat_price || pkg?.madinah_ziyarat_selling_price || pkg?.madinah_ziyarat_price)
+                                                        ? "YES"
+                                                        : "N/A"}
                                                 </div>
                                               </div>
                                               <div className="col-6 col-sm-4 col-md-2 mb-2">
                                                 <p className="fw-bold mb-1 small">FOOD:</p>
                                                 <div>
-                                                  {pkg?.food_price > 0 ? "INCLUDED" : "N/A"}
+                                                  {(pkg?.food_selling_price || pkg?.food_price) > 0 ? "INCLUDED" : "N/A"}
                                                 </div>
                                               </div>
                                               <div className="col-6 col-sm-4 col-md-2 mb-2">
@@ -817,36 +833,57 @@ const UmrahPackage = () => {
                                           <div className="col-6 col-sm-4 col-md-2 mb-3">
                                             <strong className="d-block">PER INFANT</strong>
                                             <div className="fw-bold text-primary">
-                                              Rs. {totalinfant.toLocaleString()}/.
+                                              Rs. {totalInfant.toLocaleString()}/.
                                             </div>
                                             <small className="text-muted">per PEX</small>
                                           </div>
 
                                           <div className="col-12 mt-2">
                                             <small className="text-muted">
-                                              Per Child <span className="text-primary fw-bold">Rs {childPrices}/.</span> discount.
+                                              Per Child <span className="text-primary fw-bold">Rs {childDiscount.toLocaleString()}/.</span> discount.
                                             </small>
                                           </div>
                                         </div>
 
                                         {/* Buttons */}
                                         <div className="d-flex flex-wrap gap-3">
-                                          <button
-                                            className="btn flex-fill text-white"
-                                            style={{ background: "#1B78CE" }}
-                                            onClick={() =>
-                                              navigate(`/packages/edit/${pkg.id}`)
-                                            }
-                                          >
-                                            Edit
-                                          </button>
-                                          <button
-                                            className="btn text-white flex-fill"
-                                            style={{ background: "#1B78CE" }}
-                                            onClick={() => handleDeletePackage(pkg.id)}
-                                          >
-                                            Delete
-                                          </button>
+                                                    {(() => {
+                                                      const pkgOrg = pkg.organization || pkg.organization_id || pkg.inventory_owner_organization_id || null;
+                                                      const isExternal = pkgOrg && String(pkgOrg) !== String(organizationId);
+                                                      const forbiddenMessage = "You do not have permission to modify this package. Linked organizations cannot edit or delete packages. If you need access, please contact the owning organization or an administrator.";
+
+                                                      return (
+                                                        <>
+                                                          <button
+                                                            className="btn flex-fill text-white"
+                                                            style={{ background: "#1B78CE" }}
+                                                            onClick={() => {
+                                                              if (isExternal) {
+                                                                showForbiddenModal(forbiddenMessage);
+                                                                return;
+                                                              }
+                                                              navigate(`/packages/edit/${pkg.id}`);
+                                                            }}
+                                                          >
+                                                            Edit
+                                                          </button>
+
+                                                          <button
+                                                            className="btn text-white flex-fill"
+                                                            style={{ background: "#1B78CE" }}
+                                                            onClick={() => {
+                                                              if (isExternal) {
+                                                                showForbiddenModal(forbiddenMessage);
+                                                                return;
+                                                              }
+                                                              handleDeletePackage(pkg.id);
+                                                            }}
+                                                          >
+                                                            Delete
+                                                          </button>
+                                                        </>
+                                                      );
+                                                    })()}
                                         </div>
                                         <div className="d-flex mt-3 flex-wrap">
                                           <button
@@ -890,7 +927,7 @@ const UmrahPackage = () => {
                                             Umrah Visa:
                                           </h6>
                                           <div className="small text-dark">
-                                            {pkg?.adault_visa_price > 0 ? "INCLUDED" : "N/A"}
+                                            {(pkg?.adault_visa_selling_price || pkg?.adault_visa_price) > 0 ? "INCLUDED" : "N/A"}
                                           </div>
                                         </div>
 
@@ -938,12 +975,24 @@ const UmrahPackage = () => {
                                             </div>
                                           </div>
                                         </div>
+                                        {/* Professional modal shown when action is forbidden */}
+                                        {showModal && (
+                                          <div className="modal-backdrop" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1050 }}>
+                                            <div style={{ width: '520px', background: '#fff', borderRadius: 8, padding: 24, boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
+                                              <h5 style={{ margin: 0, marginBottom: 12 }}>Action Not Allowed</h5>
+                                              <p style={{ color: '#333', marginBottom: 18, lineHeight: 1.4 }}>{modalMessage}</p>
+                                              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
+                                                <button className="btn btn-outline-secondary" onClick={closeModal}>Close</button>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        )}
                                         <div className="mb-1">
                                           <h6 className="fw-bold mb-1 text-muted fst-italic">
                                             ZAYARAT:
                                           </h6>
                                           <div className="small text-dark">
-                                            {pkg?.makkah_ziyarat_price || pkg?.madinah_ziyarat_price
+                                            {(pkg?.makkah_ziyarat_selling_price || pkg?.makkah_ziyarat_price || pkg?.madinah_ziyarat_selling_price || pkg?.madinah_ziyarat_price)
                                               ? "YES"
                                               : "N/A"}
                                           </div>
@@ -954,7 +1003,7 @@ const UmrahPackage = () => {
                                             FOOD:
                                           </h6>
                                           <div className="small text-dark">
-                                            {pkg?.food_price > 0 ? "INCLUDED" : "N/A"}
+                                            {(pkg?.food_selling_price || pkg?.food_price) > 0 ? "INCLUDED" : "N/A"}
                                           </div>
                                         </div>
                                       </div>

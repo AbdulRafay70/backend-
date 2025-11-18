@@ -1458,36 +1458,101 @@ class DiscountSerializer(serializers.ModelSerializer):
             "currency",
             "room_type",
             "per_night_discount",
-            "discounted_hotels",       # POST/PUT ke liye IDs
-            "discounted_hotels_data",  # GET ke liye full objects
+            "discounted_hotels",       # POST/PUT -> IDs
+            "discounted_hotels_data",  # GET -> full objects
         ]
 
 
 class DiscountGroupSerializer(serializers.ModelSerializer):
-    # discounts are accepted on write, but for GET we return a compact object (see to_representation)
-    discounts = DiscountSerializer(many=True, write_only=True, required=False)
+    # Accept a compact `discounts` object (write-only) with specific keys
+    # Accept blank strings for convenience from the frontend and validate/normalize
+    # numeric values in `validate_discounts` (empty string -> None).
+    discounts = serializers.DictField(child=serializers.CharField(allow_blank=True), write_only=True, required=False)
 
-    # allow a more convenient hotel_night_discounts payload shape as requested by the API (write-only)
+    # Expect a list of hotel night discount objects with strict keys
     hotel_night_discounts = serializers.ListField(child=serializers.DictField(), write_only=True, required=False)
 
     class Meta:
         model = DiscountGroup
         fields = ["id", "name", "group_type", "organization", "is_active", "discounts", "hotel_night_discounts"]
 
+    def validate_discounts(self, value):
+        # only allow the two specific keys; accept blank strings and convert
+        # numeric-looking values to Decimal. Return a normalized dict where
+        # missing/blank values become None and numeric values are Decimal.
+        from decimal import Decimal
+
+        allowed = {"group_ticket_discount_amount", "umrah_package_discount_amount"}
+        unknown = set(value.keys()) - allowed
+        if unknown:
+            raise serializers.ValidationError(f"Unknown keys in discounts object: {unknown}")
+
+        normalized = {}
+        for k in allowed:
+            raw = value.get(k, None)
+            # treat empty string as missing
+            if raw is None or (isinstance(raw, str) and raw.strip() == ""):
+                normalized[k] = None
+                continue
+            # validate numeric
+            try:
+                normalized[k] = Decimal(str(raw))
+            except Exception:
+                raise serializers.ValidationError({k: f"A valid number is required for {k}."})
+
+        return normalized
+
+    def validate_hotel_night_discounts(self, value):
+        # Ensure each entry contains only allowed keys
+        allowed_keys = {
+            "quint_per_night_discount",
+            "quad_per_night_discount",
+            "triple_per_night_discount",
+            "double_per_night_discount",
+            "sharing_per_night_discount",
+            "other_per_night_discount",
+            "discounted_hotels",
+        }
+        for entry in value:
+            if not isinstance(entry, dict):
+                raise serializers.ValidationError("Each hotel_night_discounts entry must be an object")
+            unknown = set(entry.keys()) - allowed_keys
+            if unknown:
+                raise serializers.ValidationError(f"Unknown keys in hotel_night_discounts entry: {unknown}")
+        return value
+
     def create(self, validated_data):
-        discounts_data = validated_data.pop("discounts", [])
-        hotel_night_discounts = validated_data.pop("hotel_night_discounts", [])
+        discounts_obj = validated_data.pop("discounts", {}) or {}
+        hotel_night_discounts = validated_data.pop("hotel_night_discounts", []) or []
         discount_group = DiscountGroup.objects.create(**validated_data)
 
-        # create explicit discounts passed in the `discounts` list
-        for discount_data in discounts_data:
-            hotels = discount_data.pop("discounted_hotels", [])
-            discount = Discount.objects.create(discount_group=discount_group, **discount_data)
-            if hotels:
-                discount.discounted_hotels.set(hotels)
+        # create group-level discounts from the compact `discounts` object
+        # expected keys: group_ticket_discount_amount, umrah_package_discount_amount
+        g_val = discounts_obj.get("group_ticket_discount_amount")
+        if g_val not in (None, ""):
+            try:
+                Discount.objects.create(
+                    discount_group=discount_group,
+                    organization=discount_group.organization,
+                    things="group_ticket",
+                    group_ticket_discount_amount=g_val,
+                )
+            except Exception:
+                pass
 
-        # handle hotel_night_discounts convenience format: each entry may contain per-room-type discounts + discounted_hotels list
-        # expected keys: quint_per_night_discount, quad_per_night_discount, triple_per_night_discount, double_per_night_discount, sharing_per_night_discount, other_per_night_discount, discounted_hotels
+        u_val = discounts_obj.get("umrah_package_discount_amount")
+        if u_val not in (None, ""):
+            try:
+                Discount.objects.create(
+                    discount_group=discount_group,
+                    organization=discount_group.organization,
+                    things="umrah_package",
+                    umrah_package_discount_amount=u_val,
+                )
+            except Exception:
+                pass
+
+        # handle hotel_night_discounts convenience format
         room_map = {
             "quint_per_night_discount": "quint",
             "quad_per_night_discount": "quad",
@@ -1498,40 +1563,212 @@ class DiscountGroupSerializer(serializers.ModelSerializer):
         }
 
         for entry in hotel_night_discounts:
-            hotels = entry.get("discounted_hotels", [])
-            for key, room_type in room_map.items():
-                val = entry.get(key)
-                if val in (None, "", []):
+            # normalize keys and ensure discounted_hotels is a list of ints
+            hotels_raw = entry.get("discounted_hotels", []) or []
+            hotels = []
+            for h in hotels_raw:
+                try:
+                    hotels.append(int(h))
+                except Exception:
                     continue
-                # create a Discount per room type
-                disc = Discount.objects.create(
-                    discount_group=discount_group,
-                    organization=discount_group.organization,
-                    things="hotel",
-                    room_type=room_type,
-                    per_night_discount=val,
-                )
-                if hotels:
-                    disc.discounted_hotels.set(hotels)
+
+            # Ensure all room keys exist (normalize empty strings -> None)
+            normalized = {}
+            for rk in room_map.keys():
+                v = entry.get(rk, None)
+                if isinstance(v, str) and v.strip() == "":
+                    v = None
+                normalized[rk] = v
+
+            # For each present room-type value, create a Discount only if an
+            # equivalent discount (same room_type and same hotel set) does not already exist.
+            for key, room_type in room_map.items():
+                val = normalized.get(key)
+                if val in (None, [], ""):
+                    continue
+
+                # Check for existing discount with same group, room_type and identical hotel set
+                existing_found = False
+                try:
+                    candidates = Discount.objects.filter(discount_group=discount_group, things="hotel", room_type=room_type)
+                    target_set = set(hotels)
+                    for c in candidates:
+                        try:
+                            c_ids = set(c.discounted_hotels.values_list('id', flat=True))
+                        except Exception:
+                            c_ids = set()
+                        if c_ids == target_set:
+                            # if per_night_discount already the same, consider it duplicate
+                            try:
+                                if (c.per_night_discount is None and val is None) or (str(c.per_night_discount) == str(val)):
+                                    existing_found = True
+                                    break
+                            except Exception:
+                                existing_found = True
+                                break
+                except Exception:
+                    existing_found = False
+
+                if existing_found:
+                    continue
+
+                # create new discount
+                try:
+                    disc = Discount.objects.create(
+                        discount_group=discount_group,
+                        organization=discount_group.organization,
+                        things="hotel",
+                        room_type=room_type,
+                        per_night_discount=val,
+                    )
+                    if hotels:
+                        disc.discounted_hotels.set(hotels)
+                except Exception:
+                    # skip invalid entries but continue
+                    continue
 
         return discount_group
 
+    def update(self, instance, validated_data):
+        # Pop write-only convenience fields so DRF doesn't try to assign them
+        discounts_obj = validated_data.pop("discounts", None) or {}
+        hotel_night_discounts = validated_data.pop("hotel_night_discounts", None) or []
+
+        # Perform the normal model update first
+        instance = super().update(instance, validated_data)
+
+        # Process group-level discounts (update existing or create)
+        try:
+            if discounts_obj:
+                # group ticket
+                g_val = discounts_obj.get("group_ticket_discount_amount")
+                if g_val not in (None, ""):
+                    try:
+                        g_disc = instance.discounts.filter(things="group_ticket").first()
+                        if g_disc:
+                            g_disc.group_ticket_discount_amount = g_val
+                            g_disc.save()
+                        else:
+                            Discount.objects.create(
+                                discount_group=instance,
+                                organization=instance.organization,
+                                things="group_ticket",
+                                group_ticket_discount_amount=g_val,
+                            )
+                    except Exception:
+                        pass
+
+                # umrah package
+                u_val = discounts_obj.get("umrah_package_discount_amount")
+                if u_val not in (None, ""):
+                    try:
+                        u_disc = instance.discounts.filter(things="umrah_package").first()
+                        if u_disc:
+                            u_disc.umrah_package_discount_amount = u_val
+                            u_disc.save()
+                        else:
+                            Discount.objects.create(
+                                discount_group=instance,
+                                organization=instance.organization,
+                                things="umrah_package",
+                                umrah_package_discount_amount=u_val,
+                            )
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+
+        # Handle hotel_night_discounts entries similarly to create()
+        room_map = {
+            "quint_per_night_discount": "quint",
+            "quad_per_night_discount": "quad",
+            "triple_per_night_discount": "triple",
+            "double_per_night_discount": "double",
+            "sharing_per_night_discount": "sharing",
+            "other_per_night_discount": "all",
+        }
+
+        for entry in hotel_night_discounts:
+            hotels_raw = entry.get("discounted_hotels", []) or []
+            hotels = []
+            for h in hotels_raw:
+                try:
+                    hotels.append(int(h))
+                except Exception:
+                    continue
+
+            normalized = {}
+            for rk in room_map.keys():
+                v = entry.get(rk, None)
+                if isinstance(v, str) and v.strip() == "":
+                    v = None
+                normalized[rk] = v
+
+            for key, room_type in room_map.items():
+                val = normalized.get(key)
+                if val in (None, [], ""):
+                    continue
+
+                existing_found = False
+                try:
+                    candidates = Discount.objects.filter(discount_group=instance, things="hotel", room_type=room_type)
+                    target_set = set(hotels)
+                    for c in candidates:
+                        try:
+                            c_ids = set(c.discounted_hotels.values_list('id', flat=True))
+                        except Exception:
+                            c_ids = set()
+                        if c_ids == target_set:
+                            try:
+                                if (c.per_night_discount is None and val is None) or (str(c.per_night_discount) == str(val)):
+                                    existing_found = True
+                                    break
+                            except Exception:
+                                existing_found = True
+                                break
+                except Exception:
+                    existing_found = False
+
+                if existing_found:
+                    continue
+
+                try:
+                    disc = Discount.objects.create(
+                        discount_group=instance,
+                        organization=instance.organization,
+                        things="hotel",
+                        room_type=room_type,
+                        per_night_discount=val,
+                    )
+                    if hotels:
+                        disc.discounted_hotels.set(hotels)
+                except Exception:
+                    continue
+
+        return instance
+
     def to_representation(self, instance):
-        # Build discounts object (single values)
+        # Build discounts object (single numeric values or null)
         group_ticket_disc = instance.discounts.filter(things="group_ticket").first()
         umrah_disc = instance.discounts.filter(things="umrah_package").first()
 
+        def _fmt_num_str(val):
+            # Return empty string for missing values, otherwise return a string
+            if val is None or val == "":
+                return ""
+            try:
+                dec = Decimal(str(val))
+            except Exception:
+                return str(val)
+            # integer value -> no decimal point
+            if dec == dec.to_integral():
+                return str(int(dec))
+            # normalized string without trailing zeros
+            return format(dec.normalize(), 'f')
+
         discounts_obj = {
-            "group_ticket_discount_amount": (
-                str(group_ticket_disc.group_ticket_discount_amount)
-                if group_ticket_disc and group_ticket_disc.group_ticket_discount_amount is not None
-                else ""
-            ),
-            "umrah_package_discount_amount": (
-                str(umrah_disc.umrah_package_discount_amount)
-                if umrah_disc and umrah_disc.umrah_package_discount_amount is not None
-                else ""
-            ),
+            "group_ticket_discount_amount": _fmt_num_str(getattr(group_ticket_disc, 'group_ticket_discount_amount', None)),
+            "umrah_package_discount_amount": _fmt_num_str(getattr(umrah_disc, 'umrah_package_discount_amount', None)),
         }
 
         # Build hotel_night_discounts list by grouping hotel Discounts by the set of hotel IDs
@@ -1545,20 +1782,6 @@ class DiscountGroupSerializer(serializers.ModelSerializer):
             "sharing": "sharing_per_night_discount",
             "all": "other_per_night_discount",
         }
-
-        # helper to format hotel per-night discounts: drop ".00" for whole numbers
-        def _fmt_hotel_amount(val):
-            if val is None:
-                return ""
-            try:
-                dec = Decimal(str(val))
-            except Exception:
-                return str(val)
-            # integer value → return without decimal part
-            if dec == dec.to_integral():
-                return str(int(dec))
-            # otherwise remove trailing zeros
-            return format(dec.normalize(), 'f')
 
         for disc in hotel_discs:
             hotel_ids = tuple(sorted([h.id for h in disc.discounted_hotels.all()]))
@@ -1575,9 +1798,8 @@ class DiscountGroupSerializer(serializers.ModelSerializer):
 
             key = room_key_map.get(disc.room_type)
             if key:
-                grouped[hotel_ids][key] = _fmt_hotel_amount(disc.per_night_discount)
+                grouped[hotel_ids][key] = _fmt_num_str(disc.per_night_discount)
 
-        # Return an explicit minimal representation so no extra keys are included
         return {
             "id": instance.id,
             "name": instance.name,

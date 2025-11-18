@@ -2,7 +2,7 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
-from drf_spectacular.utils import extend_schema, OpenApiParameter, extend_schema_view
+from drf_spectacular.utils import extend_schema, OpenApiParameter, extend_schema_view, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
 
 from .models import Ticket, Hotels,HotelRooms
@@ -10,9 +10,6 @@ from booking.models import AllowedReseller
 from .serializers import TicketSerializer, TicketListSerializer, HotelsSerializer, HotelRoomsSerializer
 from django.utils import timezone
 from users.models import GroupExtension
-from django.db.models.deletion import ProtectedError
-from rest_framework.response import Response
-from rest_framework import status
 
 
 @extend_schema_view(
@@ -40,6 +37,67 @@ from rest_framework import status
             ),
         ],
         description='Get detailed information about a specific ticket'
+    ),
+    create=extend_schema(
+        request=TicketSerializer,
+        responses=TicketSerializer,
+        description='Create a ticket and return the created ticket representation',
+        examples=[
+            OpenApiExample(
+                'Ticket create example',
+                value={
+                    "trip_details": [
+                        {
+                            "flight_number": "string",
+                            "departure_date_time": "2025-11-12T14:17:44.827Z",
+                            "arrival_date_time": "2025-11-12T14:17:44.827Z",
+                            "departure_city": 0,
+                            "arrival_city": 0
+                        }
+                    ],
+                    "stopover_details": [
+                        {
+                            "stopover_duration": "string",
+                            "trip_type": "string",
+                            "stopover_city": 0
+                        }
+                    ],
+                    "adult_fare": 0,
+                    "child_fare": 0,
+                    "infant_fare": 0,
+                    "baggage_weight": 0,
+                    "baggage_pieces": 2147483647,
+                    "is_refundable": True,
+                    "is_meal_included": True,
+                    "pnr": "string",
+                    "status": "available",
+                    "total_seats": 2147483647,
+                    "left_seats": 2147483647,
+                    "booked_tickets": 2147483647,
+                    "confirmed_tickets": 2147483647,
+                    "adult_purchase_price": 0,
+                    "child_purchase_price": 0,
+                    "infant_purchase_price": 0,
+                    "is_umrah_seat": True,
+                    "trip_type": "string",
+                    "owner_organization_id": 2147483647,
+                    "reselling_allowed": True,
+                    "branch": 0,
+                    "airline": 0,
+                },
+                request_only=True,
+            )
+        ]
+    ),
+    update=extend_schema(
+        request=TicketSerializer,
+        responses=TicketSerializer,
+        description='Update a ticket and return the updated ticket representation'
+    ),
+    partial_update=extend_schema(
+        request=TicketSerializer,
+        responses=TicketSerializer,
+        description='Partially update a ticket and return the updated ticket representation'
     ),
 )
 class TicketViewSet(ModelViewSet):
@@ -175,48 +233,6 @@ class TicketViewSet(ModelViewSet):
 class HotelsViewSet(ModelViewSet):
     serializer_class = HotelsSerializer
     permission_classes = [IsAuthenticated]
-
-    def destroy(self, request, *args, **kwargs):
-        # Override destroy to provide a friendly error when deletion is blocked
-        # by protected related objects (e.g., HotelRooms with on_delete=PROTECT)
-        try:
-            # Debug: print requesting user and kwargs for diagnosis
-            try:
-                print(f"DEBUG HotelsViewSet.destroy called by user id={getattr(request.user, 'id', None)} username={getattr(request.user, 'username', None)} kwargs={kwargs}")
-            except Exception:
-                pass
-
-            return super().destroy(request, *args, **kwargs)
-        except ProtectedError as pe:
-            # Return 409 Conflict with a helpful message instead of 500
-            print("DEBUG HotelsViewSet.destroy ProtectedError:", pe)
-            return Response(
-                {
-                    "detail": (
-                        "Cannot delete hotel because related objects exist (rooms, bookings, etc.). "
-                        "Remove or reassign those objects before deleting the hotel."
-                    )
-                },
-                status=status.HTTP_409_CONFLICT,
-            )
-        except Exception as exc:
-            # Log unexpected exception server-side and return 500 with generic message + error (for debugging)
-            try:
-                import traceback
-
-                traceback.print_exc()
-            except Exception:
-                pass
-            # Include exception string in response for debugging; remove in production
-            try:
-                err_msg = str(exc)
-            except Exception:
-                err_msg = "<unrepresentable error>"
-            print(f"DEBUG HotelsViewSet.destroy unexpected exception: {err_msg}")
-            return Response(
-                {"detail": "Internal server error while deleting hotel.", "error": err_msg},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
 
     def get_queryset(self):
         from organization.models import OrganizationLink

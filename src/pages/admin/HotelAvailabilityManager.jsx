@@ -149,7 +149,10 @@ const HotelAvailabilityManager = () => {
   const [initialRoomIds, setInitialRoomIds] = useState([]);
 
   const addRoom = () => {
-    setRooms([...rooms, { floor: "", room_no: "", room_type: "double", capacity: 2, status: "available", details: [] }]);
+    // Choose a default room_type that is not already used in other rooms when possible
+    const used = new Set(rooms.map(r => r.room_type));
+    const defaultRoomType = (roomTypes.find(rt => !used.has(rt.value)) || roomTypes[0]).value;
+    setRooms([...rooms, { floor: "", room_no: "", room_type: defaultRoomType, capacity: (roomTypes.find(rt => rt.value === defaultRoomType)?.capacity || 2), status: "available", details: [] }]);
   };
 
   const removeRoom = (index) => {
@@ -739,16 +742,40 @@ const HotelAvailabilityManager = () => {
       // Only owners may edit hotel details; linked orgs (resellers) cannot.
       const canEdit = isOwner;
 
-      // Prepare prices payload; include prices only for owners
-      const pricesPayload = (priceSections || []).map(p => ({
+      // Prepare prices payload; include base prices and any bed-specific prices so edits persist all entries
+      const pricesPayload = (priceSections || []).flatMap(p => {
+        const sectionStart = p.start_date || null;
+        const sectionEnd = p.end_date || null;
+        const entries = [];
+
+        // Base section price (if provided)
+        entries.push({
           id: p.id || undefined,
-          start_date: p.start_date || null,
-          end_date: p.end_date || null,
+          start_date: sectionStart,
+          end_date: sectionEnd,
           room_type: p.room_type,
           price: parseFloat(p.price) || 0,
           purchase_price: parseFloat(p.purchase_price) || 0,
           profit: Number(((parseFloat(p.price) || 0) - (parseFloat(p.purchase_price) || 0)).toFixed(2)),
-      }));
+        });
+
+        // Any bed-specific prices defined for this section
+        if (Array.isArray(p.bed_prices)) {
+          p.bed_prices.forEach(bp => {
+            entries.push({
+              id: bp.id || undefined,
+              start_date: sectionStart,
+              end_date: sectionEnd,
+              room_type: bp.type || p.room_type,
+              price: parseFloat(bp.price) || 0,
+              purchase_price: parseFloat(bp.purchase_price) || 0,
+              profit: Number(((parseFloat(bp.price) || 0) - (parseFloat(bp.purchase_price) || 0)).toFixed(2)),
+            });
+          });
+        }
+
+        return entries;
+      });
 
       if (!canEdit) {
         // Block updates when not owner
@@ -1518,7 +1545,8 @@ const HotelAvailabilityManager = () => {
                       <th style={{ minWidth: "120px" }}>City</th>
                       <th style={{ minWidth: "200px" }}>Address</th>
                       <th style={{ minWidth: "100px" }}>Category</th>
-                      <th style={{ minWidth: "100px" }}>Distance / Walk</th>
+                      <th style={{ minWidth: "100px" }}>Distance (KM)</th>
+                      <th style={{ minWidth: "110px" }}>Walk Time (min)</th>
                       <th style={{ minWidth: "120px" }}>Contact</th>
                       <th style={{ minWidth: "100px" }}>Status</th>
                       <th style={{ minWidth: "150px" }}>Availability</th>
@@ -1528,13 +1556,13 @@ const HotelAvailabilityManager = () => {
                   <tbody>
                     {loading ? (
                       <tr>
-                        <td colSpan="9" className="text-center py-4">
+                        <td colSpan="10" className="text-center py-4">
                           <Spinner animation="border" variant="primary" />
                         </td>
                       </tr>
                     ) : filteredHotels.length === 0 ? (
                       <tr>
-                        <td colSpan="9" className="text-center py-4">
+                        <td colSpan="10" className="text-center py-4">
                           <AlertCircle size={48} className="text-muted mb-3" />
                           <p className="text-muted">No hotels found</p>
                         </td>
@@ -1565,7 +1593,14 @@ const HotelAvailabilityManager = () => {
                           <td>{getCategoryBadge(hotel.category)}</td>
                           <td>
                             {hotel.distance ? (
-                              <span>{String(hotel.distance)} km{hotel.walking_time ? ` (${hotel.walking_time} min walk)` : ""}</span>
+                              <span>{String(hotel.distance)} km</span>
+                            ) : (
+                              "N/A"
+                            )}
+                          </td>
+                          <td>
+                            {hotel.walking_time || hotel.walking_time === 0 ? (
+                              <span>{String(hotel.walking_time)} min</span>
                             ) : (
                               "N/A"
                             )}
@@ -1984,8 +2019,15 @@ const HotelAvailabilityManager = () => {
                             <Form.Control placeholder="Room No" value={r.room_no} onChange={(e) => { const copy = [...rooms]; copy[ri].room_no = e.target.value; setRooms(copy); }} />
                           </Col>
                           <Col md={3}>
-                            <Form.Select value={r.room_type} onChange={(e) => { const copy = [...rooms]; copy[ri].room_type = e.target.value; setRooms(copy); }}>
-                              {roomTypes.map(rt => <option key={rt.value} value={rt.value}>{rt.label}</option>)}
+                            <Form.Select value={r.room_type} onChange={(e) => { const copy = [...rooms]; const newType = e.target.value; copy[ri].room_type = newType; const found = roomTypes.find(rt => rt.value === newType); if (found) copy[ri].capacity = found.capacity; setRooms(copy); }}>
+                              {roomTypes
+                                .filter(rt => {
+                                  // allow the current room's selected type to remain selectable
+                                  if (rt.value === r.room_type) return true;
+                                  // hide types already selected by other rooms
+                                  return !rooms.some((other, idx) => idx !== ri && other.room_type === rt.value);
+                                })
+                                .map(rt => <option key={rt.value} value={rt.value}>{rt.label}</option>)}
                             </Form.Select>
                           </Col>
                           <Col md={2}>
@@ -2409,8 +2451,13 @@ const HotelAvailabilityManager = () => {
                             <Form.Control placeholder="Room No" value={r.room_no} onChange={(e) => { const copy = [...rooms]; copy[ri].room_no = e.target.value; setRooms(copy); }} />
                           </Col>
                           <Col md={3}>
-                            <Form.Select value={r.room_type} onChange={(e) => { const copy = [...rooms]; copy[ri].room_type = e.target.value; setRooms(copy); }}>
-                              {roomTypes.map(rt => <option key={rt.value} value={rt.value}>{rt.label}</option>)}
+                            <Form.Select value={r.room_type} onChange={(e) => { const copy = [...rooms]; const newType = e.target.value; copy[ri].room_type = newType; const found = roomTypes.find(rt => rt.value === newType); if (found) copy[ri].capacity = found.capacity; setRooms(copy); }}>
+                              {roomTypes
+                                .filter(rt => {
+                                  if (rt.value === r.room_type) return true;
+                                  return !rooms.some((other, idx) => idx !== ri && other.room_type === rt.value);
+                                })
+                                .map(rt => <option key={rt.value} value={rt.value}>{rt.label}</option>)}
                             </Form.Select>
                           </Col>
                           <Col md={2}>
