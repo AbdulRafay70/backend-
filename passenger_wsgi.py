@@ -1,19 +1,33 @@
 import os
 import sys
 
-import django.core.handlers.wsgi
+# ---------------- Project paths ----------------
+PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, PROJECT_DIR)
+
+# ---------------- Activate virtual environment ----------------
+VENV_PYTHON = '/home/saeraqnj/virtualenv/api.saer.pk/3.10/bin/python'
+VENV_ACTIVATE = '/home/saeraqnj/virtualenv/api.saer.pk/3.10/bin/activate_this.py'
+
+if os.path.exists(VENV_ACTIVATE):
+    with open(VENV_ACTIVATE) as f:
+        exec(f.read(), dict(__file__=VENV_ACTIVATE))
+else:
+    print("Warning: virtual environment not found at", VENV_ACTIVATE)
+
+# ---------------- Django settings ----------------
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'configuration.settings')
+
+# ---------------- WSGI Application ----------------
 from django.core.wsgi import get_wsgi_application
+application = get_wsgi_application()
 
-# Set up paths and environment variables
-sys.path.append(os.getcwd())
-os.environ['DJANGO_SETTINGS_MODULE'] = 'configuration.settings' 
-
-# Set script name for the PATH_INFO fix below
+# ---------------- Passenger PATH_INFO Fix ----------------
 SCRIPT_NAME = os.getcwd()
 
 class PassengerPathInfoFix(object):
     """
-        Sets PATH_INFO from REQUEST_URI because Passenger doesn't provide it.
+    Sets PATH_INFO from REQUEST_URI because Passenger doesn't provide it.
     """
     def __init__(self, app):
         self.app = app
@@ -27,6 +41,5 @@ class PassengerPathInfoFix(object):
         environ['PATH_INFO'] = request_uri[offset:].split('?', 1)[0]
         return self.app(environ, start_response)
 
-# Set the application
-application = get_wsgi_application()
+# Wrap WSGI app
 application = PassengerPathInfoFix(application)
