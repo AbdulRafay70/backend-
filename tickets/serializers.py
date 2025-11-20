@@ -147,9 +147,9 @@ class TicketSerializer(serializers.ModelSerializer):
         # organization may be provided as an object or an id; prefer explicit owner fields if present
         org_val = validated_data.get('organization')
         request = self.context.get('request')
-        # If organization missing from payload, try query param (views often pass ?organization=)
+        # If organization missing from payload, try query param (views often pass ?owner_organization=)
         if not org_val and request:
-            qorg = request.query_params.get('organization') if request else None
+            qorg = request.query_params.get('owner_organization') if request else None
             if qorg:
                 try:
                     validated_data['organization'] = int(qorg)
@@ -251,9 +251,33 @@ class TicketSerializer(serializers.ModelSerializer):
 
 
 class HotelPricesSerializer(serializers.ModelSerializer):
+    # expose the stored `price` field as `selling_price` in the API schema
+    selling_price = serializers.FloatField(source='price', required=False)
+    # accept incoming legacy `price` key as write-only to support older clients
+    price = serializers.FloatField(write_only=True, required=False)
+
     class Meta:
         model = HotelPrices
-        exclude = ["hotel"]
+        # explicitly list fields so OpenAPI shows `selling_price` instead of `price`
+        fields = ('id', 'start_date', 'end_date', 'room_type', 'selling_price', 'price', 'purchase_price', 'is_sharing_allowed')
+
+
+class HotelCategorySerializer(serializers.ModelSerializer):
+    # make slug optional at the serializer level so clients can POST just a name
+    slug = serializers.CharField(required=False, allow_blank=True)
+
+    class Meta:
+        model = None  # set below after import to avoid circular import during migrations
+        fields = ['id', 'name', 'slug', 'organization', 'created_at']
+
+
+# Resolve HotelCategory model reference for serializer Meta to avoid import-time issues
+try:
+    from .models import HotelCategory
+    HotelCategorySerializer.Meta.model = HotelCategory
+except Exception:
+    # during migrations or import cycles HotelCategory may not be available yet
+    pass
 
 
 class HotelContactDetailsSerializer(serializers.ModelSerializer):
@@ -276,9 +300,27 @@ class HotelsSerializer(serializers.ModelSerializer):
         prices_data = validated_data.pop("prices", [])
         contact_details_data = validated_data.pop("contact_details", [])
         photos = validated_data.pop("photos", [])
+        # Compute walking_distance (meters) from incoming walking_time (minutes) if provided
+        walking_minutes = None
+        if 'walking_time' in validated_data:
+            try:
+                walking_minutes = float(validated_data.pop('walking_time'))
+            except Exception:
+                walking_minutes = None
+        elif 'walking_time_minutes' in validated_data:
+            try:
+                walking_minutes = float(validated_data.pop('walking_time_minutes'))
+            except Exception:
+                walking_minutes = None
+        if walking_minutes is not None:
+            # assume average walking speed = 5 km/h => 5000 m / 60 min = 83.333... m/min
+            validated_data['walking_distance'] = float(walking_minutes) * 83.3333333
         hotel = Hotels.objects.create(**validated_data)
 
         for price in prices_data:
+            # accept incoming `selling_price` from clients and map to DB `price`
+            if 'selling_price' in price and 'price' not in price:
+                price['price'] = price.pop('selling_price')
             HotelPrices.objects.create(hotel=hotel, **price)
         for contact in contact_details_data:
             HotelContactDetails.objects.create(hotel=hotel, **contact)
@@ -287,12 +329,31 @@ class HotelsSerializer(serializers.ModelSerializer):
             # if photos are URLs, store them in caption or treat as external; here we create Photo with caption=URL
             from .models import HotelPhoto
             HotelPhoto.objects.create(hotel=hotel, caption=p)
+        # Ensure walking_distance is saved if provided via validated_data (some DB adapters may need explicit save)
+        if hasattr(hotel, 'walking_distance') and 'walking_distance' in validated_data:
+            hotel.walking_distance = validated_data.get('walking_distance')
+            hotel.save()
         return hotel
 
     def update(self, instance, validated_data):
         prices_data = validated_data.pop("prices", None)
         contact_details_data = validated_data.pop("contact_details", None)
         photos = validated_data.pop("photos", None)
+
+        # If walking_time provided on update, compute walking_distance (meters)
+        walking_minutes = None
+        if 'walking_time' in validated_data:
+            try:
+                walking_minutes = float(validated_data.pop('walking_time'))
+            except Exception:
+                walking_minutes = None
+        elif 'walking_time_minutes' in validated_data:
+            try:
+                walking_minutes = float(validated_data.pop('walking_time_minutes'))
+            except Exception:
+                walking_minutes = None
+        if walking_minutes is not None:
+            validated_data['walking_distance'] = float(walking_minutes) * 83.3333333
 
         # Update main Hotel fields
         for attr, value in validated_data.items():
@@ -301,15 +362,18 @@ class HotelsSerializer(serializers.ModelSerializer):
 
         # Update prices only if provided
         if prices_data is not None:
-            # special rule: rates can only be changed by the owning organization
+            # special rule: rates can only be changed by the owning (owner_organization) organization
+            # Accept either `owner_organization` (preferred) or legacy `organization` query param.
             request = self.context.get("request")
             org_id = None
             if request:
-                org_id = request.query_params.get("organization")
+                org_id = request.query_params.get("owner_organization") or request.query_params.get("organization")
             if org_id is None or str(instance.organization_id) != str(org_id):
-                raise PermissionDenied("Rates can only be changed by the owning organization.")
+                raise PermissionDenied("Rates can only be changed by the owning organization (use owner_organization or organization query param).")
             instance.prices.all().delete()
             for price in prices_data:
+                if 'selling_price' in price and 'price' not in price:
+                    price['price'] = price.pop('selling_price')
                 HotelPrices.objects.create(hotel=instance, **price)
         if contact_details_data is not None:
             instance.contact_details.all().delete()
@@ -322,6 +386,12 @@ class HotelsSerializer(serializers.ModelSerializer):
             for p in photos:
                 HotelPhoto.objects.create(hotel=instance, caption=p)
         return instance
+
+    def validate_category(self, value):
+        # Allow dynamic category values created via HotelCategory API.
+        # The model previously used static choices, but we accept arbitrary
+        # category strings so admin can manage categories dynamically.
+        return value
 
     def get_photos_data(self, obj):
         photos_qs = obj.photos.all() if hasattr(obj, "photos") else []

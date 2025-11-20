@@ -169,12 +169,15 @@ const Hotels = () => {
       const normalize = (city) => city?.toString().trim().toLowerCase() || "";
 
       // Filter hotels by city
-      const makkah = allHotels.filter((hotel) => normalize(hotel.city) === "makkah");
-      const madinah = allHotels.filter((hotel) => normalize(hotel.city) === "madina");
+      // Normalize price objects to ensure `price` exists (fallback to `selling_price`)
+      const normalizedAll = (allHotels || []).map(h => ({ ...h, prices: Array.isArray(h.prices) ? h.prices.map(p => ({ ...p, price: (p.price ?? p.selling_price ?? '') })) : h.prices }));
+
+      const makkah = normalizedAll.filter((hotel) => normalize(hotel.city) === "makkah");
+      const madinah = normalizedAll.filter((hotel) => normalize(hotel.city) === "madina");
 
       setMakkahHotels(makkah);
       setMadinahHotels(madinah);
-      setHotels(allHotels);
+      setHotels(normalizedAll);
       setTotalRecords(allHotels.length);
     } catch (error) {
       console.error("Error fetching hotels:", error);
@@ -374,7 +377,7 @@ const Hotels = () => {
                             <td rowSpan={sortedGroups.length}>
                               <strong>{hotel.name}</strong>
                               <br />
-                              <small className="text-muted">{hotel.distance}M</small>
+                              <small className="text-muted">{hotel.distance ? `${Math.round(Number(hotel.distance) * 1000)} m` : 'N/A'}</small>
                               {hotel.orgName ? (
                                 <div>
                                   <small className="text-muted">Org: {hotel.orgName}</small>

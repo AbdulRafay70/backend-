@@ -426,6 +426,11 @@ class UmrahPackage(models.Model):
     # Transport (selling/purchase)
     transport_selling_price = models.FloatField(default=0)
     transport_purchase_price = models.FloatField(default=0)
+
+    # Selected option IDs (persist which dropdown option was chosen)
+    food_price_id = models.IntegerField(blank=True, null=True)
+    makkah_ziyarat_id = models.IntegerField(blank=True, null=True)
+    madinah_ziyarat_id = models.IntegerField(blank=True, null=True)
     
     # Room Type Activation
     is_active = models.BooleanField(default=True)
@@ -473,13 +478,9 @@ class UmrahPackage(models.Model):
     branch_commission_infant = models.FloatField(default=0, blank=True, null=True)
     
     # Pricing Rules
-    markup_percent = models.DecimalField(
+    profit_percent = models.DecimalField(
         max_digits=5, decimal_places=2, default=0,
-        help_text="Markup percentage on base price"
-    )
-    tax_rate = models.DecimalField(
-        max_digits=5, decimal_places=2, default=0,
-        help_text="Tax percentage"
+        help_text="Profit percentage on base price"
     )
     # discount_link removed temporarily - add when promotion_center.Promotion model is created
     # discount_link = models.ForeignKey(
@@ -530,13 +531,9 @@ class UmrahPackage(models.Model):
             total += children * float(self.child_service_charge or 0)
             total += infants * float(self.infant_service_charge or 0)
         
-        # Add markup
-        if self.markup_percent:
-            total += total * (float(self.markup_percent) / 100)
-        
-        # Add tax
-        if self.tax_rate:
-            total += total * (float(self.tax_rate) / 100)
+        # Add profit (previously called markup_percent)
+        if getattr(self, 'profit_percent', None):
+            total += total * (float(self.profit_percent) / 100)
         
         return round(total, 2)
 

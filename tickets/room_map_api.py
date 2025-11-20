@@ -49,18 +49,18 @@ class RoomMapManagementAPIView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUser]
     
     def post(self, request):
-        # Check organization access
-        organization_id = request.query_params.get('organization')
-        if not organization_id:
+        # Check owner organization access
+        owner_org_id = request.query_params.get('owner_organization')
+        if not owner_org_id:
             return Response({
-                'error': 'Missing organization parameter',
-                'detail': 'organization query parameter is required'
+                'error': 'Missing owner_organization parameter',
+                'detail': 'owner_organization query parameter is required'
             }, status=status.HTTP_400_BAD_REQUEST)
         
         # Validate user has access to this organization (unless superuser)
         if not request.user.is_superuser:
             user_organizations = request.user.organizations.values_list('id', flat=True)
-            if int(organization_id) not in user_organizations:
+            if int(owner_org_id) not in user_organizations:
                 raise PermissionDenied("You don't have access to this organization.")
 
         serializer = RoomMapUploadSerializer(data=request.data)
@@ -76,8 +76,8 @@ class RoomMapManagementAPIView(APIView):
         floor_number = validated_data['floor_number']
         map_image = validated_data['map_image']
         
-        # Validate that the hotel belongs to the user's organization
-        if hotel.organization_id != int(organization_id):
+        # Validate that the hotel belongs to the user's owner organization
+        if hotel.organization_id != int(owner_org_id):
             return Response({
                 'error': 'Access denied',
                 'detail': 'Hotel does not belong to your organization'
@@ -122,18 +122,18 @@ class RoomMapManagementAPIView(APIView):
         
         Retrieve the floor map URL for a specific floor.
         """
-        # Check organization access
-        organization_id = request.query_params.get('organization')
-        if not organization_id:
+        # Check owner organization access
+        owner_org_id = request.query_params.get('owner_organization')
+        if not owner_org_id:
             return Response({
-                'error': 'Missing organization parameter',
-                'detail': 'organization query parameter is required'
+                'error': 'Missing owner_organization parameter',
+                'detail': 'owner_organization query parameter is required'
             }, status=status.HTTP_400_BAD_REQUEST)
         
         # Validate user has access to this organization (unless superuser)
         if not request.user.is_superuser:
             user_organizations = request.user.organizations.values_list('id', flat=True)
-            if int(organization_id) not in user_organizations:
+            if int(owner_org_id) not in user_organizations:
                 raise PermissionDenied("You don't have access to this organization.")
 
         hotel_id = request.query_params.get('hotel_id')
@@ -146,7 +146,7 @@ class RoomMapManagementAPIView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
         
         try:
-            hotel = Hotels.objects.get(id=hotel_id, organization_id=organization_id)
+            hotel = Hotels.objects.get(id=hotel_id, organization_id=owner_org_id)
         except Hotels.DoesNotExist:
             return Response({
                 'error': 'Hotel not found or not accessible for this organization'
@@ -191,18 +191,18 @@ class RoomMapManagementAPIView(APIView):
         
         Delete a floor map.
         """
-        # Check organization access
-        organization_id = request.query_params.get('organization')
-        if not organization_id:
+        # Check owner organization access
+        owner_org_id = request.query_params.get('owner_organization')
+        if not owner_org_id:
             return Response({
-                'error': 'Missing organization parameter',
-                'detail': 'organization query parameter is required'
+                'error': 'Missing owner_organization parameter',
+                'detail': 'owner_organization query parameter is required'
             }, status=status.HTTP_400_BAD_REQUEST)
         
         # Validate user has access to this organization (unless superuser)
         if not request.user.is_superuser:
             user_organizations = request.user.organizations.values_list('id', flat=True)
-            if int(organization_id) not in user_organizations:
+            if int(owner_org_id) not in user_organizations:
                 raise PermissionDenied("You don't have access to this organization.")
 
         hotel_id = request.query_params.get('hotel_id')
@@ -215,7 +215,7 @@ class RoomMapManagementAPIView(APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
         
         try:
-            hotel = Hotels.objects.get(id=hotel_id, organization_id=organization_id)
+            hotel = Hotels.objects.get(id=hotel_id, organization_id=owner_org_id)
         except Hotels.DoesNotExist:
             return Response({
                 'error': 'Hotel not found or not accessible for this organization'

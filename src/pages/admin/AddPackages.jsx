@@ -82,75 +82,73 @@ const FlightModal = ({
                 </tr>
               </thead>
               <tbody>
-                {flights.map((flight) => {
-                  const departureTrip = flight.trip_details?.find(
-                    (t) => ((t && t.trip_type) ? String(t.trip_type).toLowerCase() : "") === "departure"
-                  );
-                  const returnTrip = flight.trip_details?.find(
-                    (t) => ((t && t.trip_type) ? String(t.trip_type).toLowerCase() : "") === "return"
-                  );
+                {flights.map((flightRaw) => {
+                  // Support different API shapes: some endpoints return a wrapper
+                  // object with `ticket_info` or `ticket`, others return the ticket
+                  // fields at top-level. Normalize to `ticket` for rendering.
+                  const ticket = flightRaw.ticket_info ?? flightRaw.ticket ?? flightRaw;
 
+                  // Prefer explicit trip_type markers, but fall back to the
+                  // first trip_details element when trip_type is not provided
+                  // (many ticket objects only include an array of segments).
+                  const departureTrip =
+                    ticket.trip_details?.find((t) => ((t && t.trip_type) ? String(t.trip_type).toLowerCase() : "") === "departure")
+                    || (ticket.trip_details && ticket.trip_details.length > 0 ? ticket.trip_details[0] : undefined);
+                  const returnTrip =
+                    ticket.trip_details?.find((t) => ((t && t.trip_type) ? String(t.trip_type).toLowerCase() : "") === "return")
+                    || undefined;
+
+                  const safeNumber = (v) => {
+                    const n = Number(v);
+                    return Number.isFinite(n) ? n : 0;
+                  };
+
+                  const formatPrice = (v) => {
+                    try {
+                      return safeNumber(v).toLocaleString();
+                    } catch (e) {
+                      return String(v || "0");
+                    }
+                  };
+
+                  const airlineName = airlinesMap[ticket.airline ?? ticket.airline_id]?.name || "N/A";
+                  const pnr = ticket.pnr ?? ticket.ticket_pnr ?? "-";
+                  const seats = ticket.left_seats ?? flightRaw.left_seats ?? "- ";
 
                   return (
-                    <tr key={flight.id}>
-                      <td>{airlinesMap[flight.airline]?.name || "N/A"}</td>
-                      <td>{flight.pnr || "N/A"}</td>
+                    <tr key={ticket.id ?? flightRaw.id}>
+                      <td>{airlineName}</td>
+                      <td>{pnr}</td>
                       <td>
-                        {returnTrip ? "Round Trip" : "One Way"}
-                        {flight.is_umrah_seat && " (Umrah)"}
+                        {ticket.trip_type ? ticket.trip_type : (returnTrip ? "Round Trip" : "One Way")}
+                        {ticket.is_umrah_seat && " (Umrah)"}
                       </td>
                       <td>
                         {departureTrip?.departure_date_time
-                          ? new Date(
-                            departureTrip.departure_date_time
-                          ).toLocaleString("en-GB", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                          : "N/A"}
+                          ? new Date(departureTrip.departure_date_time).toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
+                          : departureTrip?.departure_date || departureTrip?.departure_date_time || "N/A"}
                       </td>
                       <td>
                         {returnTrip?.arrival_date_time
-                          ? new Date(
-                            returnTrip.arrival_date_time
-                          ).toLocaleString("en-GB", {
-                            day: "2-digit",
-                            month: "short",
-                            year: "numeric",
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })
-                          : "N/A"}
+                          ? new Date(returnTrip.arrival_date_time).toLocaleString("en-GB", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })
+                          : returnTrip?.arrival_date || returnTrip?.arrival_date_time || "-"}
                       </td>
                       <td>
                         {departureTrip?.departure_city
-                          ? citiesMap[departureTrip.departure_city]?.code ||
-                          "N/A"
+                          ? (citiesMap[departureTrip.departure_city]?.code || citiesMap[departureTrip.departure_city]?.name || "-")
                           : "N/A"}
                       </td>
                       <td>
                         {departureTrip?.arrival_city
-                          ? citiesMap[departureTrip.arrival_city]?.code || "N/A"
-                          : "N/A"}
+                          ? (citiesMap[departureTrip.arrival_city]?.code || citiesMap[departureTrip.arrival_city]?.name || "-")
+                          : "-"}
                       </td>
-                      <td className="text-success fw-bold">
-                        Rs. {flight.adult_price?.toLocaleString() || "0"}
-                      </td>
-                      <td className="text-success fw-bold">
-                        Rs. {flight.child_price?.toLocaleString() || "0"}
-                      </td>
-                      <td className="text-success fw-bold">
-                        Rs. {flight.infant_price?.toLocaleString() || "0"}
-                      </td>
-                      <td>{flight.seats || "N/A"}</td>
+                      <td className="text-success fw-bold">Rs. {formatPrice(ticket.adult_price ?? ticket.adult_fare ?? ticket.adultFare ?? ticket.adult ?? ticket.adault_price ?? 0)}</td>
+                      <td className="text-success fw-bold">Rs. {formatPrice(ticket.child_price ?? ticket.child_fare ?? ticket.childFare ?? ticket.child ?? 0)}</td>
+                      <td className="text-success fw-bold">Rs. {formatPrice(ticket.infant_price ?? ticket.infant_fare ?? ticket.infantFare ?? ticket.infant ?? 0)}</td>
+                      <td>{seats}</td>
                       <td>
-                        <button
-                          className="btn btn-sm btn-primary"
-                          onClick={() => onSelect(flight)}
-                        >
+                        <button className="btn btn-sm btn-primary" onClick={() => onSelect(ticket)}>
                           Select
                         </button>
                       </td>
@@ -416,6 +414,8 @@ const AddPackages = ({ mode = "add" }) => {
 
 
   const [flightNumber, setFlightNumber] = useState("");
+  const [airlineName, setAirlineName] = useState("");
+  const [fromSector, setFromSector] = useState("");
   const [toSector, setToSector] = useState("");
   const [departureDate, setDepartureDate] = useState("");
   const [returnDate, setReturnDate] = useState("");
@@ -553,7 +553,7 @@ const AddPackages = ({ mode = "add" }) => {
   setMadinaZiyaaratSellingPrice(pkgData.madinah_ziyarat_selling_price ?? pkgData.madinah_ziyarat_price ?? 0);
   setMadinaZiyaaratPurchasePrice(pkgData.madinah_ziyarat_purchase_price ?? 0);
   setSelectedMadinaZiyaratId(pkgData.madinah_ziyarat_id ?? "");
-  setTransportSellingPrice(pkgData.transport_selling_price ?? 0);
+  setTransportSellingPrice(pkgData.transport_selling_price ?? pkgData.transport_price ?? 0);
   setTransportPurchasePrice(pkgData.transport_purchase_price ?? 0);
   // Tax rate field removed from form - backend will use default or existing value
 
@@ -561,9 +561,18 @@ const AddPackages = ({ mode = "add" }) => {
     const hotelDetails = pkgData.hotel_details.map((hotel) => ({
       hotelName: hotel.hotel_info?.name || "",
       hotelId: hotel.hotel,
-      checkIn: hotel.check_in_time,
-      nights: hotel.number_of_nights,
-      checkOut: hotel.check_out_time,
+      checkIn: (() => {
+        const d = hotel.check_in_date ?? hotel.check_in_time ?? hotel.check_in ?? hotel.checkIn ?? null;
+        return d ? formatDateForInput(new Date(d)) : "";
+      })(),
+      nights: (() => {
+        const n = hotel.number_of_nights ?? hotel.number_of_nights_count ?? hotel.nights ?? hotel.numberOfNights ?? "";
+        return n !== null && n !== undefined ? (String(n) === "" ? "" : Number(n)) : "";
+      })(),
+      checkOut: (() => {
+        const d = hotel.check_out_date ?? hotel.check_out_time ?? hotel.check_out ?? hotel.checkOut ?? null;
+        return d ? formatDateForInput(new Date(d)) : "";
+      })(),
       // try to populate new selling/purchase fields if backend provides them,
       // fall back to existing single price fields for compatibility
       // Treat a selling price of 0 as "not provided" and fall back to legacy price
@@ -1493,9 +1502,7 @@ const AddPackages = ({ mode = "add" }) => {
   food_price: parseFloat(foodSellingPrice) || 0,
   makkah_ziyarat_price: parseFloat(meccaZiyaaratSellingPrice) || 0,
   madinah_ziyarat_price: parseFloat(madinaZiyaaratSellingPrice) || 0,
-  // Do not send legacy `transport_price` field. Backend will accept
-  // explicit selling/purchase fields: `transport_selling_price` and
-  // `transport_purchase_price` which are added below.
+  transport_price: parseFloat(transportSellingPrice) || 0,
 
   // Explicit selling / purchase fields
   adault_visa_selling_price: parseFloat(adultVisaSellingPrice) || 0,
@@ -1555,6 +1562,13 @@ const AddPackages = ({ mode = "add" }) => {
       };
 
       const token = localStorage.getItem("accessToken");
+
+      if (!token) {
+        // No token: avoid sending unauthenticated requests and guide user to login
+        toast.error("Not authenticated — please log in.");
+        navigate("/login");
+        return;
+      }
 
       // Debug: log package payload to browser console so we can verify which
       // top-level extras and hotel fields are being sent to the API.
@@ -1624,8 +1638,17 @@ const AddPackages = ({ mode = "add" }) => {
         navigate("/packages");
       }
     } catch (error) {
-      console.error("Error saving package:", error);
-      toast.error(error.response?.data?.message || "Failed to save package");
+      console.error("Error saving package:", error, error?.response?.data);
+      const status = error?.response?.status;
+      const serverMsg = error?.response?.data?.message || error?.response?.data?.detail || JSON.stringify(error?.response?.data || {});
+      if (status === 401) {
+        toast.error("Unauthorized (401) — your session may have expired. Please log in again.");
+        // Clear possibly expired token and redirect to login
+        try { localStorage.removeItem("accessToken"); } catch (e) {}
+        navigate("/login");
+      } else {
+        toast.error(serverMsg || `Failed to save package (${status || "error"})`);
+      }
     }
   };
 

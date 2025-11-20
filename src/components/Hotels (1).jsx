@@ -128,7 +128,10 @@ const Hotels = () => {
         total = Array.isArray(list) ? list.length : 0;
       }
 
-      setHotels(list);
+      // Ensure price objects include `price` (fallback to `selling_price`) so UI components
+      // that read `price` continue to work when API returns `selling_price`.
+      const normalized = (list || []).map(h => ({ ...h, prices: Array.isArray(h.prices) ? h.prices.map(p => ({ ...p, price: (p.price ?? p.selling_price ?? '') })) : h.prices }));
+      setHotels(normalized);
       setTotalRecords(total);
 
       // If no organizationId was set but hotels returned and include an organization, adopt it for further calls
@@ -431,7 +434,7 @@ const Hotels = () => {
                             <td rowSpan={sortedGroups.length}>
                               <strong>{hotel.name}</strong>
                               <br />
-                              <small className="text-muted">{hotel.distance}M</small>
+                              <small className="text-muted">{hotel.distance ? `${Math.round(Number(hotel.distance) * 1000)} m` : 'N/A'}</small>
                             </td>
                             <td rowSpan={sortedGroups.length}>{hotel.category}</td>
                             <td rowSpan={sortedGroups.length} style={{ color: "#1B78CE" }}>

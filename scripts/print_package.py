@@ -17,5 +17,4 @@ else:
     print('available_start_date=', pkg.available_start_date)
     print('available_end_date=', pkg.available_end_date)
     print('area_agent_commission_adult=', pkg.area_agent_commission_adult)
-    print('markup_percent=', pkg.markup_percent)
-    print('tax_rate=', pkg.tax_rate)
+    print('profit_percent=', pkg.profit_percent)

@@ -248,6 +248,8 @@ class Hotels(models.Model):
     contact_number = models.CharField(max_length=20, blank=True, null=True)
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='standard')
     distance = models.FloatField(default=0)
+    # Walking distance in meters from reference point (computed from walking time)
+    walking_distance = models.FloatField(default=0, help_text='Walking distance in meters from reference point')
     is_active = models.BooleanField(default=True)
     available_start_date = models.DateField(blank=True, null=True)
     available_end_date = models.DateField(blank=True, null=True)
@@ -261,6 +263,27 @@ class Hotels(models.Model):
         verbose_name = "Hotel"
         verbose_name_plural = "Hotels"
         ordering = ['name']
+
+
+class HotelCategory(models.Model):
+    """
+    Dynamic hotel categories so admins can add/edit/delete categories
+    without needing to change model choice constants.
+    """
+    name = models.CharField(max_length=100, unique=True)
+    slug = models.SlugField(max_length=120, unique=True)
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="hotel_categories", null=True, blank=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Hotel Category"
+        verbose_name_plural = "Hotel Categories"
+        ordering = ["name"]
 
 
 class HotelPrices(models.Model):

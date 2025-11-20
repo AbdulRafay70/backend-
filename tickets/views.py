@@ -5,9 +5,15 @@ from django.db.models import Q
 from drf_spectacular.utils import extend_schema, OpenApiParameter, extend_schema_view, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
 
-from .models import Ticket, Hotels,HotelRooms
+from .models import Ticket, Hotels, HotelRooms, HotelCategory
 from booking.models import AllowedReseller
-from .serializers import TicketSerializer, TicketListSerializer, HotelsSerializer, HotelRoomsSerializer
+from .serializers import (
+    TicketSerializer,
+    TicketListSerializer,
+    HotelsSerializer,
+    HotelRoomsSerializer,
+    HotelCategorySerializer,
+)
 from django.utils import timezone
 from users.models import GroupExtension
 
@@ -244,21 +250,21 @@ class HotelsViewSet(ModelViewSet):
                 'prices', 'contact_details', 'photos'
             )
         
-        # Always require organization parameter
-        organization_id = self.request.query_params.get("organization")
-        if not organization_id:
-            raise PermissionDenied("Missing 'organization' query parameter.")
-        
+        # Accept either `owner_organization` (preferred) or legacy `organization` query param
+        owner_org_id = self.request.query_params.get("owner_organization") or self.request.query_params.get("organization")
+        if not owner_org_id:
+            raise PermissionDenied("Missing 'owner_organization' or 'organization' query parameter.")
+
         # Check if user has access to this organization
         user_organizations = self.request.user.organizations.values_list('id', flat=True)
-        if int(organization_id) not in user_organizations:
+        if int(owner_org_id) not in user_organizations:
             raise PermissionDenied("You don't have access to this organization.")
 
         # Get linked organizations
-        linked_org_ids = OrganizationLink.get_linked_organizations(int(organization_id))
+        linked_org_ids = OrganizationLink.get_linked_organizations(int(owner_org_id))
         
         # Include hotels from the user's organization and linked organizations
-        allowed_org_ids = {int(organization_id)} | linked_org_ids
+        allowed_org_ids = {int(owner_org_id)} | linked_org_ids
         
         # Build allowed owner organization ids based on AllowedReseller entries
         allowed_owner_org_ids = []
@@ -266,7 +272,7 @@ class HotelsViewSet(ModelViewSet):
         try:
             # Query AllowedReseller for the calling organization only
             allowed_qs = AllowedReseller.objects.filter(
-                reseller_company_id=int(organization_id),
+                reseller_company_id=int(owner_org_id),
                 requested_status_by_reseller="ACCEPTED",
             )
             # filter by allowed_types containing GROUP_HOTELS
@@ -300,7 +306,7 @@ class HotelsViewSet(ModelViewSet):
             allowed_owner_org_ids = []
 
         # Include own organization and any explicitly allowed owner organizations
-        owner_ids = set(allowed_owner_org_ids) | {int(organization_id)}
+        owner_ids = set(allowed_owner_org_ids) | {int(owner_org_id)}
 
         # Start from all active hotels (we'll apply OR-filters below).
         # Using a broad base queryset ensures the OR-combined filters below can
@@ -309,7 +315,7 @@ class HotelsViewSet(ModelViewSet):
         queryset = Hotels.objects.filter(is_active=True)
 
         # Separate own organization
-        own_org_id = int(organization_id)
+        own_org_id = int(owner_org_id)
 
         # Base filter: always show hotels from own organization
         base_filter = Q(organization_id=own_org_id)
@@ -368,7 +374,7 @@ class HotelRoomsViewSet(ModelViewSet):
 
     def get_queryset(self):
         from organization.models import OrganizationLink
-        # We should return HotelRooms objects (not Hotels) and allow filtering by `hotel` or `organization`.
+        # We should return HotelRooms objects (not Hotels) and allow filtering by `hotel` or `owner_organization`.
         qs = HotelRooms.objects.select_related('hotel').all()
 
         # Superuser sees all rooms
@@ -377,7 +383,7 @@ class HotelRoomsViewSet(ModelViewSet):
 
         # If a specific hotel is requested, return rooms for that hotel
         hotel_id = self.request.query_params.get('hotel')
-        organization_id = self.request.query_params.get('organization')
+        owner_org_id = self.request.query_params.get('owner_organization')
 
         if hotel_id:
             try:
@@ -385,14 +391,46 @@ class HotelRoomsViewSet(ModelViewSet):
             except Exception:
                 return HotelRooms.objects.none()
 
-        # Require organization parameter for non-superusers
-        if not organization_id:
-            raise PermissionDenied("Missing 'organization' query parameter.")
+        # Require owner_organization parameter for non-superusers
+        if not owner_org_id:
+            raise PermissionDenied("Missing 'owner_organization' query parameter.")
 
         # Ensure the requesting user has access to the organization
         user_organizations = self.request.user.organizations.values_list('id', flat=True)
-        if int(organization_id) not in user_organizations:
+        if int(owner_org_id) not in user_organizations:
             raise PermissionDenied("You don't have access to this organization.")
 
-        # Return rooms for hotels owned by the organization
-        return qs.filter(hotel__organization_id=int(organization_id))
+        # Return rooms for hotels owned by the owner organization
+        return qs.filter(hotel__organization_id=int(owner_org_id))
+
+
+class HotelCategoryViewSet(ModelViewSet):
+    """API to manage hotel categories (CRUD). Supports optional `owner_organization` query param to scope categories."""
+    serializer_class = HotelCategorySerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        qs = HotelCategory.objects.all().order_by('name')
+        org = self.request.query_params.get('owner_organization')
+        if org:
+            try:
+                qs = qs.filter(organization_id=int(org))
+            except Exception:
+                pass
+        return qs
+
+    def perform_create(self, serializer):
+        # allow creating org-scoped categories by passing ?owner_organization= on the request
+        org = self.request.query_params.get('owner_organization')
+        from django.utils.text import slugify
+        data = serializer.validated_data if hasattr(serializer, 'validated_data') else {}
+        slug_val = data.get('slug') or None
+        if not slug_val and data.get('name'):
+            slug_val = slugify(data.get('name'))
+
+        if org:
+            try:
+                return serializer.save(organization_id=int(org), slug=slug_val)
+            except Exception:
+                pass
+        return serializer.save(slug=slug_val)

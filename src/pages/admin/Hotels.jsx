@@ -128,7 +128,9 @@ const Hotels = () => {
         total = Array.isArray(list) ? list.length : 0;
       }
 
-      setHotels(list);
+      // Normalize price objects so components expecting `price` still work
+      const normalized = (list || []).map(h => ({ ...h, prices: Array.isArray(h.prices) ? h.prices.map(p => ({ ...p, price: (p.price ?? p.selling_price ?? '') })) : h.prices }));
+      setHotels(normalized);
       setTotalRecords(total);
 
       // If no organizationId was set but hotels returned and include an organization, adopt it for further calls
@@ -440,7 +442,7 @@ const Hotels = () => {
                                   <span className="badge bg-success ms-2">Reselling Allowed</span>
                                 )}
                                 <br />
-                                <small className="text-muted">{hotel.distance}M</small>
+                                <small className="text-muted">{hotel.distance ? `${Math.round(Number(hotel.distance) * 1000)} m` : 'N/A'}</small>
                               </div>
                             </td>
                             <td rowSpan={sortedGroups.length}>{hotel.category}</td>

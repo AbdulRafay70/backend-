@@ -208,8 +208,7 @@ class VisaViewSet(ModelViewSet):
                         "adult_price": "string",
                         "infant_price": "string",
                         "child_discount": "string",
-                        "markup_percent": "-36",
-                        "tax_rate": "5",
+                        "profit_percent": "-36",
                         "rules": "string",
 
                         "start_date": "2025-11-18",
@@ -354,8 +353,7 @@ class VisaViewSet(ModelViewSet):
                     "adult_price": "string",
                     "infant_price": "string",
                     "child_discount": "string",
-                    "markup_percent": "-36",
-                    "tax_rate": "5",
+                    "profit_percent": "-36",
                     "rules": "string",
 
                     "start_date": "2025-11-18",
@@ -625,6 +623,26 @@ class PackageViewSet(ModelViewSet):
             )
         
         return queryset
+
+    def list(self, request, *args, **kwargs):
+        """Wrapper to capture and log exceptions for easier debugging in development.
+
+        Returns a JSON error response with a minimal message and prints the traceback
+        to the server console so developers can inspect the root cause of 500s.
+        """
+        # debug: print caller context to help trace request-time errors
+        try:
+            user = getattr(request, 'user', None)
+            user_info = f"id={getattr(user,'id',None)}, username={getattr(user,'username',None)}"
+            print(f"PackageViewSet.list called by {user_info} params={dict(request.query_params)}")
+            return super().list(request, *args, **kwargs)
+        except Exception as exc:
+            import traceback
+            tb = traceback.format_exc()
+            # print to server console / logs
+            print("PackageViewSet.list exception:\n", tb)
+            # return structured JSON so frontend shows a clear message
+            return Response({"error": "Internal server error", "detail": str(exc)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     def perform_create(self, serializer):
         """Set created_by to current user"""
@@ -980,7 +998,32 @@ class UmrahPackageViewSet(ModelViewSet):
 
         # hotel_details expect 'hotel' pk
         if data.get("hotel_details"):
-            data["hotel_details"] = _clean_list(data.get("hotel_details"), ["hotel"])
+            # Normalize incoming hotel detail keys so frontend variations (checkIn, check_in_time, check_in_date)
+            # are accepted and mapped to the model fields `check_in_date`, `check_out_date`, `number_of_nights`.
+            normalized = []
+            for h in data.get("hotel_details"):
+                if not isinstance(h, dict):
+                    continue
+                # prefer explicit check_in_date, but accept several alternatives
+                if not h.get('check_in_date'):
+                    for k in ('check_in_time', 'checkIn', 'checkInDate', 'check_in_time'):
+                        if h.get(k):
+                            h['check_in_date'] = h.get(k)
+                            break
+                if not h.get('check_out_date'):
+                    for k in ('check_out_time', 'checkOut', 'checkOutDate', 'check_out_time'):
+                        if h.get(k):
+                            h['check_out_date'] = h.get(k)
+                            break
+                # nights normalization
+                if not h.get('number_of_nights'):
+                    if h.get('nights') is not None:
+                        try:
+                            h['number_of_nights'] = int(h.get('nights'))
+                        except Exception:
+                            h['number_of_nights'] = 0
+                normalized.append(h)
+            data["hotel_details"] = _clean_list(normalized, ["hotel"])
         # transport_details expect 'transport_sector'
         if data.get("transport_details"):
             data["transport_details"] = _clean_list(data.get("transport_details"), ["transport_sector"])
@@ -1256,24 +1299,20 @@ class SetVisaTypeViewSet(ModelViewSet):
 
 
 class AllPricesAPIView(APIView):
-    def get(self, request):
-        organization_id = request.query_params.get("organization_id")
-        if not organization_id:
-            return Response({"error": "organization_id is required"}, status=400)
-
-        # apply filter on all models
-        data = {
-            "riyal_rates": RiyalRate.objects.filter(organization_id=organization_id).values(),
-            "shirkas": Shirka.objects.filter(organization_id=organization_id).values(),
-            "umrah_visa_prices": UmrahVisaPrice.objects.filter(organization_id=organization_id).values(),
-            "umrah_visa_type_two": UmrahVisaPriceTwo.objects.filter(organization_id=organization_id).values(),
-            "only_visa_prices": OnlyVisaPrice.objects.filter(organization_id=organization_id).values(),
-            # "transport_sector_prices": TransportSectorPrice.objects.filter(organization_id=organization_id).values(),
-            "airlines": Airlines.objects.filter(organization_id=organization_id).values(),
-            "cities": City.objects.filter(organization_id=organization_id).values(),
-            "set_visa_type": SetVisaType.objects.filter(organization_id=organization_id).values(),
-            "food_prices": FoodPrice.objects.filter(organization_id=organization_id, active=True).values(),
-            "ziarat_prices": ZiaratPrice.objects.filter(organization_id=organization_id).values(),
+    def _gather_for_org(self, organization_id):
+        # return a dict of all price-like resources for a single organization id
+        return {
+            "riyal_rates": list(RiyalRate.objects.filter(organization_id=organization_id).values()),
+            "shirkas": list(Shirka.objects.filter(organization_id=organization_id).values()),
+            "umrah_visa_prices": list(UmrahVisaPrice.objects.filter(organization_id=organization_id).values()),
+            "umrah_visa_type_two": list(UmrahVisaPriceTwo.objects.filter(organization_id=organization_id).values()),
+            "only_visa_prices": list(OnlyVisaPrice.objects.filter(organization_id=organization_id).values()),
+            # "transport_sector_prices": list(TransportSectorPrice.objects.filter(organization_id=organization_id).values()),
+            "airlines": list(Airlines.objects.filter(organization_id=organization_id).values()),
+            "cities": list(City.objects.filter(organization_id=organization_id).values()),
+            "set_visa_type": list(SetVisaType.objects.filter(organization_id=organization_id).values()),
+            "food_prices": list(FoodPrice.objects.filter(organization_id=organization_id, active=True).values()),
+            "ziarat_prices": list(ZiaratPrice.objects.filter(organization_id=organization_id).values()),
             "tickets": TicketSerializer(
                 Ticket.objects.filter(organization_id=organization_id), many=True
             ).data,
@@ -1282,7 +1321,42 @@ class AllPricesAPIView(APIView):
             ).data,
         }
 
-        return Response(data)
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name='organization_id',
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description='Optional organization id. If omitted the endpoint returns data for all organizations.'
+            )
+        ],
+        description='Return price lists. When `organization_id` is provided (query param) returns prices for that org. When omitted returns a map of organization_id -> prices for ALL organizations.',
+        responses=OpenApiTypes.OBJECT,
+    )
+    def get(self, request):
+        organization_id = request.query_params.get("organization_id")
+        if organization_id:
+            try:
+                org_id = int(organization_id)
+            except Exception:
+                return Response({"error": "invalid organization_id"}, status=400)
+            data = self._gather_for_org(org_id)
+            return Response(data)
+
+        # No organization_id provided: return data for all organizations (keyed by org id)
+        from organization.models import Organization
+
+        all_orgs = Organization.objects.values_list('id', flat=True)
+        result = {}
+        for oid in all_orgs:
+            try:
+                result[str(oid)] = self._gather_for_org(oid)
+            except Exception:
+                # continue on errors for specific organizations
+                result[str(oid)] = {"error": "failed to gather for org"}
+
+        return Response(result)
 
 
 class PublicUmrahPackageListAPIView(generics.ListAPIView):
@@ -1363,3 +1437,27 @@ class PublicUmrahPackageDetailAPIView(APIView):
 
         serializer = PublicUmrahPackageDetailSerializer(pkg)
         return Response(serializer.data)
+
+
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name='organization_id',
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.PATH,
+            required=True,
+            description='Organization ID to filter prices'
+        )
+    ],
+    description='Return price lists for a single organization (organization_id in path)',
+    responses=OpenApiTypes.OBJECT,
+)
+class AllPricesByOrgAPIView(APIView):
+    def get(self, request, organization_id):
+        try:
+            org_id = int(organization_id)
+        except Exception:
+            return Response({"error": "invalid organization_id"}, status=400)
+
+        data = AllPricesAPIView()._gather_for_org(org_id)
+        return Response(data)

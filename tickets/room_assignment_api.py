@@ -73,18 +73,18 @@ class RoomAssignmentAPIView(APIView):
     permission_classes = [IsAuthenticated]
     
     def post(self, request):
-        # Check organization access
-        organization_id = request.query_params.get('organization')
-        if not organization_id:
+        # Check owner organization access
+        owner_org_id = request.query_params.get('owner_organization')
+        if not owner_org_id:
             return Response({
-                'error': 'Missing organization parameter',
-                'detail': 'organization query parameter is required'
+                'error': 'Missing owner_organization parameter',
+                'detail': 'owner_organization query parameter is required'
             }, status=status.HTTP_400_BAD_REQUEST)
         
         # Validate user has access to this organization (unless superuser)
         if not request.user.is_superuser:
             user_organizations = request.user.organizations.values_list('id', flat=True)
-            if int(organization_id) not in user_organizations:
+            if int(owner_org_id) not in user_organizations:
                 raise PermissionDenied("You don't have access to this organization.")
 
         serializer = RoomAssignmentSerializer(data=request.data)
@@ -100,8 +100,8 @@ class RoomAssignmentAPIView(APIView):
         room = validated_data['room']
         bed_numbers = validated_data['bed_numbers']
         
-        # Validate that the room belongs to the user's organization
-        if room.hotel.organization_id != int(organization_id):
+        # Validate that the room belongs to the user's owner organization
+        if room.hotel.organization_id != int(owner_org_id):
             return Response({
                 'error': 'Access denied',
                 'detail': 'Room does not belong to your organization'
@@ -170,18 +170,18 @@ class RoomUnassignmentAPIView(APIView):
     permission_classes = [IsAuthenticated]
     
     def post(self, request):
-        # Check organization access
-        organization_id = request.query_params.get('organization')
-        if not organization_id:
+        # Check owner organization access
+        owner_org_id = request.query_params.get('owner_organization')
+        if not owner_org_id:
             return Response({
-                'error': 'Missing organization parameter',
-                'detail': 'organization query parameter is required'
+                'error': 'Missing owner_organization parameter',
+                'detail': 'owner_organization query parameter is required'
             }, status=status.HTTP_400_BAD_REQUEST)
         
         # Validate user has access to this organization (unless superuser)
         if not request.user.is_superuser:
             user_organizations = request.user.organizations.values_list('id', flat=True)
-            if int(organization_id) not in user_organizations:
+            if int(owner_org_id) not in user_organizations:
                 raise PermissionDenied("You don't have access to this organization.")
 
         booking_id = request.data.get('booking_id')
@@ -201,8 +201,8 @@ class RoomUnassignmentAPIView(APIView):
         except HotelRooms.DoesNotExist:
             return Response({'error': 'Room not found'}, status=status.HTTP_404_NOT_FOUND)
         
-        # Validate that the room belongs to the user's organization
-        if room.hotel.organization_id != int(organization_id):
+        # Validate that the room belongs to the user's owner organization
+        if room.hotel.organization_id != int(owner_org_id):
             return Response({
                 'error': 'Access denied',
                 'detail': 'Room does not belong to your organization'

@@ -10,7 +10,7 @@ from booking.models import BookingHotelDetails, BookingPersonDetail
 
 class HotelAvailabilityAPIView(APIView):
     """
-    GET /api/hotels/availability?hotel_id=123&date_from=YYYY-MM-DD&date_to=YYYY-MM-DD&organization=10
+    GET /api/hotels/availability?hotel_id=123&date_from=YYYY-MM-DD&date_to=YYYY-MM-DD&owner_organization=10
     
     Display real-time hotel room and bed availability with visual floor map.
     Shows which rooms are occupied, partially occupied, or available.
@@ -21,24 +21,24 @@ class HotelAvailabilityAPIView(APIView):
         hotel_id = request.query_params.get('hotel_id')
         date_from = request.query_params.get('date_from')
         date_to = request.query_params.get('date_to')
-        organization_id = request.query_params.get('organization')
+        owner_org_id = request.query_params.get('owner_organization')
         
         # Validate required parameters
-        if not all([hotel_id, date_from, date_to, organization_id]):
+        if not all([hotel_id, date_from, date_to, owner_org_id]):
             return Response({
                 'error': "Missing required parameters",
-                'detail': "Required: 'organization', 'hotel_id', 'date_from', 'date_to'"
+                'detail': "Required: 'owner_organization', 'hotel_id', 'date_from', 'date_to'"
             }, status=status.HTTP_400_BAD_REQUEST)
 
         # Check if user has access to this organization (unless superuser)
         if not request.user.is_superuser:
             user_organizations = request.user.organizations.values_list('id', flat=True)
-            if int(organization_id) not in user_organizations:
+            if int(owner_org_id) not in user_organizations:
                 raise PermissionDenied("You don't have access to this organization.")
 
         # Fetch hotel filtered by organization
         try:
-            hotel = Hotels.objects.get(id=hotel_id, organization_id=organization_id, is_active=True)
+            hotel = Hotels.objects.get(id=hotel_id, organization_id=owner_org_id, is_active=True)
         except Hotels.DoesNotExist:
             return Response({
                 'error': 'Hotel not found or not accessible for this organization.'
@@ -47,7 +47,7 @@ class HotelAvailabilityAPIView(APIView):
         # Fetch all rooms for this hotel with their details
         rooms = HotelRooms.objects.filter(
             hotel_id=hotel_id, 
-            hotel__organization_id=organization_id
+            hotel__organization_id=owner_org_id
         ).prefetch_related('details').order_by('floor', 'room_number')
         
         # Count total rooms

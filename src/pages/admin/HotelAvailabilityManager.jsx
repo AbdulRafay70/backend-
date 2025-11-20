@@ -24,6 +24,7 @@ const HotelAvailabilityManager = () => {
   
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showCategoryModal, setShowCategoryModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showDeleteBlockedModal, setShowDeleteBlockedModal] = useState(false);
@@ -52,13 +53,19 @@ const HotelAvailabilityManager = () => {
     address: "",
     google_location: "",
     contact_number: "",
-    category: "ECO",
+    category: "",
     distance: "",
     walking_time: "",
     is_active: true,
     available_start_date: "",
     available_end_date: ""
   });
+
+  // Category management state
+  const [categoriesList, setCategoriesList] = useState([]);
+  const [categoryLoading, setCategoryLoading] = useState(false);
+  const [categoryForm, setCategoryForm] = useState({ id: null, name: '', slug: '' });
+  const [editingCategory, setEditingCategory] = useState(null);
   
   const [roomForm, setRoomForm] = useState({
     room_type: "double",
@@ -108,28 +115,30 @@ const HotelAvailabilityManager = () => {
     return s;
   };
 
-  // Parse user-entered distance into kilometers (accepts values like "500m", "0.5", "2 km")
+  // Parse user-entered distance (expects meters by default) and convert to kilometers
+  // Accepts values like "500", "500m", "0.5km", "500 m".
+  // Plain numbers are interpreted as meters and converted to km for backend storage.
   const parseDistanceToKm = (input) => {
     if (input === undefined || input === null) return "";
     const s = String(input).trim().toLowerCase();
     if (!s) return "";
-    // meters like '500m' or '500 m'
+    // meters like '500m' or '500 m' or plain numeric '500'
     const mMatch = s.match(/^(\d+(?:\.\d+)?)\s*m(?:eters?)?$/);
     if (mMatch) {
       const meters = parseFloat(mMatch[1]);
       if (Number.isFinite(meters)) return String((meters / 1000).toFixed(3)).replace(/\.0+$/, "");
       return "";
     }
-    // km like '2km' or '2 km'
+    // km like '0.5km' or '0.5 km'
     const kmMatch = s.match(/^(\d+(?:\.\d+)?)\s*k(?:m)?/);
     if (kmMatch) {
       const km = parseFloat(kmMatch[1]);
       if (Number.isFinite(km)) return String(km);
       return "";
     }
-    // plain number assume km
+    // plain number without unit: interpret as meters
     const num = parseFloat(s.replace(/[^0-9.\-]/g, ''));
-    if (Number.isFinite(num)) return String(num);
+    if (Number.isFinite(num)) return String((num / 1000));
     return "";
   };
 
@@ -172,31 +181,9 @@ const HotelAvailabilityManager = () => {
   };
 
   // Hotel categories
-  const categories = [
-    { value: "ECO", label: "Economy", color: "#6c757d" },
-    { value: "STD", label: "Standard", color: "#0dcaf0" },
-    { value: "DLX", label: "Deluxe", color: "#0d6efd" },
-    { value: "PRM", label: "Premium", color: "#198754" },
-    { value: "LUX", label: "Luxury", color: "#ffc107" }
-  ];
-  // Map frontend category tokens/labels to backend-accepted choice keys
-  const categoryMapping = {
-    ECO: "economy",
-    STD: "standard",
-    DLX: "deluxe",
-    PRM: "luxury",
-    LUX: "luxury",
-    // human readable mappings (in case server returns these or older UI uses them)
-    Economy: "economy",
-    Standard: "standard",
-    Deluxe: "deluxe",
-    Luxury: "luxury",
-    "1 Star": "2_star",
-    "2 Star": "2_star",
-    "3 Star": "3_star",
-    "4 Star": "4_star",
-    "5 Star": "5_star",
-  };
+  // Categories are loaded from the backend into `categoriesList`.
+  // We no longer rely on a hard-coded list here — create categories via the
+  // Category Management modal and they will be returned by `fetchCategories()`.
 
   // Fetch cities (use shared api helper and tolerate multiple response shapes)
   const fetchCities = async () => {
@@ -225,7 +212,7 @@ const HotelAvailabilityManager = () => {
       address: "Ajyad Street, Makkah",
       google_location: "https://goo.gl/maps/grand-makkah",
       contact_number: "+966-12-123-4567",
-      category: "LUX",
+      category: "",
       distance: "0.5",
       walking_time: 6,
       is_active: true,
@@ -241,7 +228,7 @@ const HotelAvailabilityManager = () => {
       address: "Prince Road, Medina",
       google_location: "https://goo.gl/maps/medina-sunrise",
       contact_number: "+966-14-987-6543",
-      category: "PRM",
+      category: "",
       distance: "2.0",
       walking_time: 25,
       is_active: true,
@@ -257,7 +244,7 @@ const HotelAvailabilityManager = () => {
       address: "Corniche Road, Jeddah",
       google_location: "https://goo.gl/maps/jeddah-beach",
       contact_number: "+966-12-456-7890",
-      category: "DLX",
+      category: "",
       distance: "5.0",
       walking_time: 60,
       is_active: true,
@@ -273,7 +260,7 @@ const HotelAvailabilityManager = () => {
       address: "Safa Street, Makkah",
       google_location: "https://goo.gl/maps/holy-city",
       contact_number: "+966-12-555-8888",
-      category: "STD",
+      category: "",
       distance: "1.0",
       walking_time: 12,
       is_active: true,
@@ -289,7 +276,7 @@ const HotelAvailabilityManager = () => {
       address: "Al-Noor Street, Medina",
       google_location: "https://goo.gl/maps/prophets-peace",
       contact_number: "+966-14-222-3333",
-      category: "ECO",
+      category: "",
       distance: "3.5",
       walking_time: 40,
       is_active: true,
@@ -341,6 +328,14 @@ const HotelAvailabilityManager = () => {
       if (copy.owner_organization_id && typeof copy.owner_organization_id === 'string' && copy.owner_organization_id.match(/^\d+$/)) {
         copy.owner_organization_id = Number(copy.owner_organization_id);
       }
+      // Normalize prices: backend may expose `selling_price` (source='price') for read,
+      // while older clients expect `price`. Ensure a `price` field is always present
+      // on price objects so UI components continue to work.
+      try {
+        if (Array.isArray(copy.prices)) {
+          copy.prices = copy.prices.map(p => ({ ...p, price: (p.price ?? p.selling_price ?? "") }));
+        }
+      } catch (e) {}
       return copy;
     });
   };
@@ -462,10 +457,29 @@ const HotelAvailabilityManager = () => {
     }
   };
 
+    // Fetch available hotel categories from backend
+    const fetchCategories = async () => {
+      try {
+        setCategoryLoading(true);
+        const params = {};
+        if (organizationId) params.organization = organizationId;
+        const resp = await api.get(`/hotel-categories/`, { params });
+        const data = Array.isArray(resp.data) ? resp.data : resp.data?.results ?? [];
+        setCategoriesList(data);
+      } catch (err) {
+        console.error('Failed to load categories', err);
+        setCategoriesList([]);
+      } finally {
+        setCategoryLoading(false);
+      }
+    };
+
   useEffect(() => {
     // Re-fetch cities and hotels when organization context changes
     fetchCities();
     fetchHotels();
+    // ensure categories are loaded so dropdowns show up-to-date list
+    fetchCategories();
   }, [organizationId]);
 
   // Show alert helper
@@ -510,8 +524,9 @@ const HotelAvailabilityManager = () => {
         }
       }
 
-      // ensure category is translated to backend choice key
-      const mappedCategory = categoryMapping[hotelForm.category] || hotelForm.category || "standard";
+      // category is provided as a slug from `categoriesList` (backend-driven)
+      // send it directly to the server; fallback to null if not selected
+      const mappedCategory = hotelForm.category || null;
 
       // Normalize distance and walking time: convert user input to kilometers and minutes
       const distanceKm = parseDistanceToKm(hotelForm.distance);
@@ -803,7 +818,25 @@ const HotelAvailabilityManager = () => {
         console.debug('Updating hotel with payload:', { hotelId: selectedHotel?.id, updatePayload, isOwner, tokenOrgs });
 
         // Include organization param for server routing/permission checks
-        await api.put(`/hotels/${selectedHotel.id}/`, updatePayload, { params: { organization: organizationId } });
+        // Use a longer timeout for updates and retry once on timeout to handle slow backend operations
+        const updateConfig = { params: { organization: organizationId }, timeout: 30000 };
+        try {
+          await api.put(`/hotels/${selectedHotel.id}/`, updatePayload, updateConfig);
+        } catch (putErr) {
+          // If timeout occurred, retry once with an even larger timeout
+          if (putErr && (putErr.code === 'ECONNABORTED' || (putErr?.message || '').toLowerCase().includes('timeout'))) {
+            // eslint-disable-next-line no-console
+            console.warn('Hotel update timed out, retrying with extended timeout...');
+            try {
+              await api.put(`/hotels/${selectedHotel.id}/`, updatePayload, { params: { organization: organizationId }, timeout: 60000 });
+            } catch (secondErr) {
+              // rethrow to be handled by outer catch
+              throw secondErr;
+            }
+          } else {
+            throw putErr;
+          }
+        }
 
       // Sync rooms: update existing, create new, delete removed
       const currentRoomIds = (rooms || []).filter(r => r.id).map(r => r.id);
@@ -1227,7 +1260,7 @@ const HotelAvailabilityManager = () => {
       address: "",
       google_location: "",
       contact_number: "",
-      category: "ECO",
+      category: "",
       distance: "",
       walking_time: "",
       is_active: true,
@@ -1246,7 +1279,7 @@ const HotelAvailabilityManager = () => {
   };
 
   // Open edit modal
-  const openAddModal = () => {
+  const openAddModal = async () => {
     // Reset form states
     setHotelForm({
       city: "",
@@ -1269,6 +1302,8 @@ const HotelAvailabilityManager = () => {
     setHotelStatus("active");
     setRooms([]);
     setAddHotelTab("hotel");
+    // ensure categories are available in the add form
+    try { await fetchCategories(); } catch (e) { /* ignore */ }
     setShowAddModal(true);
   };
 
@@ -1300,7 +1335,7 @@ const HotelAvailabilityManager = () => {
       start_date: p.start_date || "",
       end_date: p.end_date || "",
       room_type: p.room_type || "double",
-      price: p.price || "",
+      price: (p.price ?? p.selling_price ?? ""),
       purchase_price: p.purchase_price || "",
       bed_prices: []
     }));
@@ -1316,6 +1351,8 @@ const HotelAvailabilityManager = () => {
     
     // Fetch existing rooms for this hotel so they are editable
     (async () => {
+      // ensure categories are loaded before showing edit modal so dropdown contains latest items
+      try { await fetchCategories(); } catch (e) { /* ignore */ }
       try {
         const resp = await api.get(`/hotel-rooms/`, { params: { hotel: hotel.id } });
         const list = resp?.data || [];
@@ -1376,10 +1413,12 @@ const HotelAvailabilityManager = () => {
 
   // Get category badge
   const getCategoryBadge = (category) => {
-    const cat = categories.find(c => c.value === category);
-    return cat ? (
-      <Badge style={{ backgroundColor: cat.color }}>{cat.label}</Badge>
-    ) : <Badge bg="secondary">{category}</Badge>;
+    if (!category) return <Badge bg="secondary">Unspecified</Badge>;
+    // Prefer dynamic categories from the backend
+    const cat = categoriesList && categoriesList.find(c => String(c.slug) === String(category) || String(c.id) === String(category));
+    if (cat) return <Badge bg="primary">{cat.name}</Badge>;
+    // Fallback: show raw value
+    return <Badge bg="secondary">{String(category)}</Badge>;
   };
 
   return (
@@ -1545,7 +1584,7 @@ const HotelAvailabilityManager = () => {
                       <th style={{ minWidth: "120px" }}>City</th>
                       <th style={{ minWidth: "200px" }}>Address</th>
                       <th style={{ minWidth: "100px" }}>Category</th>
-                      <th style={{ minWidth: "100px" }}>Distance (KM)</th>
+                      <th style={{ minWidth: "100px" }}>Distance (m)</th>
                       <th style={{ minWidth: "110px" }}>Walk Time (min)</th>
                       <th style={{ minWidth: "120px" }}>Contact</th>
                       <th style={{ minWidth: "100px" }}>Status</th>
@@ -1592,11 +1631,11 @@ const HotelAvailabilityManager = () => {
                           <td>{hotel.address}</td>
                           <td>{getCategoryBadge(hotel.category)}</td>
                           <td>
-                            {hotel.distance ? (
-                              <span>{String(hotel.distance)} km</span>
-                            ) : (
-                              "N/A"
-                            )}
+                              {hotel.distance ? (
+                                <span>{Number(hotel.distance) ? String(Math.round(Number(hotel.distance) * 1000)) : hotel.distance} m</span>
+                              ) : (
+                                "N/A"
+                              )}
                           </td>
                           <td>
                             {hotel.walking_time || hotel.walking_time === 0 ? (
@@ -1771,24 +1810,31 @@ const HotelAvailabilityManager = () => {
                     <Col md={4}>
                       <Form.Group>
                         <Form.Label className="fw-medium">Category</Form.Label>
-                        <Form.Select
-                          value={hotelForm.category}
-                          onChange={(e) => setHotelForm({ ...hotelForm, category: e.target.value })}
-                        >
-                          {categories.map(cat => (
-                            <option key={cat.value} value={cat.value}>{cat.label}</option>
-                          ))}
-                        </Form.Select>
+                        <div className="d-flex">
+                          <Form.Select
+                            value={hotelForm.category}
+                            onChange={(e) => setHotelForm({ ...hotelForm, category: e.target.value })}
+                          >
+                            {Array.isArray(categoriesList) && categoriesList.length > 0 ? (
+                              categoriesList.map(cat => (
+                                <option key={cat.id} value={cat.slug || cat.name}>{cat.name}</option>
+                              ))
+                            ) : (
+                              <option value="">-- No categories --</option>
+                            )}
+                          </Form.Select>
+                          <Button variant="outline-primary" className="ms-2" onClick={async () => { setShowCategoryModal(true); await fetchCategories(); }} title="Manage Categories">+</Button>
+                        </div>
                       </Form.Group>
                     </Col>
                     <Col md={3}>
                       <Form.Group>
-                        <Form.Label className="fw-medium">Distance (KM)</Form.Label>
+                          <Form.Label className="fw-medium">Distance (m)</Form.Label>
                         <Form.Control
                           type="text"
                           value={hotelForm.distance}
-                          onChange={(e) => setHotelForm({ ...hotelForm, distance: e.target.value })}
-                          placeholder="e.g., 0.5"
+                            onChange={(e) => setHotelForm({ ...hotelForm, distance: e.target.value })}
+                            placeholder="e.g., 500 or 500 m"
                         />
                       </Form.Group>
                     </Col>
@@ -2084,6 +2130,95 @@ const HotelAvailabilityManager = () => {
           </Modal.Footer>
         </Modal>
 
+        {/* Category Management Modal */}
+        <Modal show={showCategoryModal} onHide={() => setShowCategoryModal(false)} size="md" centered>
+          <Modal.Header closeButton>
+            <Modal.Title>Manage Hotel Categories</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <div>
+              <div className="mb-3 d-flex gap-2">
+                <input className="form-control" placeholder="Category name" value={categoryForm.name} onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })} />
+                <input className="form-control" placeholder="Slug (optional)" value={categoryForm.slug} onChange={(e) => setCategoryForm({ ...categoryForm, slug: e.target.value })} />
+                <Button onClick={async () => {
+                  // create or update
+                  // client-side validation
+                  if (!categoryForm.name || categoryForm.name.trim() === '') {
+                    setAlert({ show: true, type: 'danger', message: 'Category name is required.' });
+                    return;
+                  }
+
+                  try {
+                    setCategoryLoading(true);
+                    const payload = { name: categoryForm.name.trim() };
+                    // only include slug if provided
+                    if (categoryForm.slug && categoryForm.slug.trim() !== '') payload.slug = categoryForm.slug.trim();
+
+                    // include organization query param when available so category is scoped
+                    const orgQuery = organizationId ? `?organization=${organizationId}` : '';
+
+                    if (editingCategory) {
+                      await api.put(`/hotel-categories/${editingCategory.id}/` + orgQuery, payload);
+                      setEditingCategory(null);
+                    } else {
+                      await api.post(`/hotel-categories/` + orgQuery, payload);
+                    }
+
+                    setCategoryForm({ id: null, name: '', slug: '' });
+                    await fetchCategories();
+                    setAlert({ show: true, type: 'success', message: 'Category saved.' });
+                  } catch (err) {
+                    console.error('Category save error', err);
+                    // try to extract validation errors from response
+                    let msg = 'Failed to save category.';
+                    try {
+                      if (err?.response?.data) {
+                        const data = err.response.data;
+                        if (typeof data === 'string') msg = data;
+                        else if (data.detail) msg = data.detail;
+                        else if (typeof data === 'object') msg = Object.entries(data).map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`).join(' | ');
+                      } else if (err.message) {
+                        msg = err.message;
+                      }
+                    } catch (e) {
+                      // fallback
+                    }
+                    setAlert({ show: true, type: 'danger', message: msg });
+                  } finally {
+                    setCategoryLoading(false);
+                  }
+                }}>{editingCategory ? 'Update' : 'Add'}</Button>
+              </div>
+
+              <div>
+                <Table striped bordered hover size="sm">
+                  <thead>
+                    <tr><th>Name</th><th>Slug</th><th>Actions</th></tr>
+                  </thead>
+                  <tbody>
+                    {categoriesList.map(cat => (
+                      <tr key={cat.id}>
+                        <td>{cat.name}</td>
+                        <td>{cat.slug}</td>
+                        <td>
+                          <Button size="sm" variant="outline-secondary" className="me-2" onClick={() => { setEditingCategory(cat); setCategoryForm({ id: cat.id, name: cat.name, slug: cat.slug }); }}>Edit</Button>
+                          <Button size="sm" variant="outline-danger" onClick={async () => {
+                            if (!window.confirm('Delete category?')) return;
+                            try { await api.delete(`/hotel-categories/${cat.id}/`); await fetchCategories(); } catch (e) { console.error(e); alert('Failed to delete'); }
+                          }}>Delete</Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </Table>
+              </div>
+            </div>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowCategoryModal(false)}>Close</Button>
+          </Modal.Footer>
+        </Modal>
+
         {/* Delete Blocked Modal - shows when backend refuses deletion due to linked data */}
         <Modal show={showDeleteBlockedModal} onHide={() => setShowDeleteBlockedModal(false)} centered>
           <Modal.Header closeButton>
@@ -2207,20 +2342,24 @@ const HotelAvailabilityManager = () => {
                           value={hotelForm.category}
                           onChange={(e) => setHotelForm({ ...hotelForm, category: e.target.value })}
                         >
-                          {categories.map(cat => (
-                            <option key={cat.value} value={cat.value}>{cat.label}</option>
-                          ))}
+                          {categoriesList && categoriesList.length > 0 ? (
+                            categoriesList.map(cat => (
+                              <option key={cat.id} value={cat.slug}>{cat.name}</option>
+                            ))
+                          ) : (
+                            <option value="">-- No categories --</option>
+                          )}
                         </Form.Select>
                       </Form.Group>
                     </Col>
                     <Col md={3}>
                       <Form.Group>
-                        <Form.Label className="fw-medium">Distance (KM)</Form.Label>
+                          <Form.Label className="fw-medium">Distance (m)</Form.Label>
                         <Form.Control
                           type="text"
                           value={hotelForm.distance}
-                          onChange={(e) => setHotelForm({ ...hotelForm, distance: e.target.value })}
-                          placeholder="e.g., 0.5"
+                            onChange={(e) => setHotelForm({ ...hotelForm, distance: e.target.value })}
+                            placeholder="e.g., 500 or 500 m"
                         />
                       </Form.Group>
                     </Col>

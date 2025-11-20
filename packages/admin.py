@@ -170,7 +170,7 @@ class UmrahPackageAdmin(admin.ModelAdmin):
             'fields': ('package_code', 'title', 'description', 'package_type', 'status')
         }),
         ('Pricing & Dates', {
-            'fields': ('start_date', 'end_date', 'markup_percent', 'tax_rate')
+            'fields': ('start_date', 'end_date', 'profit_percent')
         }),
         ('Capacity', {
             'fields': ('max_capacity', 'booked_seats', 'left_seats')
