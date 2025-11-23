@@ -178,6 +178,22 @@ from universal.scope import apply_user_scope
 
 import json
 class BookingViewSet(viewsets.ModelViewSet):
+    def create(self, request, *args, **kwargs):
+        """Override create to return a fresh serialization of the created
+        Booking instance. The default behavior may return the serializer
+        bound to input data which can miss related nested objects that are
+        created in the serializer's `create` method. Re-serializing the
+        instance ensures nested `ticket_details` and `person_details`
+        (and other related lists) are included in the response.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        instance = serializer.instance
+        # Re-serialize the created instance to include nested relations
+        out_serializer = self.get_serializer(instance)
+        headers = self.get_success_headers(out_serializer.data)
+        return Response(out_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
     @action(detail=False, methods=["get"], url_path="unpaid/(?P<organization_id>[^/.]+)")
     def get_unpaid_orders(self, request, organization_id=None):
         from django.utils import timezone

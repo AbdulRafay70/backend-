@@ -11,34 +11,71 @@ const PackageDetails = () => {
     const [umrahPackageDetails, setUmrahPackageDetails] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    const token = localStorage.getItem("accessToken");
+    const tokenCandidates = [
+        localStorage.getItem("accessToken"),
+        localStorage.getItem("agentAccessToken"),
+        localStorage.getItem("token"),
+    ].filter(Boolean);
+    const token = tokenCandidates[0];
     const selectedOrganization = JSON.parse(
+        
         localStorage.getItem("selectedOrganization")
     );
     const orgId = selectedOrganization?.id;
 
     useEffect(() => {
         const fetchPackageDetails = async () => {
+            const mask = (s) => (s ? s.substr(0, 8) + '…' : 'none');
             try {
                 setLoading(true);
-                const [bookingsRes, packageRes] = await Promise.all([
-                    axios.get(`https://api.saer.pk/api/bookings/get_by_umrah_package/`, {
-                        params: { umrah_package_id: id, organization: orgId },
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                            "Content-Type": "application/json",
-                        },
-                    }),
-                    axios.get(`https://api.saer.pk/api/umrah-packages/get_by_id/`, {
-                        params: { id, organization: orgId },
-                        headers: {
-                            Authorization: `Bearer ${token}`,
-                            "Content-Type": "application/json",
-                        },
-                    })
-                ]);
 
-                setBookingsData(bookingsRes.data || []);
+                console.debug('PackageDetails - token candidates:', tokenCandidates.map(mask));
+                console.debug('PackageDetails - using token (masked):', mask(token));
+
+                    const doRequest = async (useToken) => {
+                        const headers = { Authorization: `Bearer ${useToken}`, "Content-Type": "application/json" };
+
+                        // Fetch package details (use main packages API)
+                        const packageReq = axios.get(`http://127.0.0.1:8000/api/packages/${id}/`, {
+                            params: { organization: orgId },
+                            headers,
+                        });
+
+                        // Use the generic bookings list endpoint directly to avoid 404s
+                        const bookingsReq = await axios.get(`http://127.0.0.1:8000/api/bookings/`, {
+                            params: { umrah_package_id: id, organization: orgId },
+                            headers,
+                        });
+                        const packageRes = await packageReq;
+                        return { bookingsRes: bookingsReq, packageRes };
+                    };
+
+                    let bookingsRes, packageRes;
+                    try {
+                        ({ bookingsRes, packageRes } = await doRequest(token));
+                    } catch (err) {
+                        // If unauthorized and we have another candidate (e.g., agentAccessToken), retry once
+                        // 404 for the specialized endpoint is expected on some backends; lower noise level
+                        console.debug('Initial package details request failed', err?.response?.status || err.message);
+                        if (err?.response?.status === 401 && tokenCandidates.length > 1) {
+                            const fallbackToken = tokenCandidates[1];
+                            console.debug('Retrying requests with fallback token (masked):', mask(fallbackToken));
+                            try {
+                                ({ bookingsRes, packageRes } = await doRequest(fallbackToken));
+                            } catch (err2) {
+                                console.error('Fallback request also failed', err2);
+                                throw err2;
+                            }
+                        } else {
+                            throw err;
+                        }
+                    }
+
+                    setBookingsData((bookingsRes && bookingsRes.data) || []);
+
+                // Debug: log raw responses and which organization was requested
+                console.debug('PackageDetails - bookingsRes.data:', bookingsRes.data);
+                console.debug('PackageDetails - requested organization id:', orgId);
 
                 // Normalize package response which may be { message, data }
                 const pkgPayload = packageRes?.data;
@@ -49,6 +86,43 @@ const PackageDetails = () => {
                     else pkg = pkgPayload;
                 }
                 setUmrahPackageDetails(pkg);
+                // If bookings empty but package exists and package has an owning org,
+                // try fetching bookings using the package owner organization as a fallback.
+                if ((bookingsRes.data || []).length === 0 && pkg && (pkg.organization || pkg.organization_id || pkg.owner_organization_id)) {
+                    const ownerOrg = pkg.organization || pkg.organization_id || pkg.owner_organization_id;
+                    if (ownerOrg && ownerOrg !== orgId) {
+                        try {
+                            console.debug('No bookings for selected org; trying owner org (generic endpoint):', ownerOrg);
+                            const fallbackRes = await axios.get(`http://127.0.0.1:8000/api/bookings/`, {
+                                params: { umrah_package_id: id, organization: ownerOrg },
+                                headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
+                            });
+                            console.debug('PackageDetails - fallback bookingsRes.data (owner org):', fallbackRes.data, 'ownerOrg:', ownerOrg);
+                            if (Array.isArray(fallbackRes.data) && fallbackRes.data.length > 0) {
+                                setBookingsData(fallbackRes.data);
+                            }
+                        } catch (e) {
+                            console.warn('Fallback bookings fetch failed', e);
+                        }
+                    }
+                }
+
+                // Final fallback: try without organization filter if still empty
+                if ((bookingsRes.data || []).length === 0) {
+                    try {
+                        console.debug('No bookings found with org filters; trying without organization filter');
+                        const allRes = await axios.get(`http://127.0.0.1:8000/api/bookings/`, {
+                            params: { umrah_package_id: id },
+                            headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }
+                        });
+                        console.debug('PackageDetails - all-org fallback bookingsRes.data:', allRes.data);
+                        if (Array.isArray(allRes.data) && allRes.data.length > 0) {
+                            setBookingsData(allRes.data);
+                        }
+                    } catch (e) {
+                        console.warn('All-org bookings fallback failed', e);
+                    }
+                }
             } catch (error) {
                 console.error('Error fetching package details:', error);
             } finally {

@@ -1020,11 +1020,14 @@ class BookingSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def update(self, instance, validated_data):
-        hotel_data = validated_data.pop("hotel_details", [])
-        transport_data = validated_data.pop("transport_details", [])
-        ticket_data = validated_data.pop("ticket_details", [])
-        person_data = validated_data.pop("person_details", [])
-        payment_data = validated_data.pop("payment_details", [])
+        # Use None as default so we can distinguish between "field not provided"
+        # (do not touch existing related rows) and "empty list provided"
+        # (explicitly clear related rows).
+        hotel_data = validated_data.pop("hotel_details", None)
+        transport_data = validated_data.pop("transport_details", None)
+        ticket_data = validated_data.pop("ticket_details", None)
+        person_data = validated_data.pop("person_details", None)
+        payment_data = validated_data.pop("payment_details", None)
 
         # update booking fields
         for attr, value in validated_data.items():

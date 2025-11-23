@@ -15,11 +15,55 @@ from rest_framework import viewsets, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
+from drf_spectacular.utils import extend_schema, OpenApiExample
 
 
+@extend_schema(
+    request=LeadSerializer,
+    examples=[
+        OpenApiExample(
+            'Lead example',
+            value={
+                "customer_full_name": "Ahmed Ali",
+                "passport_number": "AB1234567",
+                "contact_number": "+923001234567",
+                "branch": 1,
+                "organization": 1,
+                "loan_amount": "50000.00",
+                "recovered_amount": "10000.00",
+                "recovery_date": "2025-11-18",
+                "chat_messages": [{"from": "agent:1", "message": "Called", "sent_at": "2025-11-01T10:00:00Z"}],
+                "assigned_to": 1,
+                "is_internal_task": True,
+                "notes": "Customer promised partial payment"
+            },
+        )
+    ],
+)
 class LeadCreateAPIView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated, IsBranchUser]
     serializer_class = LeadSerializer
+
+    def create(self, request, *args, **kwargs):
+        """
+        If an `id` (or `lead_id`) is present in the payload, treat this POST as an update
+        to avoid creating duplicate leads when the frontend accidentally posts to create.
+        Otherwise proceed with normal create flow.
+        """
+        lead_id = request.data.get("id") or request.data.get("lead_id")
+        if lead_id:
+            try:
+                lead = Lead.objects.get(pk=lead_id)
+            except Lead.DoesNotExist:
+                lead = None
+
+            if lead:
+                serializer = self.get_serializer(lead, data=request.data, partial=True)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return super().create(request, *args, **kwargs)
 
 
 class LeadListAPIView(generics.ListAPIView):
@@ -55,6 +99,24 @@ class LeadUpdateAPIView(generics.UpdateAPIView):
     queryset = Lead.objects.all()
 
 
+class LeadRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    """Support GET, PUT/PATCH and DELETE at `/api/leads/<id>/` to match frontend expectations."""
+    permission_classes = [IsAuthenticated]
+    serializer_class = LeadSerializer
+    queryset = Lead.objects.all()
+
+    def get_permissions(self):
+        # allow read to any authenticated user, restrict write/delete to branch users
+        if self.request.method in ("PUT", "PATCH", "DELETE", "POST"):
+            return [IsAuthenticated(), IsBranchUser()]
+        return [IsAuthenticated()]
+
+    def perform_destroy(self, instance):
+        # No soft-delete field on Lead model: perform hard delete by default.
+        # If you prefer soft-delete, add `is_deleted` to Lead model and change this.
+        instance.delete()
+
+
 class FollowUpCreateAPIView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated, IsBranchUser]
     serializer_class = FollowUpHistorySerializer
@@ -65,8 +127,19 @@ class FollowUpCreateAPIView(generics.CreateAPIView):
         lead_id = request.data.get("lead")
         try:
             lead = Lead.objects.get(pk=lead_id)
+            # Update next follow-up date/time if provided
             lead.next_followup_date = request.data.get("next_followup_date") or lead.next_followup_date
+            # accept next_followup_time as well
+            if request.data.get("next_followup_time"):
+                try:
+                    lead.next_followup_time = request.data.get("next_followup_time")
+                except Exception:
+                    pass
+
+            # Update last contacted date from followup_date if provided
             lead.last_contacted_date = request.data.get("followup_date") or lead.last_contacted_date
+            # If followup_time provided, store it as part of next_followup_time if appropriate
+            # (lead model does not have a separate last_contacted_time field)
             lead.save()
         except Exception:
             pass

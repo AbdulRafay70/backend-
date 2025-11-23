@@ -77,3 +77,29 @@ class LeadsAPITests(APITestCase):
         resp = self.client.get(overdue_url)
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(any(item["id"] == loan.id for item in resp.data))
+
+    def test_create_lead_with_new_fields(self):
+        url = reverse("leads-create")
+        payload = {
+            "customer_full_name": "Ahmed Ali",
+            "passport_number": "AB1234567",
+            "contact_number": "+923001234567",
+            "branch": self.branch.id,
+            "organization": self.org.id,
+            "loan_amount": "50000.00",
+            "recovered_amount": "10000.00",
+            "recovery_date": "2025-11-18",
+            "chat_messages": [{"from": "agent:1", "message": "Called", "sent_at": "2025-11-01T10:00:00Z"}],
+            "assigned_to": self.staff_user.id,
+            "is_internal_task": True,
+            "notes": "Test lead created with financial fields"
+        }
+
+        # ensure only staff can create
+        self.client.force_authenticate(self.staff_user)
+        resp = self.client.post(url, payload, format="json")
+        self.assertEqual(resp.status_code, 201)
+        self.assertEqual(resp.data["customer_full_name"], "Ahmed Ali")
+        self.assertEqual(str(resp.data["loan_amount"]), "50000.00")
+        self.assertEqual(str(resp.data["recovered_amount"]), "10000.00")
+        self.assertEqual(resp.data["is_internal_task"], True)

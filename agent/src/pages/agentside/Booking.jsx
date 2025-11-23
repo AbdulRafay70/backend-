@@ -619,119 +619,190 @@ const TicketBooking = () => {
         return;
       }
 
+      // Abort controllers for active requests so we can cancel on unmount
+      const controllers = [];
+      let didCancel = false;
+
+      // Helper: normalize responses (arrays, paginated results, or data key)
+      const normalize = (resp) => {
+        if (!resp) return [];
+        const d = resp.data;
+        if (!d) return [];
+        if (Array.isArray(d)) return d;
+        if (Array.isArray(d?.results)) return d.results;
+        if (Array.isArray(d?.data)) return d.data;
+        return [];
+      };
+
+      // Helper: get with retry and support abort
+      const getWithRetry = async (url, retries = 2, backoff = 300) => {
+        const controller = new AbortController();
+        controllers.push(controller);
+        try {
+          const resp = await api.get(url, { signal: controller.signal });
+          return resp;
+        } catch (err) {
+          if (controller.signal.aborted) throw err;
+          if (retries > 0) {
+            await new Promise((res) => setTimeout(res, backoff));
+            return getWithRetry(url, retries - 1, backoff * 1.5);
+          }
+          // return null to allow partial results
+          return null;
+        }
+      };
+
+      // Helper: fetch URLs in batches to limit concurrency
+      const fetchUrlsInBatches = async (urls, batchSize = 3) => {
+        const results = [];
+        for (let i = 0; i < urls.length; i += batchSize) {
+          if (didCancel) break;
+          const batch = urls.slice(i, i + batchSize).map((u) => getWithRetry(u, 2));
+          // wait for batch to complete
+          const batchRes = await Promise.all(batch);
+          results.push(...batchRes);
+        }
+        return results;
+      };
+
+      // Use sessionStorage cache to provide instant UI response while we refresh in background
+      const cacheKey = `booking_cache_${uniqueOrgIds.join(",")}`;
       try {
-        setIsLoading(true);
+        const cached = sessionStorage.getItem(cacheKey);
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+            if (parsed && parsed.tickets && parsed.airlines && parsed.cities) {
+              // apply cached results immediately for fast UI
+              const ticketsData = parsed.tickets || [];
+              const airlinesData = parsed.airlines || [];
+              const citiesData = parsed.cities || [];
+
+              // build maps quickly
+              const airlinesById = {};
+              airlinesData.forEach((airline) => {
+                if (!airlinesById[airline.id]) airlinesById[airline.id] = airline;
+              });
+              const airlineMapData = Object.values(airlinesById).reduce((map, airline) => {
+                map[airline.id] = { name: airline.name, logo: airline.logo };
+                return map;
+              }, {});
+
+              const citiesById = {};
+              citiesData.forEach((city) => { if (!citiesById[city.id]) citiesById[city.id] = city; });
+              const cityMapData = Object.values(citiesById).reduce((map, city) => { map[city.id] = city.name; return map; }, {});
+              const cityCodeMapData = Object.values(citiesById).reduce((map, city) => { map[city.id] = city.code; return map; }, {});
+
+              const ticketsById = {};
+              ticketsData.forEach((t) => { if (!ticketsById[t.id]) ticketsById[t.id] = t; });
+
+              setTickets(Object.values(ticketsById));
+              setAirlineMap(airlineMapData);
+              setCityMap(cityMapData);
+              setCityCodeMap(cityCodeMapData);
+
+              // Initialize airline filters only for airlines that appear in the tickets
+              try {
+                const airlineIdsInTickets = new Set((ticketsData || []).map((t) => t.airline).filter(Boolean));
+                const initialAirlineFiltersCached = {};
+                Object.values(airlinesById).forEach((airline) => {
+                  if (airlineIdsInTickets.has(airline.id)) {
+                    initialAirlineFiltersCached[airline.name] = false;
+                  }
+                });
+                setAirlineFilters(initialAirlineFiltersCached);
+              } catch (e) {
+                // Ignore filter init errors from cache
+              }
+
+              // quick stop-loading so user can interact; we'll refresh in background
+              setIsLoading(false);
+            }
+          } catch (e) {
+            // ignore cache parse errors
+          }
+        }
+      } catch (e) {
+        // ignore sessionStorage errors
+      }
+
+      // Now perform background refresh with limited concurrency
+      try {
         setError(null);
+        setIsLoading(true);
 
-        // Always fetch fresh data from API (no local cache)
+        const ticketUrls = uniqueOrgIds.map((id) => `http://127.0.0.1:8000/api/tickets/?organization=${id}`);
+        const airlineUrls = uniqueOrgIds.map((id) => `http://127.0.0.1:8000/api/airlines/?organization=${id}`);
+        const cityUrls = uniqueOrgIds.map((id) => `http://127.0.0.1:8000/api/cities/?organization=${id}`);
 
-        // No valid cache, fetch fresh data
-        // Fetch tickets, airlines and cities for all organizations in parallel
-        const ticketsPromises = uniqueOrgIds.map((id) => api.get(`http://127.0.0.1:8000/api/tickets/?organization=${id}`));
-        const airlinesPromises = uniqueOrgIds.map((id) => api.get(`http://127.0.0.1:8000/api/airlines/?organization=${id}`));
-        const citiesPromises = uniqueOrgIds.map((id) => api.get(`http://127.0.0.1:8000/api/cities/?organization=${id}`));
+        const [ticketsResponses, airlinesResponses, citiesResponses] = await Promise.all([
+          ticketUrls.length ? fetchUrlsInBatches(ticketUrls, 3) : [],
+          airlineUrls.length ? fetchUrlsInBatches(airlineUrls, 3) : [],
+          cityUrls.length ? fetchUrlsInBatches(cityUrls, 3) : [],
+        ]);
 
-        const ticketsResponses = uniqueOrgIds.length ? await Promise.all(ticketsPromises) : [];
-        const airlinesResponses = uniqueOrgIds.length ? await Promise.all(airlinesPromises) : [];
-        const citiesResponses = uniqueOrgIds.length ? await Promise.all(citiesPromises) : [];
+        const ticketsData = ticketsResponses.map((r) => (r ? normalize(r) : [])).flat().filter(Boolean);
+        const airlinesData = airlinesResponses.map((r) => (r ? normalize(r) : [])).flat().filter(Boolean);
+        const citiesData = citiesResponses.map((r) => (r ? normalize(r) : [])).flat().filter(Boolean);
 
-        // Flatten and dedupe. Support direct arrays or paginated responses with `results`.
-        const normalize = (resp) => {
-          if (!resp) return [];
-          const d = resp.data;
-          if (!d) return [];
-          if (Array.isArray(d)) return d;
-          if (Array.isArray(d?.results)) return d.results;
-          // If API returns an object that directly contains items under a key, try to detect common keys
-          if (Array.isArray(d?.data)) return d.data;
-          return [];
-        };
-
-        const ticketsData = ticketsResponses.map((r) => normalize(r)).flat().filter(Boolean);
-        const airlinesData = airlinesResponses.map((r) => normalize(r)).flat().filter(Boolean);
-        const citiesData = citiesResponses.map((r) => normalize(r)).flat().filter(Boolean);
-
-        // Create airline map with names and logos
-        // dedupe airlines by id
+        // Build airline and city maps
         const airlinesById = {};
-        airlinesData.forEach((airline) => {
-          if (!airlinesById[airline.id]) airlinesById[airline.id] = airline;
-        });
-        const airlineMapData = Object.values(airlinesById).reduce((map, airline) => {
-          map[airline.id] = { name: airline.name, logo: airline.logo };
-          return map;
-        }, {});
+        airlinesData.forEach((airline) => { if (!airlinesById[airline.id]) airlinesById[airline.id] = airline; });
+        const airlineMapData = Object.values(airlinesById).reduce((map, airline) => { map[airline.id] = { name: airline.name, logo: airline.logo }; return map; }, {});
 
-        // Create city map (for names)
-        // dedupe cities by id
         const citiesById = {};
-        citiesData.forEach((city) => {
-          if (!citiesById[city.id]) citiesById[city.id] = city;
-        });
-        const cityMapData = Object.values(citiesById).reduce((map, city) => {
-          map[city.id] = city.name;
-          return map;
-        }, {});
+        citiesData.forEach((city) => { if (!citiesById[city.id]) citiesById[city.id] = city; });
+        const cityMapData = Object.values(citiesById).reduce((map, city) => { map[city.id] = city.name; return map; }, {});
+        const cityCodeMapData = Object.values(citiesById).reduce((map, city) => { map[city.id] = city.code; return map; }, {});
 
-        // Create city code map
-        const cityCodeMapData = Object.values(citiesById).reduce((map, city) => {
-          map[city.id] = city.code;
-          return map;
-        }, {});
-
-        // Initialize airline filters
+        // Initialize airline filters only for airlines that appear in fetched tickets
+        const airlineIdsInTickets = new Set((ticketsData || []).map((t) => t.airline).filter(Boolean));
         const initialAirlineFilters = {};
-        Object.values(airlineMapData).forEach((airline) => {
-          initialAirlineFilters[airline.name] = false;
+        Object.values(airlinesById).forEach((airline) => {
+          if (airlineIdsInTickets.has(airline.id)) {
+            initialAirlineFilters[airline.name] = false;
+          }
         });
 
-        // Debug: log counts
-        // console.debug can be inspected in browser devtools if needed
-        console.debug('Ticket fetch counts:', {
-          orgs: uniqueOrgIds.length,
-          tickets: ticketsData.length,
-          airlines: airlinesData.length,
-          cities: citiesData.length,
-        });
+        // Debugging counts
+        console.debug('Ticket fetch counts (refreshed):', { orgs: uniqueOrgIds.length, tickets: ticketsData.length, airlines: airlinesData.length, cities: citiesData.length });
 
-        // Update state
-        // dedupe tickets by id
+        // Update state (dedupe tickets by id)
         const ticketsById = {};
-        ticketsData.forEach((t) => {
-          if (!ticketsById[t.id]) ticketsById[t.id] = t;
-        });
+        ticketsData.forEach((t) => { if (!ticketsById[t.id]) ticketsById[t.id] = t; });
         setTickets(Object.values(ticketsById));
         setAirlineMap(airlineMapData);
         setCityMap(cityMapData);
         setCityCodeMap(cityCodeMapData);
         setAirlineFilters(initialAirlineFilters);
 
-        // Do not cache response locally; always use fresh API data
+        // Cache fresh data for short time (1 minute)
+        try {
+          sessionStorage.setItem(cacheKey, JSON.stringify({ tickets: ticketsData, airlines: airlinesData, cities: citiesData, ts: Date.now() }));
+        } catch (e) {
+          // ignore storage errors
+        }
       } catch (err) {
         let errorMessage = "Failed to load data";
-
         if (err.response) {
-          // Server responded with error status
-          errorMessage =
-            err.response.data?.message ||
-            err.response.data?.detail ||
-            `Server error: ${err.response.status}`;
+          errorMessage = err.response.data?.message || err.response.data?.detail || `Server error: ${err.response.status}`;
         } else if (err.request) {
-          // Request was made but no response received
           errorMessage = "Network error: No response from server";
         } else if (err.code === "ECONNABORTED") {
-          // Request timed out
           errorMessage = "Request timed out. Please try again.";
         } else if (err.message) {
-          // Other errors
           errorMessage = err.message;
         }
-
         setError(errorMessage);
         console.error("API error:", err);
       } finally {
-        setIsLoading(false);
+        if (!didCancel) setIsLoading(false);
       }
+
+      return () => {
+        didCancel = true;
+        controllers.forEach((c) => c.abort());
+      };
     };
 
     fetchData();

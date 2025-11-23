@@ -48,6 +48,12 @@ const HotelRowSkeleton = () => {
       <td>
         <div className="shimmer" style={{ height: "20px", width: "70%", borderRadius: "4px" }}></div>
       </td>
+      <td>
+        <div className="shimmer" style={{ height: "20px", width: "70%", borderRadius: "4px" }}></div>
+      </td>
+      <td>
+        <div className="shimmer" style={{ height: "20px", width: "70%", borderRadius: "4px" }}></div>
+      </td>
     </tr>
   );
 };
@@ -166,18 +172,40 @@ const Hotels = () => {
         });
       }
 
-      const normalize = (city) => city?.toString().trim().toLowerCase() || "";
+      const normalizeCity = (city) => city?.toString().trim().toLowerCase() || "";
 
-      // Filter hotels by city
       // Normalize price objects to ensure `price` exists (fallback to `selling_price`)
-      const normalizedAll = (allHotels || []).map(h => ({ ...h, prices: Array.isArray(h.prices) ? h.prices.map(p => ({ ...p, price: (p.price ?? p.selling_price ?? '') })) : h.prices }));
+      const normalizedAll = (allHotels || []).map(h => ({
+        ...h,
+        prices: Array.isArray(h.prices) ? h.prices.map(p => ({ ...p, price: (p.price ?? p.selling_price ?? ''), selling_price: (p.selling_price ?? p.price ?? null) })) : h.prices,
+        orgName: h.orgName || h.organization_name || h.orgName || h.org || h.orgName || h.orgName
+      }));
 
-      const makkah = normalizedAll.filter((hotel) => normalize(hotel.city) === "makkah");
-      const madinah = normalizedAll.filter((hotel) => normalize(hotel.city) === "madina");
+      // Deduplicate hotels by id: if same hotel appears for multiple orgs, merge org names
+      const byId = {};
+      normalizedAll.forEach(h => {
+        const id = String(h.id);
+        const orgName = h.orgName || h.orgName || h.orgId || h.org || h.organization || null;
+        if (!byId[id]) {
+          byId[id] = { ...h, orgNames: orgName ? [String(orgName)] : [] };
+        } else {
+          // merge org names
+          const existing = byId[id];
+          if (orgName && !existing.orgNames.includes(String(orgName))) existing.orgNames.push(String(orgName));
+          // prefer to keep earliest available fields (address, prices etc.)
+          if ((!existing.address || existing.address === '') && h.address) existing.address = h.address;
+          if ((!existing.prices || existing.prices.length === 0) && (h.prices || []).length > 0) existing.prices = h.prices;
+        }
+      });
+
+      const uniqueHotels = Object.values(byId).map(h => ({ ...h, orgName: (h.orgNames || []).join(', ') }));
+
+      const makkah = uniqueHotels.filter((hotel) => normalizeCity(hotel.city) === "makkah");
+      const madinah = uniqueHotels.filter((hotel) => normalizeCity(hotel.city) === "madina");
 
       setMakkahHotels(makkah);
       setMadinahHotels(madinah);
-      setHotels(normalizedAll);
+      setHotels(uniqueHotels);
       setTotalRecords(allHotels.length);
     } catch (error) {
       console.error("Error fetching hotels:", error);
@@ -225,10 +253,30 @@ const Hotels = () => {
     };
 
     prices.forEach(price => {
-      if (price.room_type in priceMap &&
-        price.start_date === startDate &&
-        price.end_date === endDate) {
-        priceMap[price.room_type] = price;
+      if (!price) return;
+      // Only consider entries for the requested date range
+      if (startDate && endDate && (price.start_date !== startDate || price.end_date !== endDate)) return;
+
+      const rt = String(price.room_type || '').toLowerCase();
+
+      let key = null;
+      if (rt === 'single' || rt === 'only-room' || rt === 'only' || rt === 'single bed') key = 'Only-Room';
+      else if (rt === 'sharing' || price.is_sharing_allowed) key = 'Sharing';
+      else if (rt.includes('double')) key = 'Double Bed';
+      else if (rt.includes('triple')) key = 'Triple Bed';
+      else if (rt.includes('quad')) key = 'Quad Bed';
+      else if (rt.includes('quint')) key = 'Quint Bed';
+
+      if (!key) {
+        // Fallbacks: some APIs use short names like 'double','triple' etc.
+        if (rt === 'double') key = 'Double Bed';
+        if (rt === 'triple') key = 'Triple Bed';
+        if (rt === 'quad') key = 'Quad Bed';
+        if (rt === 'quint') key = 'Quint Bed';
+      }
+
+      if (key && priceMap[key] == null) {
+        priceMap[key] = price;
       }
     });
 
@@ -325,21 +373,42 @@ const Hotels = () => {
     <div className="mb-5" ref={tableRef}>
       <h4 className="text-center fw-bold">{title} Hotels</h4>
       <div className="bg-white rounded shadow-sm">
-        <div className="table-responsive">
-          <table className="table mb-0">
+        <div className="table-responsive scrollable">
+          <table className="table mb-0 table-sm align-middle" style={{ fontSize: 13 }}>
+            <colgroup>
+              <col style={{ width: '18%' }} />
+              <col style={{ width: '8%' }} />
+              <col style={{ width: '16%' }} />
+              <col style={{ width: '6%' }} />
+              <col style={{ width: '6%' }} />
+              <col style={{ width: '6%' }} />
+              <col style={{ width: '10%' }} />
+              <col style={{ width: '5%' }} />
+              <col style={{ width: '5%' }} />
+              <col style={{ width: '5%' }} />
+              <col style={{ width: '5%' }} />
+              <col style={{ width: '5%' }} />
+              <col style={{ width: '6%' }} />
+              <col style={{ width: '5%' }} />
+              <col style={{ width: '5%' }} />
+            </colgroup>
             <thead className="table-light">
               <tr>
                 <th>Hotel Name</th>
-                <th>Category</th>
+                <th>City</th>
                 <th>Address</th>
-                <th>Available</th>
+                <th>Category</th>
+                <th>Distance (m)</th>
+                <th>Walk Time (min)</th>
                 <th>Price Dates</th>
-                <th>Only Room</th>
-                <th>Sharing</th>
-                <th>Double</th>
-                <th>Triple</th>
-                <th>Quad</th>
-                <th>Quint</th>
+                <th>Sharing Price</th>
+                <th>Quint Price</th>
+                <th>Quad Price</th>
+                <th>Triple Price</th>
+                <th>Double Price</th>
+                <th>Contact</th>
+                <th>Status</th>
+                <th>Availability</th>
               </tr>
             </thead>
             <tbody className="small">
@@ -351,7 +420,7 @@ const Hotels = () => {
                 </>
               ) : data.length === 0 ? (
                 <tr>
-                  <td colSpan="12" className="text-center">
+                  <td colSpan="15" className="text-center">
                     No hotels found
                   </td>
                 </tr>
@@ -371,26 +440,32 @@ const Hotels = () => {
                     const pricesByType = getPricesByRoomType(hotel.prices, startDate, endDate);
 
                     return (
-                      <tr key={`${hotel.id}-${groupIndex}`}>
+                      <tr key={`${String(hotel.id)}-${String(hotel.orgId ?? hotel.organization ?? hotel.org ?? 'org')}-${String(groupIndex)}-${String(group[0]?.start_date ?? '')}`}>
                         {groupIndex === 0 ? (
                           <>
                             <td rowSpan={sortedGroups.length}>
-                              <strong>{hotel.name}</strong>
-                              <br />
-                              <small className="text-muted">{hotel.distance ? `${Math.round(Number(hotel.distance) * 1000)} m` : 'N/A'}</small>
-                              {hotel.orgName ? (
-                                <div>
-                                  <small className="text-muted">Org: {hotel.orgName}</small>
-                                </div>
-                              ) : null}
-                            </td>
-                            <td rowSpan={sortedGroups.length}>{hotel.category}</td>
-                            <td rowSpan={sortedGroups.length} style={{ color: "#1B78CE" }}>
-                              {hotel.address}
+                              <strong className="hotel-name" style={{ display: 'inline-block', maxWidth: '100%' }}>{hotel.name}</strong>
                             </td>
                             <td rowSpan={sortedGroups.length}>
-                              {formatDate(hotel.available_start_date)} -{" "}
-                              {formatDate(hotel.available_end_date)}
+                              {hotel.city_name ? hotel.city_name : (hotel.city || 'N/A')}
+                            </td>
+                            <td rowSpan={sortedGroups.length} style={{ color: "#1B78CE" }}>
+                              <div style={{ maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{hotel.address}</div>
+                            </td>
+                            <td rowSpan={sortedGroups.length}>{hotel.category}</td>
+                            <td rowSpan={sortedGroups.length}>
+                              {hotel.distance !== undefined && hotel.distance !== null && hotel.distance !== "" ? (
+                                <span>{Number(hotel.distance).toLocaleString()} m</span>
+                              ) : (
+                                "N/A"
+                              )}
+                            </td>
+                            <td rowSpan={sortedGroups.length}>
+                              {(hotel.walking_time !== undefined && hotel.walking_time !== null && hotel.walking_time !== "") ? (
+                                <span>{String(hotel.walking_time)} min</span>
+                              ) : (
+                                "N/A"
+                              )}
                             </td>
                           </>
                         ) : null}
@@ -398,25 +473,50 @@ const Hotels = () => {
                         <td className={`small ${!isOldestGroup ? "text-danger " : ""}`}>
                           {formatDate(startDate)} - {formatDate(endDate)}
                         </td>
-                        <td className={!isOldestGroup ? "text-danger " : ""}>
-                          {pricesByType['Only-Room'] ? `SAR ${pricesByType['Only-Room'].price}` : 'N/A'}
+
+                        <td className={!isOldestGroup ? "text-danger " : ""} style={{ fontWeight: 600 }}>
+                          {pricesByType['Sharing'] ? `PKR ${pricesByType['Sharing'].price}` : 'N/A'}
+                        </td>
+                        <td className={!isOldestGroup ? "text-danger " : ""} style={{ fontWeight: 600 }}>
+                          {pricesByType['Quint Bed'] ? `PKR ${pricesByType['Quint Bed'].price}` : 'N/A'}
+                        </td>
+                        <td className={!isOldestGroup ? "text-danger " : ""} style={{ fontWeight: 600 }}>
+                          {pricesByType['Quad Bed'] ? `PKR ${pricesByType['Quad Bed'].price}` : 'N/A'}
+                        </td>
+                        <td className={!isOldestGroup ? "text-danger " : ""} style={{ fontWeight: 600 }}>
+                          {pricesByType['Triple Bed'] ? `PKR ${pricesByType['Triple Bed'].price}` : 'N/A'}
+                        </td>
+                        <td className={!isOldestGroup ? "text-danger " : ""} style={{ fontWeight: 600 }}>
+                          {pricesByType['Double Bed'] ? `PKR ${pricesByType['Double Bed'].price}` : 'N/A'}
                         </td>
 
-                        <td className={!isOldestGroup ? "text-danger " : ""}>
-                          {pricesByType['Sharing'] ? `SAR ${pricesByType['Sharing'].price}` : 'N/A'}
-                        </td>
-                        <td className={!isOldestGroup ? "text-danger " : ""}>
-                          {pricesByType['Double Bed'] ? `SAR ${pricesByType['Double Bed'].price}` : 'N/A'}
-                        </td>
-                        <td className={!isOldestGroup ? "text-danger " : ""}>
-                          {pricesByType['Triple Bed'] ? `SAR ${pricesByType['Triple Bed'].price}` : 'N/A'}
-                        </td>
-                        <td className={!isOldestGroup ? "text-danger " : ""}>
-                          {pricesByType['Quad Bed'] ? `SAR ${pricesByType['Quad Bed'].price}` : 'N/A'}
-                        </td>
-                        <td className={!isOldestGroup ? "text-danger " : ""}>
-                          {pricesByType['Quint Bed'] ? `SAR ${pricesByType['Quint Bed'].price}` : 'N/A'}
-                        </td>
+                        {groupIndex === 0 ? (
+                          <>
+                            <td rowSpan={sortedGroups.length} style={{ whiteSpace: 'nowrap' }}>
+                              {hotel.contact_number ? (
+                                <span>
+                                  {hotel.contact_number}
+                                </span>
+                              ) : "N/A"}
+                            </td>
+                            <td rowSpan={sortedGroups.length}>
+                              {hotel.is_active ? (
+                                <span className="badge bg-success" style={{ fontSize: 12, padding: '6px 8px' }}>Active</span>
+                              ) : (
+                                <span className="badge bg-danger" style={{ fontSize: 12, padding: '6px 8px' }}>Inactive</span>
+                              )}
+                            </td>
+                            <td rowSpan={sortedGroups.length}>
+                              {hotel.available_start_date && hotel.available_end_date ? (
+                                <small>
+                                  {formatDate(hotel.available_start_date)} - {formatDate(hotel.available_end_date)}
+                                </small>
+                              ) : (
+                                <span>Not Set</span>
+                              )}
+                            </td>
+                          </>
+                        ) : null}
                       </tr>
                     );
                   });
@@ -470,6 +570,31 @@ const Hotels = () => {
     }
   }
 `}</style>
+      <style>{`
+  /* Scrollable table with sticky header */
+  .table-responsive.scrollable {
+    max-height: 60vh; /* adjust as needed */
+    overflow: auto;
+  }
+
+  .table-responsive.scrollable table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: #ffffff; /* ensure header has background */
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
+  }
+
+  /* Make first column stand out (optional) */
+  .table td, .table th {
+    vertical-align: middle;
+    white-space: nowrap;
+    text-align: center; /* center all cells by default */
+  }
+
+  /* Allow long addresses to be truncated inside cells */
+  .hotel-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+`}</style>
       <div className="min-vh-100" style={{ fontFamily: "Poppins, sans-serif" }}>
       <div className="row g-0">
         {/* Sidebar */}
@@ -510,9 +635,70 @@ const Hotels = () => {
                 </div>
               )}
 
-              {/* Tables */}
-              {renderHotelTable("Makkah", makkahHotels, makkahTableRef)}
-              {renderHotelTable("Madina", madinahHotels, madinahTableRef)}
+              {/* Page title */}
+              <div className="mb-3">
+                <h2 className="mb-1" style={{ fontWeight: 600, color: "#2c3e50" }}>Available Hotels</h2>
+                <p className="text-muted mb-0">Manage and review hotel pricing and availability</p>
+              </div>
+
+              {/* Statistics Cards (Total, Active, Cities, Inactive) */}
+              <div className="row g-3 mb-4">
+                <div className="col-6 col-md-3">
+                  <div className="card shadow-sm border-0">
+                    <div className="card-body d-flex align-items-center">
+                      <div className="p-2 rounded" style={{ backgroundColor: "#e3f2fd" }}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 6h16v12H4z" fill="#1976d2"/></svg>
+                      </div>
+                      <div className="ms-3">
+                        <small className="text-muted">Total Hotels</small>
+                        <div className="h5 mb-0">{hotels.length}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="col-6 col-md-3">
+                  <div className="card shadow-sm border-0">
+                    <div className="card-body d-flex align-items-center">
+                      <div className="p-2 rounded" style={{ backgroundColor: "#e8f5e9" }}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#388e3c" strokeWidth="2"/></svg>
+                      </div>
+                      <div className="ms-3">
+                        <small className="text-muted">Active Hotels</small>
+                        <div className="h5 mb-0">{hotels.filter(h => h.is_active).length}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="col-6 col-md-3">
+                  <div className="card shadow-sm border-0">
+                    <div className="card-body d-flex align-items-center">
+                      <div className="p-2 rounded" style={{ backgroundColor: "#fff3e0" }}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" fill="#f57c00"/></svg>
+                      </div>
+                      <div className="ms-3">
+                        <small className="text-muted">Cities</small>
+                        <div className="h5 mb-0">{new Set(hotels.map(h => String(h.city).trim())).size}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="col-6 col-md-3">
+                  <div className="card shadow-sm border-0">
+                    <div className="card-body d-flex align-items-center">
+                      <div className="p-2 rounded" style={{ backgroundColor: "#fce4ec" }}>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 2v20" stroke="#c2185b" strokeWidth="2"/></svg>
+                      </div>
+                      <div className="ms-3">
+                        <small className="text-muted">Inactive</small>
+                        <div className="h5 mb-0">{hotels.filter(h => !h.is_active).length}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Unified Hotels Table */}
+              {renderHotelTable("Available Hotels", hotels, null)}
 
               <div className="mt-3">
                 <AdminFooter />

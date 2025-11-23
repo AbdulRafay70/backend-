@@ -6,7 +6,7 @@ import AgentHeader from '../../components/AgentHeader';
 const BookingSummary = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { package: selectedPackage, bookingInfo, personDetails = [], totalPrice, families = [] } = location.state || {};
+  const { package: selectedPackage, bookingInfo, personDetails = [], totalPrice, families = [], cityMap = {}, airlineMap = {} } = location.state || {};
 
   // Group persons by family_index
   const groups = [];
@@ -77,22 +77,39 @@ const BookingSummary = () => {
 
                   <div className="card mb-3">
                     <div className="card-body">
-                      <h5 className="card-title">Ticket / Flight Info</h5>
-                      {selectedPackage?.ticket_details?.length ? (
-                        selectedPackage.ticket_details.map((td, i) => {
-                          const info = td.ticket_info || {};
-                          return (
-                            <div key={i} className="mb-2">
-                              <div><strong>Airline:</strong> {info.airline || '—'}</div>
-                              <div className="small text-muted">Adult fare: Rs. {Number(info.adult_price || 0).toLocaleString()} — Infant fare: Rs. {Number(info.infant_price || 0).toLocaleString()}</div>
-                              <div className="small text-muted">Trip: {(info.trip_details || []).join(' → ') || '—'}</div>
-                            </div>
-                          );
-                        })
-                      ) : (
-                        <p className="text-muted">No ticket info</p>
-                      )}
-                    </div>
+                        <h5 className="card-title">Ticket / Flight Info</h5>
+                        {(
+                          // prefer bookingInfo.ticket_details if present, otherwise selectedPackage.ticket_details
+                          (bookingInfo && bookingInfo.ticket_details && bookingInfo.ticket_details.length > 0) ? bookingInfo.ticket_details : (selectedPackage?.ticket_details || [])
+                        ).length ? (
+                          (bookingInfo && bookingInfo.ticket_details && bookingInfo.ticket_details.length > 0 ? bookingInfo.ticket_details : selectedPackage.ticket_details).map((td, i) => {
+                            // td may contain trip_details array and prices
+                            const adultFare = td.adult_price || td.ticket_info?.adult_price || bookingInfo?.total_ticket_amount || 0;
+                            const infantFare = td.infant_price || td.ticket_info?.infant_price || 0;
+                            const ticketId = td.ticket || td.ticket_id || td.id || selectedPackage?.id || '—';
+                            const tripArr = (td.trip_details || []).map(t => {
+                              const dep = cityMap[t.departure_city] || t.departure_city || t.departure_city_id || '—';
+                              const arr = cityMap[t.arrival_city] || t.arrival_city || t.arrival_city_id || '—';
+                              const depDate = t.departure_date_time || t.departure_date || '—';
+                              return `${dep} → ${arr} (${depDate})`;
+                            });
+
+                            // try to get airline name from map if td has airline or ticket has airline
+                            const airlineKey = td.airline || td.ticket_info?.airline || td.ticket?.airline || td.ticket_id;
+                            const airlineName = airlineMap && airlineKey ? (airlineMap[airlineKey]?.name || airlineMap[airlineKey] || airlineKey) : (td.airline_name || td.airline || '—');
+
+                            return (
+                              <div key={i} className="mb-2">
+                                <div><strong>Airline:</strong> {airlineName}</div>
+                                <div className="small text-muted">Ticket ID: {ticketId} — Adult fare: Rs. {Number(adultFare || 0).toLocaleString()} — Infant fare: Rs. {Number(infantFare || 0).toLocaleString()}</div>
+                                <div className="small text-muted">{tripArr.length ? tripArr.join(' • ') : '—'}</div>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <p className="text-muted">No ticket info</p>
+                        )}
+                      </div>
                   </div>
 
                   <div className="card mb-3">

@@ -8,8 +8,12 @@ import { useLocation, useNavigate } from "react-router-dom";
 const FlightBookingForm = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { ticket, cityMap, airlineMap } = location.state || {};
+  const { ticket: passedTicket, cityMap, airlineMap } = location.state || {};
+  const [ticket, setTicket] = useState(passedTicket || null);
   const [isLoading, setIsLoading] = useState(true);
+  const [ticketFetchFailed, setTicketFetchFailed] = useState(false);
+  const [ticketFetchErrorMsg, setTicketFetchErrorMsg] = useState("");
+  const [retryKey, setRetryKey] = useState(0);
   const [formErrors, setFormErrors] = useState({});
   const [touchedFields, setTouchedFields] = useState({});
 
@@ -293,20 +297,237 @@ const FlightBookingForm = () => {
   };
 
   useEffect(() => {
-    if (ticket) {
-      setIsLoading(false);
-    }
-  }, [ticket]);
+    let mounted = true;
 
-  if (!ticket) return null;
+    const needsFetch = () => {
+      // If no passed ticket or no trip_details or missing outbound trip, we should fetch
+      if (!passedTicket || !passedTicket.id) return false;
+      const td = passedTicket.trip_details;
+      if (!Array.isArray(td) || td.length === 0) return true;
+      // If no 'Departure' trip present, fetch full details
+      return !td.some(t => t && t.trip_type === "Departure");
+    };
+
+    if (!needsFetch()) {
+      // Passed ticket already has trip details
+      setTicket(passedTicket);
+      setIsLoading(false);
+      setTicketFetchFailed(false);
+      return () => { mounted = false; };
+    }
+
+    const fetchTicket = async () => {
+      try {
+        // Try multiple token keys and auth header formats to account for different setups
+        const tokenCandidates = [
+          localStorage.getItem('agentAccessToken'),
+          localStorage.getItem('accessToken'),
+          localStorage.getItem('token'),
+        ].filter(Boolean);
+
+        const id = passedTicket && passedTicket.id;
+        if (!id) {
+          if (mounted) {
+            setTicket(null);
+            setTicketFetchFailed(true);
+            setTicketFetchErrorMsg('Ticket id missing');
+            setIsLoading(false);
+          }
+          return;
+        }
+        // Helper to attempt a fetch with given headers and return {ok, status, body}
+        const tryFetch = async (url, headers) => {
+          try {
+            const resp = await fetch(url, { headers });
+            let bodyText = null;
+            try {
+              bodyText = await resp.text();
+            } catch (e) {
+              bodyText = null;
+            }
+            return { ok: resp.ok, status: resp.status, bodyText, resp };
+          } catch (e) {
+            return { ok: false, status: null, bodyText: String(e), resp: null };
+          }
+        };
+
+        // Attempt to determine organization id from common locations
+        // First, try to read agentOrganization from localStorage which is used elsewhere in the app
+        let parsedAgentOrg = null;
+        try {
+          const ao = localStorage.getItem('agentOrganization');
+          if (ao) parsedAgentOrg = JSON.parse(ao);
+        } catch (e) {
+          parsedAgentOrg = null;
+        }
+
+        const agentOrgIds = Array.isArray(parsedAgentOrg && parsedAgentOrg.ids) ? parsedAgentOrg.ids : [];
+
+        const orgCandidates = [
+          // prefer an explicit owner id on passedTicket if present
+          passedTicket && (passedTicket.owner_organization_id || passedTicket.organization_id || passedTicket.organization || passedTicket.org_id || passedTicket.org),
+          // prefer one of the agent's organization ids if available
+          ...(agentOrgIds || []),
+          // legacy localStorage keys
+          localStorage.getItem('organization'),
+          localStorage.getItem('orgId'),
+          localStorage.getItem('org_id'),
+        ].filter(Boolean);
+
+        // Build a prioritized list of organization ids to try.
+        // Prefer the agent's org ids, then any owner org on the ticket, then legacy keys.
+        const tryOrgIds = [];
+        if (Array.isArray(agentOrgIds) && agentOrgIds.length) {
+          tryOrgIds.push(...agentOrgIds);
+        }
+        // include owner organization from the passed ticket if present
+        const ownerOrg = passedTicket && (passedTicket.owner_organization_id || passedTicket.organization_id || passedTicket.organization || passedTicket.org_id || passedTicket.org);
+        if (ownerOrg && !tryOrgIds.includes(ownerOrg)) tryOrgIds.push(ownerOrg);
+        // add other legacy candidates
+        orgCandidates.forEach(o => {
+          if (!tryOrgIds.includes(o)) tryOrgIds.push(o);
+        });
+
+        // Always include an empty attempt (no organization) as last resort
+        tryOrgIds.push(null);
+
+        const token = localStorage.getItem('agentAccessToken') || localStorage.getItem('accessToken') || localStorage.getItem('token');
+        const headers = token ? { Authorization: `Bearer ${token}`, Accept: 'application/json' } : { Accept: 'application/json' };
+
+        // Helper to decide whether a candidate contains an outbound trip
+        const candidateHasOutbound = (candidate) => {
+          if (!candidate) return false;
+          const td = Array.isArray(candidate.trip_details) ? candidate.trip_details : [];
+          // If explicit trip_type markers exist, prefer those
+          if (td.some(t => t && t.trip_type === "Departure")) return true;
+          // If no trip_type present but there is exactly one trip_details entry,
+          // assume it's the outbound (common for one-way tickets). Also allow
+          // top-level `trip_type: 'One-way'` as hint.
+          if (td.length === 1) return true;
+          if (candidate.trip_type && String(candidate.trip_type).toLowerCase().includes('one')) return td.length > 0;
+          return false;
+        };
+
+        // Try each org id sequentially until we find a usable ticket
+        for (let i = 0; i < tryOrgIds.length; i++) {
+          const org = tryOrgIds[i];
+          const queryUrl = org ? `http://127.0.0.1:8000/api/tickets/?id=${id}&organization=${org}` : `http://127.0.0.1:8000/api/tickets/?id=${id}`;
+          console.debug('Attempting ticket fetch for organization:', org, 'url:', queryUrl);
+
+          const resp = await tryFetch(queryUrl, headers);
+          // If network level error, continue to next org
+          if (!resp.resp) {
+            console.warn('Network error when fetching', queryUrl, resp.bodyText);
+            continue;
+          }
+
+          // parse JSON body using the text already read by tryFetch
+          let parsed = null;
+          if (resp.bodyText) {
+            try {
+              parsed = JSON.parse(resp.bodyText);
+            } catch (e) {
+              console.warn('Failed to parse JSON for', queryUrl, resp.bodyText);
+              parsed = null;
+            }
+          } else {
+            parsed = null;
+          }
+
+          if (resp.ok && parsed) {
+            const items = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.results) ? parsed.results : (Array.isArray(parsed.data) ? parsed.data : []));
+            console.debug('Received items count for org', org, items && items.length);
+            if (items && items.length) {
+              const candidate = items[0];
+              if (candidateHasOutbound(candidate)) {
+                if (mounted) {
+                  setTicket(candidate);
+                  setTicketFetchFailed(false);
+                  setTicketFetchErrorMsg('');
+                  setIsLoading(false);
+                }
+                return;
+              }
+              // If item exists but doesn't have outbound, log and continue
+              console.warn('Ticket for id', id, 'returned for org', org, 'but missing explicit outbound trip_details', candidate);
+            }
+            // no items -> continue to next org
+            continue;
+          }
+
+          // Handle 401/403 explicitly and stop trying further (authorization likely same across orgs)
+          if (resp.status === 401) {
+            if (mounted) {
+              setTicket(null);
+              setTicketFetchFailed(true);
+              setTicketFetchErrorMsg('Unauthorized (401) - please log in or refresh your session');
+              setIsLoading(false);
+            }
+            return;
+          }
+          if (resp.status === 403) {
+            if (mounted) {
+              setTicket(null);
+              setTicketFetchFailed(true);
+              setTicketFetchErrorMsg("Forbidden (403) - you don't have permission to view this ticket");
+              setIsLoading(false);
+            }
+            return;
+          }
+          // otherwise continue to next org
+        }
+
+        // After exhausting attempts
+        if (mounted) {
+          setTicket(null);
+          setTicketFetchFailed(true);
+          setTicketFetchErrorMsg(`Ticket not returned for your organization(s) or missing outbound trip details (tried: ${tryOrgIds.filter(x => x !== null).join(', ')})`);
+          setIsLoading(false);
+        }
+      } catch (err) {
+        console.error('Failed to fetch ticket details', err);
+        if (mounted) {
+          setTicket(null);
+          setTicketFetchFailed(true);
+          setTicketFetchErrorMsg(String(err));
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchTicket();
+
+    return () => { mounted = false; };
+  }, [passedTicket, retryKey]);
+
+  if (!ticket && isLoading) return null;
+
+  if (!ticket && !isLoading) {
+    return (
+      <div className="card border-1 shadow-sm mb-4 rounded-2 border-black">
+        <div className="card-body p-4">
+          <h5>Ticket details not available</h5>
+          <p className="text-danger">{ticketFetchErrorMsg || 'Ticket information could not be retrieved.'}</p>
+          <div className="d-flex gap-2 mt-3">
+            <button className="btn btn-outline-secondary" onClick={handleCancel}>Back to bookings</button>
+            <button className="btn btn-primary" onClick={() => { setRetryKey(k => k + 1); setIsLoading(true); setTicketFetchFailed(false); setTicketFetchErrorMsg(""); }}>Try again</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Flight details processing
   const airlineInfo = airlineMap[ticket.airline] || {};
   const tripDetails = ticket.trip_details || [];
   const stopoverDetails = ticket.stopover_details || [];
 
-  const outboundTrip = tripDetails.find((t) => t.trip_type === "Departure");
-  const returnTrip = tripDetails.find((t) => t.trip_type === "Return");
+  // Support tickets where trip_details entries don't include explicit
+  // `trip_type` values (common for one-way tickets that only have a
+  // single segment). Prefer an explicit Departure/Return marker, but
+  // fall back to the first/second entries when missing.
+  const outboundTrip = (tripDetails.find((t) => t && t.trip_type === "Departure") || (tripDetails.length ? tripDetails[0] : undefined));
+  const returnTrip = (tripDetails.find((t) => t && t.trip_type === "Return") || (tripDetails.length > 1 ? tripDetails[1] : undefined));
 
   const outboundStopover = stopoverDetails.find((s) => s.trip_type === "Departure");
   const returnStopover = stopoverDetails.find((s) => s.trip_type === "Return");

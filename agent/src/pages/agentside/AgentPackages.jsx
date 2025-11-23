@@ -239,7 +239,7 @@ const AgentPackages = () => {
 
         // Fetch packages and airlines for all organization IDs (agent may be linked to a parent org)
         const packagePromises = orgIds.map((id) =>
-          axios.get(`https://api.saer.pk/api/umrah-packages/?organization=${id}`, {
+          axios.get(`http://127.0.0.1:8000/api/umrah-packages/?organization=${id}`, {
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
@@ -248,7 +248,7 @@ const AgentPackages = () => {
         );
 
         const airlinePromises = orgIds.map((id) =>
-          axios.get("https://api.saer.pk/api/airlines/", {
+          axios.get("http://127.0.0.1:8000/api/airlines/", {
             params: { organization: id },
             headers: {
               Authorization: `Bearer ${token}`,
@@ -395,44 +395,69 @@ const AgentPackages = () => {
   const calculatePackagePrice = (pkg, roomType) => {
     const ticketInfo = pkg?.ticket_details?.[0]?.ticket_info;
 
-    // Base price components (same for all room types)
-    const basePrice =
-      (pkg.adault_visa_price || 0) +
-      (pkg.transport_price || 0) +
-      (ticketInfo?.adult_price || 0) +
-      (pkg.food_price || 0) +
-      (pkg.makkah_ziyarat_price || 0) +
-      (pkg.madinah_ziyarat_price || 0);
+    // helper to prefer various naming conventions from backend
+    const pick = (obj, ...keys) => {
+      for (const k of keys) {
+        if (obj && obj[k] != null) return obj[k];
+      }
+      return undefined;
+    };
+
+    const pkgNumber = (v) => (v == null ? 0 : Number(v));
+
+    // Resolve base components with fallbacks between *_price and *_selling_price
+    const visaPrice = pkgNumber(pick(pkg, 'adault_visa_price', 'adault_visa_selling_price', 'adault_visa_selling'));
+    const transportPrice = pkgNumber(pick(pkg, 'transport_price', 'transport_selling_price'));
+    const ticketAdultPrice = pkgNumber(pick(ticketInfo || {}, 'adult_price', 'adult_fare')) || pkgNumber(pick(pkg, 'adult_price'));
+    const foodPrice = pkgNumber(pick(pkg, 'food_price', 'food_selling_price'));
+    const makkahZiyarat = pkgNumber(pick(pkg, 'makkah_ziyarat_price', 'makkah_ziyarat_selling_price'));
+    const madinahZiyarat = pkgNumber(pick(pkg, 'madinah_ziyarat_price', 'madinah_ziyarat_selling_price'));
+
+    const basePrice = visaPrice + transportPrice + ticketAdultPrice + foodPrice + makkahZiyarat + madinahZiyarat;
+
+    // Helper to get bed price for a hotel detail entry
+    const getBedPriceFromHotel = (hotelEntry, roomTypeKey) => {
+      if (!hotelEntry) return 0;
+
+      // try direct fields like sharing_bed_selling_price, sharing_bed_selling_price, sharing_bed_purchase_price
+      const aliases = {
+        sharing: ['sharing_bed_selling_price', 'sharing_bed_price', 'sharing_bed_purchase_price', 'sharing_bed_selling'],
+        quint: ['quaint_bed_selling_price', 'quaint_bed_price', 'quint_bed_selling_price', 'quint_bed_price'],
+        quad: ['quad_bed_selling_price', 'quad_bed_price', 'quad_bed_purchase_price'],
+        triple: ['triple_bed_selling_price', 'triple_bed_price', 'triple_bed_purchase_price'],
+        double: ['double_bed_selling_price', 'double_bed_price', 'double_bed_purchase_price'],
+        single: ['single_bed_selling_price', 'single_bed_price', 'single_bed_purchase_price'],
+      };
+
+      const tryKeys = aliases[roomTypeKey] || [];
+      for (const k of tryKeys) {
+        const v = pick(hotelEntry, k);
+        if (v != null) return Number(v);
+      }
+
+      // Fallback: check hotel_info.prices array (common normalized structure)
+      const priceArr = hotelEntry.hotel_info && hotelEntry.hotel_info.prices ? hotelEntry.hotel_info.prices : hotelEntry.prices;
+      if (Array.isArray(priceArr)) {
+        // try to find by room_type
+        const found = priceArr.find((p) => {
+          if (!p) return false;
+          const rt = (p.room_type || '').toString().toLowerCase();
+          return rt === roomTypeKey || (roomTypeKey === 'quint' && (rt === 'quaint' || rt === 'quint'));
+        });
+        if (found && (found.selling_price != null)) return Number(found.selling_price);
+      }
+
+      return 0;
+    };
 
     let hotelCost = 0;
-
-    // Calculate hotel cost based on room type
-    hotelCost = pkg?.hotel_details?.reduce((sum, hotel) => {
-      let bedPrice = 0;
-      switch (roomType) {
-        case 'sharing':
-          bedPrice = hotel.sharing_bed_price || 0;
-          break;
-        case 'quint':
-          bedPrice = hotel.quaint_bed_price || 0; // Note: 'quaint' is likely a typo for 'quint'
-          break;
-        case 'quad':
-          bedPrice = hotel.quad_bed_price || 0;
-          break;
-        case 'triple':
-          bedPrice = hotel.triple_bed_price || 0;
-          break;
-        case 'double':
-          bedPrice = hotel.double_bed_price || 0;
-          break;
-        case 'single': // Added single bed logic (was missing)
-          bedPrice = hotel.single_bed_price || 0;
-          break;
-        default:
-          return sum; // Skip if roomType is not recognized
-      }
-      return sum + bedPrice * (hotel.number_of_nights || 0);
-    }, 0) || 0;
+    if (Array.isArray(pkg?.hotel_details)) {
+      hotelCost = pkg.hotel_details.reduce((sum, hotel) => {
+        const nights = Number(hotel.number_of_nights || 0);
+        const bedPrice = getBedPriceFromHotel(hotel, roomType);
+        return sum + (bedPrice * nights);
+      }, 0);
+    }
 
     return basePrice + hotelCost;
   };
@@ -822,9 +847,21 @@ const AgentPackages = () => {
                         const doublePrice = calculatePackagePrice(pkg, 'double');
                         const singlePrice = calculatePackagePrice(pkg, 'single'); // Added single price
 
-                        // The child discount calculation seems specific to the backend's logic for visa cost differences
-                        const childPrices = (pkg?.adault_visa_price || 0) - (pkg?.child_visa_price || 0);
-                        const infantPrices = (ticketInfo?.infant_price || 0) + (pkg.infant_visa_price || 0);
+                        // The child/infant visa calculation — handled with robust fallbacks
+                        const pickPkg = (obj, ...keys) => {
+                          for (const k of keys) {
+                            if (obj && obj[k] != null) return obj[k];
+                          }
+                          return undefined;
+                        };
+
+                        const adultVisa = Number(pickPkg(pkg, 'adault_visa_price', 'adault_visa_selling_price', 'adault_visa_selling', 'adault_visa_purchase_price') || 0);
+                        const childVisa = Number(pickPkg(pkg, 'child_visa_price', 'child_visa_selling_price', 'child_visa_selling', 'child_visa_purchase_price') || 0);
+                        const infantVisa = Number(pickPkg(pkg, 'infant_visa_price', 'infant_visa_selling_price', 'infant_visa_selling', 'infant_visa_purchase_price') || 0);
+                        const ticketInfant = Number(pickPkg(ticketInfo || {}, 'infant_price') || 0);
+
+                        const childPrices = Math.max(0, adultVisa - childVisa);
+                        const infantPrices = ticketInfant + infantVisa;
 
 
                         return (

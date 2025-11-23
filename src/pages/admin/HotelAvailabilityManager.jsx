@@ -14,6 +14,10 @@ import api from "../../utils/Api";
 import { jwtDecode } from 'jwt-decode';
 
 const HotelAvailabilityManager = () => {
+    // Filter states
+    const [categoryFilter, setCategoryFilter] = useState("");
+    const [distanceFilter, setDistanceFilter] = useState("");
+    const [cityFilter, setCityFilter] = useState("");
   // State management
   const [hotels, setHotels] = useState([]);
   const [cities, setCities] = useState([]);
@@ -115,31 +119,18 @@ const HotelAvailabilityManager = () => {
     return s;
   };
 
-  // Parse user-entered distance (expects meters by default) and convert to kilometers
-  // Accepts values like "500", "500m", "0.5km", "500 m".
-  // Plain numbers are interpreted as meters and converted to km for backend storage.
-  const parseDistanceToKm = (input) => {
+  // Store/display distance as entered (meters, no conversion)
+  const parseDistanceRaw = (input) => {
     if (input === undefined || input === null) return "";
-    const s = String(input).trim().toLowerCase();
+    const s = String(input).trim();
     if (!s) return "";
-    // meters like '500m' or '500 m' or plain numeric '500'
-    const mMatch = s.match(/^(\d+(?:\.\d+)?)\s*m(?:eters?)?$/);
+    // Accept only numbers (optionally with 'm' or 'meters')
+    const mMatch = s.match(/^(\d+(?:\.\d+)?)(?:\s*m(?:eters?)?)?$/i);
     if (mMatch) {
-      const meters = parseFloat(mMatch[1]);
-      if (Number.isFinite(meters)) return String((meters / 1000).toFixed(3)).replace(/\.0+$/, "");
-      return "";
+      return mMatch[1];
     }
-    // km like '0.5km' or '0.5 km'
-    const kmMatch = s.match(/^(\d+(?:\.\d+)?)\s*k(?:m)?/);
-    if (kmMatch) {
-      const km = parseFloat(kmMatch[1]);
-      if (Number.isFinite(km)) return String(km);
-      return "";
-    }
-    // plain number without unit: interpret as meters
-    const num = parseFloat(s.replace(/[^0-9.\-]/g, ''));
-    if (Number.isFinite(num)) return String((num / 1000));
-    return "";
+    // fallback: just return as string
+    return s;
   };
 
   // Room types configuration
@@ -203,89 +194,7 @@ const HotelAvailabilityManager = () => {
     }
   };
 
-  // Demo hotels data
-  const demoHotels = [
-    {
-      id: 1,
-      name: "Grand Makkah Hotel",
-      city: { id: 1, name: "Makkah" },
-      address: "Ajyad Street, Makkah",
-      google_location: "https://goo.gl/maps/grand-makkah",
-      contact_number: "+966-12-123-4567",
-      category: "",
-      distance: "0.5",
-      walking_time: 6,
-      is_active: true,
-      available_start_date: "2025-01-01",
-      available_end_date: "2025-12-31",
-      rooms: 45,
-      available_rooms: 28
-    },
-    {
-      id: 2,
-      name: "Medina Sunrise Resort",
-      city: { id: 2, name: "Medina" },
-      address: "Prince Road, Medina",
-      google_location: "https://goo.gl/maps/medina-sunrise",
-      contact_number: "+966-14-987-6543",
-      category: "",
-      distance: "2.0",
-      walking_time: 25,
-      is_active: true,
-      available_start_date: "2025-01-01",
-      available_end_date: "2025-12-31",
-      rooms: 60,
-      available_rooms: 42
-    },
-    {
-      id: 3,
-      name: "Jeddah Beach Hotel",
-      city: { id: 3, name: "Jeddah" },
-      address: "Corniche Road, Jeddah",
-      google_location: "https://goo.gl/maps/jeddah-beach",
-      contact_number: "+966-12-456-7890",
-      category: "",
-      distance: "5.0",
-      walking_time: 60,
-      is_active: true,
-      available_start_date: "2025-01-01",
-      available_end_date: "2025-12-31",
-      rooms: 80,
-      available_rooms: 55
-    },
-    {
-      id: 4,
-      name: "Holy City Inn",
-      city: { id: 1, name: "Makkah" },
-      address: "Safa Street, Makkah",
-      google_location: "https://goo.gl/maps/holy-city",
-      contact_number: "+966-12-555-8888",
-      category: "",
-      distance: "1.0",
-      walking_time: 12,
-      is_active: true,
-      available_start_date: "2025-01-01",
-      available_end_date: "2025-12-31",
-      rooms: 50,
-      available_rooms: 35
-    },
-    {
-      id: 5,
-      name: "Prophet's Peace Hotel",
-      city: { id: 2, name: "Medina" },
-      address: "Al-Noor Street, Medina",
-      google_location: "https://goo.gl/maps/prophets-peace",
-      contact_number: "+966-14-222-3333",
-      category: "",
-      distance: "3.5",
-      walking_time: 40,
-      is_active: true,
-      available_start_date: "2025-01-01",
-      available_end_date: "2025-12-31",
-      rooms: 35,
-      available_rooms: 20
-    }
-  ];
+  // NOTE: removed demo hotels - UI will now rely on real backend data only
 
   // Normalize hotels payload to an array of hotel objects and ensure city is an ID when possible
   const normalizeHotelsPayload = (payload) => {
@@ -311,6 +220,7 @@ const HotelAvailabilityManager = () => {
         }
         copy.city = copy.city.id ?? copy.city;
       }
+      // Only use walking_time for display and storage. Ignore walking_distance completely.
       // Normalize various truthy/falsey shapes to strict boolean for reselling_allowed.
       // Also accept legacy `is_sharing_allowed` field if present.
       const rawResell = (copy.reselling_allowed !== undefined && copy.reselling_allowed !== null)
@@ -356,11 +266,8 @@ const HotelAvailabilityManager = () => {
         // If an organizationId is present we should respect the server's empty
         // response (no hotels for this org). Only use demoHotels when there is
         // no organization context (public/demo view).
-        if (organizationId) {
-          setHotels([]);
-        } else {
-          setHotels(demoHotels);
-        }
+        // Respect server response; do not inject demo data. Show empty list when none returned.
+        setHotels([]);
       }
 
       // Ensure cities list contains entries referenced by hotels. Linked/org-scoped
@@ -448,9 +355,9 @@ const HotelAvailabilityManager = () => {
         setHotels([]);
       } else {
         // default fallback: show a friendly warning with optional server message
-        const msg = (data && (data.detail || JSON.stringify(data))) || "Using demo hotels for preview";
+        const msg = (data && (data.detail || JSON.stringify(data))) || "No hotels available";
         showAlert("warning", msg);
-        setHotels(demoHotels);
+        setHotels([]);
       }
     } finally {
       setLoading(false);
@@ -528,9 +435,9 @@ const HotelAvailabilityManager = () => {
       // send it directly to the server; fallback to null if not selected
       const mappedCategory = hotelForm.category || null;
 
-      // Normalize distance and walking time: convert user input to kilometers and minutes
-      const distanceKm = parseDistanceToKm(hotelForm.distance);
-      const walkingMinutes = hotelForm.walking_time !== undefined && hotelForm.walking_time !== null && hotelForm.walking_time !== "" ? Number(hotelForm.walking_time) : null;
+      // Store distance as entered (meters, no conversion)
+      const distanceRaw = parseDistanceRaw(hotelForm.distance);
+      const walkingTime = hotelForm.walking_time !== undefined && hotelForm.walking_time !== null && hotelForm.walking_time !== "" ? Number(hotelForm.walking_time) : null;
 
       // Ensure at least one price section exists (backend requires Prices)
       if (!priceSections || priceSections.length === 0) {
@@ -549,10 +456,11 @@ const HotelAvailabilityManager = () => {
         return;
       }
 
+      const { walking_time, ...hotelFormRest } = hotelForm;
       const plainPayload = {
-        ...hotelForm,
-        distance: distanceKm,
-        walking_time: walkingMinutes,
+        ...hotelFormRest,
+        distance: distanceRaw,
+        walking_time: walkingTime, // send as walking_time
         city: normalizedCity,
         category: mappedCategory,
         // include contact details and prices as expected by serializer
@@ -801,14 +709,15 @@ const HotelAvailabilityManager = () => {
       }
 
       // Update hotel fields (owner only)
-        // Normalize distance and walking time for update payload
-        const distanceKm = parseDistanceToKm(hotelForm.distance);
-        const walkingMinutes = hotelForm.walking_time !== undefined && hotelForm.walking_time !== null && hotelForm.walking_time !== "" ? Number(hotelForm.walking_time) : null;
+      // Store distance as entered (meters, no conversion)
+      const distanceRaw = parseDistanceRaw(hotelForm.distance);
+      const walkingTime = hotelForm.walking_time !== undefined && hotelForm.walking_time !== null && hotelForm.walking_time !== "" ? Number(hotelForm.walking_time) : null;
 
+      const { walking_time, ...hotelFormRest } = hotelForm;
       const updatePayload = {
-        ...hotelForm,
-        distance: distanceKm,
-        walking_time: walkingMinutes,
+        ...hotelFormRest,
+        distance: distanceRaw,
+        walking_time: walkingTime, // send as walking_time
         reselling_allowed: !!resellingAllowed,
         ...(isOwner ? { prices: pricesPayload } : {}),
       };
@@ -1377,27 +1286,117 @@ const HotelAvailabilityManager = () => {
     })();
   };
 
-  // Filter hotels
-  const filteredHotels = hotels.filter(hotel => {
-    const matchesSearch = hotel.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         hotel.address.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCity = !selectedCity || hotel.city === parseInt(selectedCity);
-    // If this hotel belongs to another organization (i.e., a linked org view),
-    // For organization-scoped views, only show hotels created by the selected organization.
-    // Consider multiple possible fields for owner org id, including legacy `owner_organization_id`.
+  // Filter and sort hotels
+  let filteredHotels = hotels;
+  // Filter by city
+  if (cityFilter && cityFilter !== "all") {
+    filteredHotels = filteredHotels.filter(h => String(h.city) === String(cityFilter));
+  }
+  // Filter by category
+  if (categoryFilter && categoryFilter !== "all") {
+    filteredHotels = filteredHotels.filter(h => String(h.category) === String(categoryFilter));
+  }
+  // Text search (name/address)
+  if (searchTerm && searchTerm.trim() !== "") {
+    const term = searchTerm.trim().toLowerCase();
+    filteredHotels = filteredHotels.filter(h =>
+      (h.name && h.name.toLowerCase().includes(term)) ||
+      (h.address && h.address.toLowerCase().includes(term))
+    );
+  }
+  // Organization/external hotel filter (keep this last)
+  filteredHotels = filteredHotels.filter(hotel => {
     const hotelOrg = hotel.organization || hotel.organization_id || hotel.owner_organization_id || hotel.org || null;
-    // If no organizationId is set (public/demo view), apply an extra guard to avoid
-    // showing external hotels unless they explicitly allow reselling. When
-    // `organizationId` is present we should trust the server response (the API
-    // already applies AllowedReseller / linked-org / reselling_allowed rules),
-    // so do not enforce a client-side same-organization check which would hide
-    // valid reseller hotels returned by the backend.
     if (!organizationId) {
       const isExternal = hotelOrg && String(hotelOrg) !== String(organizationId);
       if (isExternal && !hotel.reselling_allowed) return false;
     }
-    return matchesSearch && matchesCity;
+    return true;
   });
+
+
+  // --- Filter UI ---
+  // ...existing code...
+
+  // --- Hotel Table/List (ACTUAL TABLE RENDER) ---
+  // Place this in your JSX render/return section:
+  const renderHotelTable = () => (
+    <table className="table table-bordered">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>City</th>
+          <th>Category</th>
+          <th>Distance</th>
+          <th>Walking Time</th>
+          <th>Price Dates</th>
+          <th>Sharing Price</th>
+          <th>Quint Price</th>
+          <th>Quad Price</th>
+          <th>Triple Price</th>
+          <th>Double Price</th>
+          {/* ...other columns... */}
+        </tr>
+      </thead>
+      <tbody>
+        {filteredHotels.map(hotel => {
+          const prices = hotel.prices || hotel.price_sections || [];
+
+          // compute overall date range from price sections
+          let minStart = null;
+          let maxEnd = null;
+          prices.forEach(p => {
+            if (!p) return;
+            if (p.start_date && (!minStart || p.start_date < minStart)) minStart = p.start_date;
+            if (p.end_date && (!maxEnd || p.end_date > maxEnd)) maxEnd = p.end_date;
+          });
+          const priceDates = minStart || maxEnd ? `${minStart || ''}${minStart && maxEnd ? ' — ' : ''}${maxEnd || ''}` : '-';
+
+          // helper to pick selling price for a given room type
+          const pickPrice = (type) => {
+            const found = prices.find(p => String(p.room_type).toLowerCase() === String(type).toLowerCase());
+            return found && found.selling_price != null ? found.selling_price : null;
+          };
+
+          const doublePrice = pickPrice('double');
+          const triplePrice = pickPrice('triple');
+          const quadPrice = pickPrice('quad');
+          const quintPrice = pickPrice('quint');
+
+          // sharing price: choose the lowest selling_price among entries where is_sharing_allowed === true
+          let sharingPrice = null;
+          prices.forEach(p => {
+            if (p && p.is_sharing_allowed) {
+              if (sharingPrice == null || (p.selling_price != null && p.selling_price < sharingPrice)) sharingPrice = p.selling_price;
+            }
+          });
+
+          const fmt = (v) => (v == null ? '-' : (Number.isFinite(Number(v)) ? Number(v).toLocaleString() : String(v)));
+
+          return (
+            <tr key={hotel.id}>
+              <td>{hotel.name}</td>
+              <td>{getCityName(hotel.city)}</td>
+              <td>{getCategoryBadge(hotel.category)}</td>
+              <td>{hotel.distance != null ? hotel.distance : '-'}</td>
+              <td>{hotel.walking_time != null ? hotel.walking_time : (hotel.walking_distance != null ? hotel.walking_distance : '-')}</td>
+              <td>{priceDates}</td>
+              <td>{fmt(sharingPrice)}</td>
+              <td>{fmt(quintPrice)}</td>
+              <td>{fmt(quadPrice)}</td>
+              <td>{fmt(triplePrice)}</td>
+              <td>{fmt(doublePrice)}</td>
+              {/* ...other columns... */}
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+
+  // Render the hotels table (uses real backend data in `hotels` state)
+  // Table will display selling prices per room type and sharing price
+  
 
   // Debug: log hotels and filtered results to help diagnose missing items in UI
   useEffect(() => {
@@ -1426,10 +1425,9 @@ const HotelAvailabilityManager = () => {
     <div className="page-container" style={{ display: "flex", minHeight: "100vh", backgroundColor: "#f8f9fa" }}>
       <Sidebar />
       <div className="content-wrapper" style={{ flex: 1, overflow: "auto" }}>
-  <Header />
-  <HotelsTabs />
-        
-  <Container fluid className="p-4">
+        <Header />
+        <HotelsTabs />
+        <Container fluid className="p-4">
           {/* Header */}
           <div className="d-flex justify-content-between align-items-center mb-4">
             <div>
@@ -1446,6 +1444,43 @@ const HotelAvailabilityManager = () => {
               <Plus size={20} className="me-2" />
               Add New Hotel
             </Button>
+          </div>
+
+          {/* Hotel Filters */}
+          <div className="d-flex flex-wrap gap-3 align-items-center mb-3 px-2 pt-2">
+            <Form.Group className="mb-0">
+              <Form.Label className="fw-medium mb-1">Category</Form.Label>
+              <Form.Select
+                value={categoryFilter}
+                onChange={e => setCategoryFilter(e.target.value)}
+                style={{ minWidth: 150 }}
+              >
+                <option value="">All</option>
+                {categoriesList.map(cat => (
+                  <option key={cat.slug || cat.name} value={cat.slug || cat.name}>{cat.name}</option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+            <Form.Group className="mb-0">
+              <Form.Label className="fw-medium mb-1">Distance</Form.Label>
+              <Form.Control
+                type="text"
+                value={distanceFilter}
+                onChange={e => setDistanceFilter(e.target.value)}
+                placeholder="e.g., 500"
+                style={{ minWidth: 120 }}
+              />
+            </Form.Group>
+            {/* Existing search box for name/address/city */}
+            <Form.Group className="mb-0 flex-grow-1">
+              <Form.Label className="fw-medium mb-1">Search</Form.Label>
+              <Form.Control
+                type="text"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                placeholder="Search by name, address, city..."
+              />
+            </Form.Group>
           </div>
 
           {/* Alert */}
@@ -1559,17 +1594,7 @@ const HotelAvailabilityManager = () => {
           </Card>
 
           {/* Hotels List */}
-          {/* Diagnostic alert: when server returned hotels but none survive client-side filters,
-              render a compact debug panel to show owner org and reselling flags. */}
-          {hotels.length > 0 && filteredHotels.length === 0 && (
-            <Alert variant="warning" className="mb-3">
-              <strong>No hotels available for the current organization/filters.</strong>
-              <div className="mt-2 small">Returned hotels (id → ownerOrg, reselling_allowed):</div>
-              <pre style={{ maxHeight: 160, overflow: 'auto', fontSize: 12 }}>
-{JSON.stringify(hotels.map(h => ({ id: h.id, org: h.organization || h.organization_id || h.owner_organization_id || null, reselling_allowed: h.reselling_allowed })), null, 2)}
-              </pre>
-            </Alert>
-          )}
+          {/* ...existing code... */}
 
           <Card className="border-0 shadow-sm">
             <Card.Header className="bg-white py-3">
@@ -1586,6 +1611,12 @@ const HotelAvailabilityManager = () => {
                       <th style={{ minWidth: "100px" }}>Category</th>
                       <th style={{ minWidth: "100px" }}>Distance (m)</th>
                       <th style={{ minWidth: "110px" }}>Walk Time (min)</th>
+                      <th style={{ minWidth: "160px" }}>Price Dates</th>
+                      <th style={{ minWidth: "120px" }}>Sharing Price</th>
+                      <th style={{ minWidth: "120px" }}>Quint Price</th>
+                      <th style={{ minWidth: "120px" }}>Quad Price</th>
+                      <th style={{ minWidth: "120px" }}>Triple Price</th>
+                      <th style={{ minWidth: "120px" }}>Double Price</th>
                       <th style={{ minWidth: "120px" }}>Contact</th>
                       <th style={{ minWidth: "100px" }}>Status</th>
                       <th style={{ minWidth: "150px" }}>Availability</th>
@@ -1631,19 +1662,61 @@ const HotelAvailabilityManager = () => {
                           <td>{hotel.address}</td>
                           <td>{getCategoryBadge(hotel.category)}</td>
                           <td>
-                              {hotel.distance ? (
-                                <span>{Number(hotel.distance) ? String(Math.round(Number(hotel.distance) * 1000)) : hotel.distance} m</span>
-                              ) : (
-                                "N/A"
-                              )}
+                            {hotel.distance !== undefined && hotel.distance !== null && hotel.distance !== "" ? (
+                              <span>{hotel.distance} m</span>
+                            ) : (
+                              "N/A"
+                            )}
                           </td>
                           <td>
-                            {hotel.walking_time || hotel.walking_time === 0 ? (
+                            {(hotel.walking_time !== undefined && hotel.walking_time !== null && hotel.walking_time !== "") ? (
                               <span>{String(hotel.walking_time)} min</span>
                             ) : (
                               "N/A"
                             )}
                           </td>
+                          {/* Price extraction */}
+                          {(() => {
+                            const prices = hotel.prices || hotel.price_sections || [];
+                            let minStart = null;
+                            let maxEnd = null;
+                            prices.forEach(p => {
+                              if (!p) return;
+                              if (p.start_date && (!minStart || p.start_date < minStart)) minStart = p.start_date;
+                              if (p.end_date && (!maxEnd || p.end_date > maxEnd)) maxEnd = p.end_date;
+                            });
+                            const priceDates = minStart || maxEnd ? `${minStart || ''}${minStart && maxEnd ? ' — ' : ''}${maxEnd || ''}` : '-';
+
+                            const pickPrice = (type) => {
+                              const found = prices.find(p => String(p.room_type).toLowerCase() === String(type).toLowerCase());
+                              return found && found.selling_price != null ? found.selling_price : null;
+                            };
+
+                            const doublePrice = pickPrice('double');
+                            const triplePrice = pickPrice('triple');
+                            const quadPrice = pickPrice('quad');
+                            const quintPrice = pickPrice('quint');
+
+                            let sharingPrice = null;
+                            prices.forEach(p => {
+                              if (p && p.is_sharing_allowed) {
+                                if (sharingPrice == null || (p.selling_price != null && p.selling_price < sharingPrice)) sharingPrice = p.selling_price;
+                              }
+                            });
+
+                            const fmt = (v) => (v == null ? 'N/A' : (Number.isFinite(Number(v)) ? Number(v).toLocaleString() : String(v)));
+
+                            return (
+                              <>
+                                <td>{priceDates}</td>
+                                <td>{fmt(sharingPrice)}</td>
+                                <td>{fmt(quintPrice)}</td>
+                                <td>{fmt(quadPrice)}</td>
+                                <td>{fmt(triplePrice)}</td>
+                                <td>{fmt(doublePrice)}</td>
+                              </>
+                            );
+                          })()}
                           <td>
                             {hotel.contact_number ? (
                               <span>
@@ -1829,33 +1902,14 @@ const HotelAvailabilityManager = () => {
                     </Col>
                     <Col md={3}>
                       <Form.Group>
-                          <Form.Label className="fw-medium">Distance (m)</Form.Label>
+                        <Form.Label className="fw-medium">Distance (m)</Form.Label>
                         <Form.Control
                           type="text"
                           value={hotelForm.distance}
-                            onChange={(e) => setHotelForm({ ...hotelForm, distance: e.target.value })}
-                            placeholder="e.g., 500 or 500 m"
+                          onChange={(e) => setHotelForm({ ...hotelForm, distance: e.target.value })}
+                          placeholder="e.g., 500"
                         />
                       </Form.Group>
-                    </Col>
-                    <Col md={3}>
-                      <Form.Group>
-                        <Form.Label className="fw-medium">Walking Time (minutes)</Form.Label>
-                        <Form.Control
-                          type="number"
-                          value={hotelForm.walking_time}
-                          onChange={(e) => setHotelForm({ ...hotelForm, walking_time: e.target.value })}
-                          placeholder="e.g., 6"
-                        />
-                      </Form.Group>
-                    </Col>
-                    <Col md={2} className="d-flex align-items-center">
-                      <Form.Check
-                        type="checkbox"
-                        label={<span className="fw-medium">Active</span>}
-                        checked={hotelForm.is_active}
-                        onChange={(e) => setHotelForm({ ...hotelForm, is_active: e.target.checked })}
-                      />
                     </Col>
 
                     <Col md={6}>

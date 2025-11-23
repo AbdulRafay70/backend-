@@ -40,7 +40,7 @@ class Lead(models.Model):
         ("lost", "lost"),
     ]
 
-    customer_full_name = models.CharField(max_length=255)
+    customer_full_name = models.CharField(max_length=255, blank=True, null=True)
     passport_number = models.CharField(max_length=50, blank=True, null=True)
     passport_expiry = models.DateField(blank=True, null=True)
     contact_number = models.CharField(max_length=50, blank=True, null=True)
@@ -72,6 +72,21 @@ class Lead(models.Model):
     )
     # organization may not define a PEX model in all deployments; store pex id instead
     pex_id = models.IntegerField(blank=True, null=True)
+    # Financial / recovery fields
+    loan_amount = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True, default=0)
+    recovered_amount = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True, default=0)
+    recovery_date = models.DateField(blank=True, null=True)
+
+    # Chat/messages and assignment
+    chat_messages = models.JSONField(blank=True, null=True, default=list)
+    # Accept free-text assignee name/identifier (no FK constraint) to allow any string value
+    assigned_to = models.CharField(max_length=255, blank=True, null=True)
+
+    # Task-related flags and notes
+    is_internal_task = models.BooleanField(default=False)
+    # Optional task categorization (e.g. 'meeting', 'call', 'follow-up')
+    task_type = models.CharField(max_length=64, blank=True, null=True)
+    notes = models.TextField(blank=True, null=True)
     created_by_user = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

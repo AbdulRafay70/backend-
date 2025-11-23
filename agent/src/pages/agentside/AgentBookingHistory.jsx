@@ -98,17 +98,34 @@ const BookingHistory = () => {
   // Helper Functions (Copied from your code, they are good)
   // ---
   const getStatusStyle = (status) => {
-    const isActive = status === "Active" || status === "active";
-    return {
-      backgroundColor: isActive ? "#ECFDF3" : "#F2F4F7",
-      color: isActive ? "#065F46" : "#344054",
-      padding: "4px 12px",
-      borderRadius: "16px",
-      display: "inline-flex",
-      alignItems: "center",
-      gap: "4px",
-    };
+    const s = (status || '').toString().toLowerCase();
+    // Paid and Active use green; Confirmed uses blue; Pending uses yellow; others default gray
+    if (s === 'paid') {
+      return { backgroundColor: '#ECFDF3', color: '#065F46', padding: '4px 12px', borderRadius: '16px', display: 'inline-flex', alignItems: 'center', gap: '4px' };
+    }
+    if (s === 'active' || s === 'approved') {
+      return { backgroundColor: '#ECFDF3', color: '#065F46', padding: '4px 12px', borderRadius: '16px', display: 'inline-flex', alignItems: 'center', gap: '4px' };
+    }
+    if (s === 'confirmed') {
+      return { backgroundColor: '#E6F0FF', color: '#0d6efd', padding: '4px 12px', borderRadius: '16px', display: 'inline-flex', alignItems: 'center', gap: '4px' };
+    }
+    if (s === 'pending') {
+      return { backgroundColor: '#FFFBEB', color: '#92400e', padding: '4px 12px', borderRadius: '16px', display: 'inline-flex', alignItems: 'center', gap: '4px' };
+    }
+    if (s === 'completed' || s === 'complete' || s === 'paid') {
+      return { backgroundColor: '#ECFDF3', color: '#065F46', padding: '4px 12px', borderRadius: '16px', display: 'inline-flex', alignItems: 'center', gap: '4px' };
+    }
+
+    return { backgroundColor: '#F2F4F7', color: '#344054', padding: '4px 12px', borderRadius: '16px', display: 'inline-flex', alignItems: 'center', gap: '4px' };
   };
+
+  const getDisplayStatus = (booking) => {
+    if (!booking) return 'N/A';
+    // If payment flags indicate paid, show Paid regardless of booking.status
+    if (booking.is_paid === true || (booking.payment_status && booking.payment_status.toString().toLowerCase() === 'paid')) return 'Paid';
+    // otherwise prefer booking.status
+    return booking.status || 'N/A';
+  }
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -125,11 +142,37 @@ const BookingHistory = () => {
   };
 
   const getPassengerNames = (personDetails) => {
-    if (!personDetails || personDetails.length === 0) return "N/A";
-    const firstPerson = personDetails[0];
-    return `${firstPerson.person_title || ""} ${
-      firstPerson.first_name || ""
-    } ${firstPerson.last_name || ""}`.trim();
+    if (!personDetails) return "N/A";
+
+    // Normalize different shapes the API might return:
+    // - An array of person objects
+    // - A single person object
+    // - An object that wraps the array under different keys
+    let people = personDetails;
+    if (!Array.isArray(people)) {
+      if (people?.booking_person_details && Array.isArray(people.booking_person_details)) {
+        people = people.booking_person_details;
+      } else if (people?.person_details && Array.isArray(people.person_details)) {
+        people = people.person_details;
+      } else if (typeof people === 'object') {
+        people = [people];
+      } else {
+        people = [];
+      }
+    }
+
+    if (!people || people.length === 0) return "N/A";
+
+    const firstPerson = people[0] || {};
+
+    // Support multiple possible naming schemes returned by APIs
+    const title = firstPerson.person_title || firstPerson.title || '';
+    const first = firstPerson.first_name || firstPerson.firstName || firstPerson.first || '';
+    const last = firstPerson.last_name || firstPerson.lastName || firstPerson.last || '';
+    const full = firstPerson.full_name || firstPerson.fullName || firstPerson.name || '';
+
+    const composed = full || `${title} ${first} ${last}`.trim();
+    return composed.trim() || "N/A";
   };
 
   // ---
@@ -138,8 +181,38 @@ const BookingHistory = () => {
 
   // Invoice link will be chosen per-booking (group vs package)
 
-  const agencyName = localStorage.getItem("agencyName") || "";
+  const rawAgency = localStorage.getItem("agencyName");
+  let agencyName = "";
+  try {
+    if (rawAgency) {
+      // localStorage may store a JSON object, a plain string, or the literal string "null"
+      const parsed = JSON.parse(rawAgency);
+      if (parsed === null) {
+        // value was the literal null
+        agencyName = "";
+      } else if (typeof parsed === "string") {
+        // stored as a JSON string
+        agencyName = parsed || "";
+      } else if (typeof parsed === "object") {
+        // stored as an object — try common fields
+        agencyName = parsed?.name || parsed?.agency_name || parsed?.displayName || parsed?.title || "";
+      } else {
+        // fallback to string conversion
+        agencyName = String(parsed) || "";
+      }
+    }
+  } catch (e) {
+    // not JSON — use raw string (handles plain strings stored without JSON encoding)
+    agencyName = rawAgency || "";
+  }
   const resolvedOrgId = getLoggedInOrgId();
+
+  // Summary totals
+  const totalBookings = bookings.length;
+  const totalAmount = bookings.reduce((sum, b) => {
+    const val = Number(b?.total_amount) || 0;
+    return sum + val;
+  }, 0);
 
   return (
     <>
@@ -198,6 +271,11 @@ const BookingHistory = () => {
                         Bookings {agencyName ? <span className="text-primary small">({agencyName})</span> : null}
                       </h6>
                       <small className="text-muted">Showing all bookings for the logged-in organization</small>
+                      {/* Totals summary */}
+                      <div className="mt-2 d-flex align-items-center" style={{ gap: '12px' }}>
+                        <div className="small text-muted">Total Bookings: <strong className="text-dark">{totalBookings}</strong></div>
+                        <div className="small text-muted">Total Amount: <strong className="text-dark">RS. {totalAmount.toLocaleString()}/-</strong></div>
+                      </div>
                     </div>
                     <div>
                       <div className="d-flex align-items-center">
@@ -221,6 +299,7 @@ const BookingHistory = () => {
                           <th className="text-muted small">Booking Included</th>
                           <th className="text-muted small">Booking Expiry</th>
                           <th className="text-muted small">Booking Status</th>
+                          <th className="text-muted small">Payment Status</th>
                           <th className="text-muted small">Amount</th>
                           <th className="text-muted small">Action</th>
                         </tr>
@@ -246,7 +325,8 @@ const BookingHistory = () => {
                               <td>{booking.booking_number || "N/A"}</td>
                               <td>{getPassengerNames(booking.person_details)}</td>
                               <td>
-                                <span
+                                <Link
+                                  to={`/booking/${booking.id}`}
                                   className="text-primary"
                                   style={{
                                     cursor: "pointer",
@@ -254,13 +334,21 @@ const BookingHistory = () => {
                                   }}
                                 >
                                   View Details
-                                </span>
+                                </Link>
                               </td>
                               <td>{formatDate(booking.expiry_time)}</td>
                               <td>
-                                <span style={getStatusStyle(booking.status)}>
-                                  {booking.status || "N/A"}
-                                </span>
+                                {(() => {
+                                  const display = booking.status || 'N/A';
+                                  return <span style={getStatusStyle(display)}>{display}</span>;
+                                })()}
+                              </td>
+                              <td>
+                                {(() => {
+                                  const pDisplay = (booking.is_paid === true || (booking.payment_status && booking.payment_status.toString().toLowerCase() === 'paid')) ? 'Paid' : (booking.payment_status || 'Pending');
+                                  const pStyle = (pDisplay.toString().toLowerCase() === 'paid') ? { backgroundColor: '#ECFDF3', color: '#065F46', padding: '4px 12px', borderRadius: '16px', display: 'inline-flex', alignItems: 'center', gap: '4px' } : { backgroundColor: '#FFFBEB', color: '#92400e', padding: '4px 12px', borderRadius: '16px', display: 'inline-flex', alignItems: 'center', gap: '4px' };
+                                  return <span style={pStyle}>{pDisplay}</span>;
+                                })()}
                               </td>
                               <td>
                                 RS. {booking.total_amount?.toLocaleString() || "0"}/-

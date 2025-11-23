@@ -291,6 +291,7 @@ class HotelsSerializer(serializers.ModelSerializer):
     contact_details = HotelContactDetailsSerializer(many=True, required=False)
     photos = serializers.ListField(child=serializers.CharField(), write_only=True, required=False)
     photos_data = serializers.SerializerMethodField(read_only=True)
+    walking_time = serializers.FloatField(required=False)
 
     class Meta:
         model = Hotels
@@ -300,21 +301,7 @@ class HotelsSerializer(serializers.ModelSerializer):
         prices_data = validated_data.pop("prices", [])
         contact_details_data = validated_data.pop("contact_details", [])
         photos = validated_data.pop("photos", [])
-        # Compute walking_distance (meters) from incoming walking_time (minutes) if provided
-        walking_minutes = None
-        if 'walking_time' in validated_data:
-            try:
-                walking_minutes = float(validated_data.pop('walking_time'))
-            except Exception:
-                walking_minutes = None
-        elif 'walking_time_minutes' in validated_data:
-            try:
-                walking_minutes = float(validated_data.pop('walking_time_minutes'))
-            except Exception:
-                walking_minutes = None
-        if walking_minutes is not None:
-            # assume average walking speed = 5 km/h => 5000 m / 60 min = 83.333... m/min
-            validated_data['walking_distance'] = float(walking_minutes) * 83.3333333
+        # walking_time is now stored directly, no conversion
         hotel = Hotels.objects.create(**validated_data)
 
         for price in prices_data:
@@ -329,10 +316,10 @@ class HotelsSerializer(serializers.ModelSerializer):
             # if photos are URLs, store them in caption or treat as external; here we create Photo with caption=URL
             from .models import HotelPhoto
             HotelPhoto.objects.create(hotel=hotel, caption=p)
-        # Ensure walking_distance is saved if provided via validated_data (some DB adapters may need explicit save)
-        if hasattr(hotel, 'walking_distance') and 'walking_distance' in validated_data:
-            hotel.walking_distance = validated_data.get('walking_distance')
-            hotel.save()
+        # Only walking_time is saved; walking_distance is ignored
+        if hasattr(hotel, 'walking_time') and 'walking_time' in validated_data:
+            hotel.walking_time = validated_data.get('walking_time')
+        hotel.save()
         return hotel
 
     def update(self, instance, validated_data):
@@ -340,22 +327,7 @@ class HotelsSerializer(serializers.ModelSerializer):
         contact_details_data = validated_data.pop("contact_details", None)
         photos = validated_data.pop("photos", None)
 
-        # If walking_time provided on update, compute walking_distance (meters)
-        walking_minutes = None
-        if 'walking_time' in validated_data:
-            try:
-                walking_minutes = float(validated_data.pop('walking_time'))
-            except Exception:
-                walking_minutes = None
-        elif 'walking_time_minutes' in validated_data:
-            try:
-                walking_minutes = float(validated_data.pop('walking_time_minutes'))
-            except Exception:
-                walking_minutes = None
-        if walking_minutes is not None:
-            validated_data['walking_distance'] = float(walking_minutes) * 83.3333333
-
-        # Update main Hotel fields
+        # walking_time is now stored directly, no conversion
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()

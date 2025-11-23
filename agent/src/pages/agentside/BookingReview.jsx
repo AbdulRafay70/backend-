@@ -61,8 +61,9 @@ const BookingReview = () => {
   const tripDetails = ticket.trip_details || [];
   const stopoverDetails = ticket.stopover_details || [];
 
-  const outboundTrip = tripDetails.find((t) => t.trip_type === "Departure");
-  const returnTrip = tripDetails.find((t) => t.trip_type === "Return");
+  // Prefer explicit trip_type markers; fall back to first/second entries for one-way tickets
+  const outboundTrip = (tripDetails.find((t) => t && t.trip_type === "Departure") || (tripDetails.length ? tripDetails[0] : undefined));
+  const returnTrip = (tripDetails.find((t) => t && t.trip_type === "Return") || (tripDetails.length > 1 ? tripDetails[1] : undefined));
 
   const outboundStopover = stopoverDetails.find(
     (s) => s.trip_type === "Departure"
@@ -190,19 +191,23 @@ const BookingReview = () => {
     // Calculate price details
     const priceDetails = calculateTotalPrice();
 
-    // Prepare ticket details - ensure all IDs are integers
+    // Prepare ticket details - ensure all IDs are integers and include *_id variants for backend compatibility
     const ticketDetails = [{
-      trip_details: tripDetails.map(trip => ({
+      trip_details: tripDetails.map((trip, idx) => ({
         departure_date_time: trip.departure_date_time,
         arrival_date_time: trip.arrival_date_time,
-        trip_type: trip.trip_type || "",
-        departure_city: parseInt(trip.departure_city?.id || trip.departure_city) || 0, // ✅ ID only
-        arrival_city: parseInt(trip.arrival_city?.id || trip.arrival_city) || 0       // ✅ ID only
+        // ensure trip_type is not blank — default to Departure/Return based on index
+        trip_type: trip.trip_type || (idx === 0 ? "Departure" : "Return"),
+        departure_city: parseInt(trip.departure_city?.id || trip.departure_city) || 0,
+        departure_city_id: parseInt(trip.departure_city?.id || trip.departure_city) || 0,
+        arrival_city: parseInt(trip.arrival_city?.id || trip.arrival_city) || 0,
+        arrival_city_id: parseInt(trip.arrival_city?.id || trip.arrival_city) || 0
       })),
       stopover_details: stopoverDetails.map(stopover => ({
         stopover_duration: stopover.stopover_duration || "",
         trip_type: stopover.trip_type || "",
-        stopover_city: parseInt(stopover.stopover_city?.id || stopover.stopover_city) || 0 // ✅ ID only
+        stopover_city: parseInt(stopover.stopover_city?.id || stopover.stopover_city) || 0,
+        stopover_city_id: parseInt(stopover.stopover_city?.id || stopover.stopover_city) || 0
       })),
       is_meal_included: ticket.is_meal_included || false,
       is_refundable: ticket.is_refundable || false,
@@ -215,12 +220,14 @@ const BookingReview = () => {
       pieces: parseInt(ticket.pieces) || 0,
       is_umrah_seat: ticket.is_umrah_seat || false,
       trip_type: ticket.trip_type || "",
-      departure_stay_type: ticket.departure_stay_type || "",
-      return_stay_type: ticket.return_stay_type || "",
-      status: "Confirmed",
+      // backend requires these non-blank — provide a sensible default
+      departure_stay_type: ticket.departure_stay_type || "None",
+      return_stay_type: ticket.return_stay_type || "None",
+      status: "confirmed",
       is_price_pkr: true,
       riyal_rate: 0,
-      ticket: parseInt(ticket.id || ticket.ticket) || 0 // ✅ ID only
+      ticket: parseInt(ticket.id || ticket.ticket) || 0,
+      ticket_id: parseInt(ticket.id || ticket.ticket) || 0
     }];
 
     // Prepare person details
@@ -241,7 +248,7 @@ const BookingReview = () => {
         last_name: passenger.lastName || "",
         passport_number: passenger.passportNumber || passenger.passportNo || "",
         date_of_birth: passenger.dob || "",
-        passpoet_issue_date: passenger.passportIssue || passenger.ppIssueDate || "",
+          passport_issue_date: passenger.passportIssue || passenger.ppIssueDate || "",
         passport_expiry_date: passenger.passportExpiry || passenger.ppExpiryDate || "",
         // passport_picture: "",
         country: passenger.country || "",
@@ -295,15 +302,15 @@ const BookingReview = () => {
       total_amount: parseFloat(priceDetails.grandTotal),
 
       is_paid: false,
-      status: "un-approve",
+      // use backend-expected initial booking status (must match server choices)
+      status: "Pending",
       payment_status: "Pending",
       is_partial_payment_allowed: false,
       category: "Ticket_Booking",
-
-      user: userIdNum,
-      organization: orgId,
-      branch: branchIdNum,
-      agency: agencyIdNum
+      user_id: userIdNum,
+      organization_id: orgId,
+      branch_id: branchIdNum,
+      agency_id: agencyIdNum
     };
 
     return bookingData;
@@ -353,6 +360,14 @@ const BookingReview = () => {
       if (error.response) {
         // The server responded with an error status
         console.error('Error response data:', error.response.data);
+        try {
+          const pretty = JSON.stringify(error.response.data, null, 2);
+          console.error('Error response (stringified):', pretty);
+          // also show an alert so it's easy to copy-paste the full message
+          alert('Booking API validation error:\n' + pretty);
+        } catch (e) {
+          // ignore stringify errors
+        }
         console.error('Error status:', error.response.status);
         console.error('Error headers:', error.response.headers);
 
@@ -503,21 +518,21 @@ const BookingReview = () => {
                     </div>
                     <div className="col-md-2 text-center text-md-start">
                       <h6 className="mb-0">
-                        {formatTime(outboundTrip.departure_date_time)}
+                        {formatTime(outboundTrip?.departure_date_time)}
                       </h6>
                       <div className="text-muted small">
-                        {formatDate(outboundTrip.departure_date_time)}
+                        {formatDate(outboundTrip?.departure_date_time)}
                       </div>
                       <div className="text-muted small">
-                        {cityMap[outboundTrip.departure_city] || "Unknown City"}
+                        {cityMap[outboundTrip?.departure_city] || "Unknown City"}
                       </div>
                     </div>
 
                     <div className="col-md-4 text-center">
                       <div className="text-muted mb-1 small">
                         {getDuration(
-                          outboundTrip.departure_date_time,
-                          outboundTrip.arrival_date_time
+                          outboundTrip?.departure_date_time,
+                          outboundTrip?.arrival_date_time
                         )}
                       </div>
                       <div className="position-relative">
@@ -559,26 +574,26 @@ const BookingReview = () => {
                         </div>
                       </div>
 
-                      <div className="text-muted mt-4 small mt-1">
+                        <div className="text-muted mt-4 small mt-1">
                         {outboundStopover ? "1 Stop" : "Non-stop"}
                       </div>
                     </div>
                     <div className="col-md-2 text-center text-md-start">
-                      <h6 className="mb-0">
-                        {formatTime(outboundTrip.arrival_date_time)}
+                        <h6 className="mb-0">
+                        {formatTime(outboundTrip?.arrival_date_time)}
                       </h6>
                       <div className="text-muted small">
-                        {formatDate(outboundTrip.arrival_date_time)}
+                        {formatDate(outboundTrip?.arrival_date_time)}
                       </div>
                       <div className="text-muted small">
-                        {cityMap[outboundTrip.arrival_city] || "Unknown City"}
+                        {cityMap[outboundTrip?.arrival_city] || "Unknown City"}
                       </div>
                     </div>
                     <div className="col-md-2 text-center">
                       <div className="fw-medium">
                         {getDuration(
-                          outboundTrip.departure_date_time,
-                          outboundTrip.arrival_date_time
+                          outboundTrip?.departure_date_time,
+                          outboundTrip?.arrival_date_time
                         )}
                       </div>
                       <div
@@ -616,13 +631,13 @@ const BookingReview = () => {
                         </div>
                         <div className="col-md-2 text-center text-md-start">
                           <h6 className="mb-0">
-                            {formatTime(returnTrip.departure_date_time)}
+                            {formatTime(returnTrip?.departure_date_time)}
                           </h6>
                           <div className="text-muted small">
-                            {formatDate(returnTrip.departure_date_time)}
+                            {formatDate(returnTrip?.departure_date_time)}
                           </div>
                           <div className="text-muted small">
-                            {cityMap[returnTrip.departure_city] || "Unknown City"}
+                            {cityMap[returnTrip?.departure_city] || "Unknown City"}
                           </div>
                         </div>
 
@@ -660,7 +675,7 @@ const BookingReview = () => {
                                         whiteSpace: "nowrap",
                                       }}
                                     >
-                                      {cityMap[returnStopover.stopover_city] ||
+                                      {cityMap[returnStopover?.stopover_city] ||
                                         "Unknown City"}
                                     </div>
                                   </div>
@@ -678,20 +693,20 @@ const BookingReview = () => {
                         </div>
                         <div className="col-md-2 text-center text-md-start">
                           <h6 className="mb-0 ">
-                            {formatTime(returnTrip.arrival_date_time)}
+                            {formatTime(returnTrip?.arrival_date_time)}
                           </h6>
                           <div className="text-muted small">
-                            {formatDate(returnTrip.arrival_date_time)}
+                            {formatDate(returnTrip?.arrival_date_time)}
                           </div>
                           <div className="text-muted small">
-                            {cityMap[returnTrip.arrival_city] || "Unknown City"}
+                            {cityMap[returnTrip?.arrival_city] || "Unknown City"}
                           </div>
                         </div>
                         <div className="col-md-2 text-center">
                           <div className="fw-medium">
                             {getDuration(
-                              returnTrip.departure_date_time,
-                              returnTrip.arrival_date_time
+                              returnTrip?.departure_date_time,
+                              returnTrip?.arrival_date_time
                             )}
                           </div>
                           <div

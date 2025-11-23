@@ -248,8 +248,10 @@ class Hotels(models.Model):
     contact_number = models.CharField(max_length=20, blank=True, null=True)
     category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default='standard')
     distance = models.FloatField(default=0)
-    # Walking distance in meters from reference point (computed from walking time)
+    # Walking distance in meters from reference point
     walking_distance = models.FloatField(default=0, help_text='Walking distance in meters from reference point')
+    # Walking time in minutes (user-entered, not auto-calculated)
+    walking_time = models.FloatField(default=0, help_text='Walking time in minutes (user-entered)')
     is_active = models.BooleanField(default=True)
     available_start_date = models.DateField(blank=True, null=True)
     available_end_date = models.DateField(blank=True, null=True)

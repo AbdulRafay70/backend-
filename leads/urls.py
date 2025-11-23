@@ -4,6 +4,7 @@ from .views import (
     LeadListAPIView,
     LeadDetailAPIView,
     LeadUpdateAPIView,
+    LeadRetrieveUpdateDestroyAPIView,
     FollowUpCreateAPIView,
     LoanPromiseAPIView,
     LeadSearchAPIView,
@@ -23,6 +24,8 @@ urlpatterns = [
     path("list/", LeadListAPIView.as_view(), name="leads-list"),
     path("detail/<int:pk>/", LeadDetailAPIView.as_view(), name="leads-detail"),
     path("update/<int:pk>/", LeadUpdateAPIView.as_view(), name="leads-update"),
+    # Backwards-compatible endpoint expected by frontend: GET/PUT/DELETE at `/api/leads/<id>/`
+    path("<int:pk>/", LeadRetrieveUpdateDestroyAPIView.as_view(), name="leads-root"),
     path("followup/", FollowUpCreateAPIView.as_view(), name="leads-followup"),
     path("loan-promise/", LoanPromiseAPIView.as_view(), name="leads-loan-promise"),
     path("search/", LeadSearchAPIView.as_view(), name="leads-search"),

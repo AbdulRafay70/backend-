@@ -939,6 +939,7 @@ class BookingExpiryViewSet(ModelViewSet):
         description='Delete an Umrah package'
     ),
 )
+@extend_schema(exclude=True)
 class UmrahPackageViewSet(ModelViewSet):
     serializer_class = UmrahPackageSerializer
 
@@ -1270,6 +1271,7 @@ class UmrahPackageViewSet(ModelViewSet):
         return Response(serializer.data)
 
 
+@extend_schema(exclude=True)
 class CustomUmrahPackageViewSet(ModelViewSet):
     serializer_class = CustomUmrahPackageSerializer
 
@@ -1359,6 +1361,7 @@ class AllPricesAPIView(APIView):
         return Response(result)
 
 
+@extend_schema(exclude=True)
 class PublicUmrahPackageListAPIView(generics.ListAPIView):
     """Public list of Umrah packages (read-only)."""
     serializer_class = PublicUmrahPackageListSerializer
@@ -1411,6 +1414,7 @@ class PublicUmrahPackageListAPIView(generics.ListAPIView):
         return qs.distinct()
 
 
+@extend_schema(exclude=True)
 class PublicUmrahPackageDetailAPIView(APIView):
     """Public package detail view. Lookup by id or slug (slugified title)."""
 
