@@ -6,8 +6,9 @@ const baseURL = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000/api";
 
 const api = axios.create({
   baseURL,
-  headers: { "Content-Type": "application/json" },
-    timeout: 30000, // 30 seconds timeout
+  // Do not set a global Content-Type here. Let axios/browser set it per-request
+  // so multipart/form-data requests get the correct boundary header.
+  timeout: 30000, // 30 seconds timeout
   // do NOT set withCredentials by default — use token auth via headers unless you specifically
   // need cookie-based sessions. Setting withCredentials without enabling CORS_ALLOW_CREDENTIALS
   // on the server causes a browser-level network error.

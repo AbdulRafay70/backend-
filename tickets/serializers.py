@@ -1,5 +1,6 @@
 
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field, OpenApiTypes
 from rest_framework.exceptions import PermissionDenied
 from .models import (
     Ticket,
@@ -14,10 +15,25 @@ from .models import (
 
 
 class TickerStopoverDetailsSerializer(serializers.ModelSerializer):
+    # Accept extra optional fields for API clients: flight_number, departure/arrival datetimes and cities, and nested airline
+    airline = serializers.JSONField(required=False)
+    flight_number = serializers.CharField(required=False, allow_blank=True)
+    departure_date_time = serializers.DateTimeField(required=False)
+    arrival_date_time = serializers.DateTimeField(required=False)
+    departure_city = serializers.JSONField(required=False)
+    arrival_city = serializers.JSONField(required=False)
+
     class Meta:
         model = TickerStopoverDetails
+        # model fields are still used for persistence; extra fields are handled at TicketSerializer level
         fields = "__all__"
         extra_kwargs = {"ticket": {"required": False}}
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # remove trip_type from API responses for stopovers
+        data.pop('trip_type', None)
+        return data
 
 
 class TicketTripDetailsSerializer(serializers.ModelSerializer):
@@ -50,25 +66,28 @@ class TicketSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Ticket
+        # keep all model fields for write operations but hide top-level `airline` in responses
         fields = "__all__"
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # remove top-level airline from API responses; nested trip/stopover entries include airline info
+        data.pop('airline', None)
+        return data
 
     def validate(self, data):
         # Validate that ForeignKey IDs exist
-        from packages.models import Airlines, City
+        from packages.models import City
         from organization.models import Organization
-        
-        if 'airline' in data:
-            try:
-                Airlines.objects.get(id=data['airline'].id if hasattr(data['airline'], 'id') else data['airline'])
-            except Airlines.DoesNotExist:
-                raise serializers.ValidationError("Invalid airline ID")
-        
+
+        # Top-level `airline` should be provided via nested trip/stopover entries.
+        # Validate organization if present.
         if 'organization' in data:
             try:
                 Organization.objects.get(id=data['organization'].id if hasattr(data['organization'], 'id') else data['organization'])
             except Organization.DoesNotExist:
                 raise serializers.ValidationError("Invalid organization ID")
-        
+
         return data
 
     def create(self, validated_data):
@@ -122,6 +141,35 @@ class TicketSerializer(serializers.ModelSerializer):
                 pass
         stopover_details_data = validated_data.pop("stopover_details", [])
 
+        # If client provided an `airline` inside nested trip/stopover entries, prefer that
+        # and set the ticket-level airline accordingly (model requires a ticket.airline FK).
+        if 'airline' not in validated_data:
+            # search trip details first
+            found_airline = None
+            for trip in trip_details_data:
+                a = trip.get('airline') or (trip.get('airline') if trip.get('airline') else None)
+                if a:
+                    found_airline = a
+                    break
+            # fallback to stopover
+            if not found_airline:
+                for stop in stopover_details_data:
+                    a = stop.get('airline') or (stop.get('airline') if stop.get('airline') else None)
+                    if a:
+                        found_airline = a
+                        break
+
+            if found_airline:
+                # normalize to PK if object provided
+                try:
+                    if hasattr(found_airline, 'id'):
+                        validated_data['airline'] = found_airline.id
+                    else:
+                        validated_data['airline'] = int(found_airline)
+                except Exception:
+                    # leave as-is; DB will validate
+                    validated_data['airline'] = found_airline
+
         # Extract fields from trip_details if not provided
         if trip_details_data:
             departure_trip = next((t for t in trip_details_data if t.get('trip_type') == 'Departure'), None)
@@ -173,10 +221,45 @@ class TicketSerializer(serializers.ModelSerializer):
 
         # Create trip details
         for trip in trip_details_data:
+            # remove any nested airline from per-leg payloads (not a field on TicketTripDetails)
+            trip.pop('airline', None)
+            # allow departure_city/arrival_city to be provided as object with `id`
+            if isinstance(trip.get('departure_city'), dict) and 'id' in trip.get('departure_city'):
+                trip['departure_city'] = trip['departure_city']['id']
+            if isinstance(trip.get('arrival_city'), dict) and 'id' in trip.get('arrival_city'):
+                trip['arrival_city'] = trip['arrival_city']['id']
             TicketTripDetails.objects.create(ticket=ticket, **trip)
 
         # Create stopover details
         for stopover in stopover_details_data:
+            # capture nested airline if present (ticket-level airline already set earlier)
+            stopover_airline = stopover.pop('airline', None)
+
+            # If stopover includes full trip-leg fields, create a corresponding TicketTripDetails
+            trip_for_stop = {}
+            for k in ('flight_number', 'departure_date_time', 'arrival_date_time', 'departure_city', 'arrival_city', 'trip_type'):
+                if k in stopover:
+                    trip_for_stop[k] = stopover.pop(k)
+
+            # normalize city objects to IDs for trip creation
+            if 'departure_city' in trip_for_stop and isinstance(trip_for_stop.get('departure_city'), dict) and 'id' in trip_for_stop.get('departure_city'):
+                trip_for_stop['departure_city'] = trip_for_stop['departure_city']['id']
+            if 'arrival_city' in trip_for_stop and isinstance(trip_for_stop.get('arrival_city'), dict) and 'id' in trip_for_stop.get('arrival_city'):
+                trip_for_stop['arrival_city'] = trip_for_stop['arrival_city']['id']
+
+            if trip_for_stop:
+                # ensure trip_type exists
+                if 'trip_type' not in trip_for_stop:
+                    trip_for_stop['trip_type'] = stopover.get('trip_type') or 'Stopover'
+                try:
+                    TicketTripDetails.objects.create(ticket=ticket, **trip_for_stop)
+                except Exception:
+                    # ignore trip creation errors; continue to save stopover
+                    pass
+
+            if isinstance(stopover.get('stopover_city'), dict) and 'id' in stopover.get('stopover_city'):
+                stopover['stopover_city'] = stopover['stopover_city']['id']
+
             TickerStopoverDetails.objects.create(ticket=ticket, **stopover)
 
         return ticket
@@ -237,14 +320,64 @@ class TicketSerializer(serializers.ModelSerializer):
 
         # Update trip details only if provided
         if trip_details_data is not None:
+            # if nested airline provided, update ticket-level airline
+            found_airline = None
+            for trip in trip_details_data:
+                a = trip.get('airline')
+                if a:
+                    found_airline = a
+                    break
+            if not found_airline and stopover_details_data:
+                for stop in stopover_details_data:
+                    a = stop.get('airline')
+                    if a:
+                        found_airline = a
+                        break
+            if found_airline:
+                try:
+                    if hasattr(found_airline, 'id'):
+                        instance.airline_id = found_airline.id
+                    else:
+                        instance.airline_id = int(found_airline)
+                except Exception:
+                    pass
+                instance.save()
+
             instance.trip_details.all().delete()
             for trip in trip_details_data:
+                trip.pop('airline', None)
+                if isinstance(trip.get('departure_city'), dict) and 'id' in trip.get('departure_city'):
+                    trip['departure_city'] = trip['departure_city']['id']
+                if isinstance(trip.get('arrival_city'), dict) and 'id' in trip.get('arrival_city'):
+                    trip['arrival_city'] = trip['arrival_city']['id']
                 TicketTripDetails.objects.create(ticket=instance, **trip)
 
         # Update stopover details only if provided
         if stopover_details_data is not None:
             instance.stopover_details.all().delete()
             for stopover in stopover_details_data:
+                stopover_airline = stopover.pop('airline', None)
+
+                trip_for_stop = {}
+                for k in ('flight_number', 'departure_date_time', 'arrival_date_time', 'departure_city', 'arrival_city', 'trip_type'):
+                    if k in stopover:
+                        trip_for_stop[k] = stopover.pop(k)
+
+                if 'departure_city' in trip_for_stop and isinstance(trip_for_stop.get('departure_city'), dict) and 'id' in trip_for_stop.get('departure_city'):
+                    trip_for_stop['departure_city'] = trip_for_stop['departure_city']['id']
+                if 'arrival_city' in trip_for_stop and isinstance(trip_for_stop.get('arrival_city'), dict) and 'id' in trip_for_stop.get('arrival_city'):
+                    trip_for_stop['arrival_city'] = trip_for_stop['arrival_city']['id']
+
+                if trip_for_stop:
+                    if 'trip_type' not in trip_for_stop:
+                        trip_for_stop['trip_type'] = stopover.get('trip_type') or 'Stopover'
+                    try:
+                        TicketTripDetails.objects.create(ticket=instance, **trip_for_stop)
+                    except Exception:
+                        pass
+
+                if isinstance(stopover.get('stopover_city'), dict) and 'id' in stopover.get('stopover_city'):
+                    stopover['stopover_city'] = stopover['stopover_city']['id']
                 TickerStopoverDetails.objects.create(ticket=instance, **stopover)
 
         return instance
@@ -316,6 +449,28 @@ class HotelsSerializer(serializers.ModelSerializer):
             # if photos are URLs, store them in caption or treat as external; here we create Photo with caption=URL
             from .models import HotelPhoto
             HotelPhoto.objects.create(hotel=hotel, caption=p)
+        # Also accept uploaded image files under 'photo_files' (multipart/form-data uploads)
+        try:
+            request = self.context.get('request')
+            if request and getattr(request, 'FILES', None):
+                # Django's request.FILES is a MultiValueDict with getlist
+                uploaded = request.FILES.getlist('photo_files') if hasattr(request.FILES, 'getlist') else []
+                for f in uploaded:
+                    try:
+                        HotelPhoto.objects.create(hotel=hotel, image=f, caption=getattr(f, 'name', None))
+                    except Exception:
+                        # ignore individual file save errors
+                        continue
+                # If a video file was uploaded under 'video', attach it to the hotel video field
+                if 'video' in request.FILES:
+                    try:
+                        hotel.video = request.FILES['video']
+                        hotel.save()
+                    except Exception:
+                        pass
+        except Exception:
+            # be tolerant: do not fail hotel creation if file handling has issues
+            pass
         # Only walking_time is saved; walking_distance is ignored
         if hasattr(hotel, 'walking_time') and 'walking_time' in validated_data:
             hotel.walking_time = validated_data.get('walking_time')
@@ -357,6 +512,26 @@ class HotelsSerializer(serializers.ModelSerializer):
             from .models import HotelPhoto
             for p in photos:
                 HotelPhoto.objects.create(hotel=instance, caption=p)
+        # Also accept uploaded image files under 'photo_files' (multipart/form-data uploads)
+        try:
+            request = self.context.get('request')
+            if request and getattr(request, 'FILES', None):
+                uploaded = request.FILES.getlist('photo_files') if hasattr(request.FILES, 'getlist') else []
+                for f in uploaded:
+                    try:
+                        from .models import HotelPhoto
+                        HotelPhoto.objects.create(hotel=instance, image=f, caption=getattr(f, 'name', None))
+                    except Exception:
+                        continue
+                # If a video file was uploaded under 'video', attach it to the hotel video field
+                if 'video' in request.FILES:
+                    try:
+                        instance.video = request.FILES['video']
+                        instance.save()
+                    except Exception:
+                        pass
+        except Exception:
+            pass
         return instance
 
     def validate_category(self, value):
@@ -371,6 +546,30 @@ class HotelsSerializer(serializers.ModelSerializer):
             {"id": p.id, "caption": p.caption, "image": p.image.url if getattr(p, 'image', None) else None}
             for p in photos_qs
         ]
+
+    def to_representation(self, instance):
+        """Return hotel representation but expose the owner organization id
+        under the `organization` key in API responses for compatibility
+        with legacy clients / Swagger UI expectations.
+        If `owner_organization_id` is present, prefer it; otherwise fall
+        back to the stored `organization_id`.
+        """
+        data = super().to_representation(instance)
+        try:
+            owner_id = getattr(instance, 'owner_organization_id', None)
+            if owner_id is None:
+                owner_id = getattr(instance, 'organization_id', None)
+            # Ensure we expose owner_organization_id and remove the legacy
+            # `organization` key from responses so clients only see the owner id.
+            data['owner_organization_id'] = owner_id
+            if 'organization' in data:
+                try:
+                    del data['organization']
+                except Exception:
+                    data.pop('organization', None)
+        except Exception:
+            pass
+        return data
 
 
 class HotelRoomDetailsSerializer(serializers.ModelSerializer):
@@ -412,16 +611,90 @@ class HotelRoomsSerializer(serializers.ModelSerializer):
 
 
 class TicketTripDetailsListSerializer(serializers.ModelSerializer):
+    departure_city = serializers.SerializerMethodField()
+    arrival_city = serializers.SerializerMethodField()
+    airline = serializers.SerializerMethodField()
+
     class Meta:
         model = TicketTripDetails
-        # only include the minimal fields for list responses (no datetimes)
-        fields = ("departure_city", "arrival_city")
+        # include minimal fields for list responses and include nested objects
+        fields = ("departure_city", "arrival_city", "airline")
+
+    def get_departure_city(self, obj):
+        return {"id": getattr(obj, 'departure_city_id', None), "name": getattr(obj.departure_city, 'name', None)}
+
+    def get_arrival_city(self, obj):
+        return {"id": getattr(obj, 'arrival_city_id', None), "name": getattr(obj.arrival_city, 'name', None)}
+
+    def get_airline(self, obj):
+        # parent ticket's airline
+        t = getattr(obj, 'ticket', None)
+        if not t:
+            return None
+        return {"id": getattr(t, 'airline_id', None), "name": getattr(t.airline, 'name', None)}
 
 
 class TickerStopoverDetailsListSerializer(serializers.ModelSerializer):
+    # Return a richer stopover object including possible associated trip-detail fields
+    stopover_city = serializers.SerializerMethodField()
+    airline = serializers.SerializerMethodField()
+    flight_number = serializers.SerializerMethodField()
+    departure_date_time = serializers.SerializerMethodField()
+    arrival_date_time = serializers.SerializerMethodField()
+    arrival_city = serializers.SerializerMethodField()
+
     class Meta:
         model = TickerStopoverDetails
-        fields = ("stopover_duration", "trip_type", "stopover_city")
+        # exclude `trip_type` from list responses
+        fields = ("flight_number", "departure_date_time", "arrival_date_time", "arrival_city", "stopover_duration", "stopover_city", "airline")
+
+    def get_stopover_city(self, obj):
+        return {"id": getattr(obj, 'stopover_city_id', None), "name": getattr(obj.stopover_city, 'name', None)}
+
+    def _find_matching_trip(self, obj):
+        # try to find a TicketTripDetails that corresponds to this stopover. Prefer trip where
+        # departure_city or arrival_city matches the stopover_city, otherwise return first related trip
+        ticket = getattr(obj, 'ticket', None)
+        if not ticket:
+            return None
+        qs = ticket.trip_details.all()
+        if not qs.exists():
+            return None
+        # prefer departure_city match
+        m = qs.filter(departure_city_id=getattr(obj, 'stopover_city_id')).first()
+        if m:
+            return m
+        m = qs.filter(arrival_city_id=getattr(obj, 'stopover_city_id')).first()
+        if m:
+            return m
+        # fallback to any trip_details entry
+        return qs.first()
+
+    def get_airline(self, obj):
+        t = getattr(obj, 'ticket', None)
+        if not t:
+            return None
+        return {"id": getattr(t, 'airline_id', None), "name": getattr(t.airline, 'name', None)}
+
+    def get_flight_number(self, obj):
+        td = self._find_matching_trip(obj)
+        return getattr(td, 'flight_number', None) if td else None
+
+    def get_departure_date_time(self, obj):
+        td = self._find_matching_trip(obj)
+        return getattr(td, 'departure_date_time', None) if td else None
+
+    def get_arrival_date_time(self, obj):
+        td = self._find_matching_trip(obj)
+        return getattr(td, 'arrival_date_time', None) if td else None
+
+    
+
+    def get_arrival_city(self, obj):
+        td = self._find_matching_trip(obj)
+        if not td:
+            return None
+        return {"id": getattr(td, 'arrival_city_id', None), "name": getattr(td.arrival_city, 'name', None)}
 
 
 class TicketListSerializer(serializers.ModelSerializer):
@@ -461,7 +734,6 @@ class TicketListSerializer(serializers.ModelSerializer):
             "owner_organization_id",
             "reselling_allowed",
             "branch",
-            "airline",
         )
 
     def get_trip_details(self, obj):
@@ -473,11 +745,12 @@ class TicketListSerializer(serializers.ModelSerializer):
             # (if the frontend provided a numeric suffix and it was stored there)
             fn = getattr(td, 'flight_number', None) or getattr(obj, 'flight_number', None)
             details.append({
+                'airline': {"id": getattr(obj, 'airline_id', None), "name": getattr(obj.airline, 'name', None)},
                 'flight_number': fn,
                 'departure_date_time': getattr(td, 'departure_date_time', None),
                 'arrival_date_time': getattr(td, 'arrival_date_time', None),
-                'departure_city': getattr(td, 'departure_city_id', None),
-                'arrival_city': getattr(td, 'arrival_city_id', None),
+                'departure_city': {"id": getattr(td, 'departure_city_id', None), "name": getattr(td.departure_city, 'name', None)},
+                'arrival_city': {"id": getattr(td, 'arrival_city_id', None), "name": getattr(td.arrival_city, 'name', None)},
             })
         return details
 

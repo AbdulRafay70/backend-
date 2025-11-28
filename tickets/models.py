@@ -238,6 +238,10 @@ class Hotels(models.Model):
     organization = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="hotels", null=True, blank=True
     )
+    # Owner organization id (separate from the `organization` FK). This
+    # allows recording the owning organization id for inventory ownership
+    # semantics without introducing an additional FK relationship.
+    owner_organization_id = models.IntegerField(blank=True, null=True, help_text="Organization that owns this inventory")
     name = models.CharField(max_length=255)
     city = models.ForeignKey(City, on_delete=models.SET_NULL, null=True, blank=True, related_name="hotels")
     address = models.TextField()
@@ -295,6 +299,8 @@ class HotelPrices(models.Model):
     
     ROOM_TYPE_CHOICES = [
         ('single', 'Single'),
+        ('sharing', 'Sharing'),
+        ('room', 'Room'),
         ('double', 'Double'),
         ('triple', 'Triple'),
         ('quad', 'Quad'),

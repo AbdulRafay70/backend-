@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Container, Row, Col, Card, Form, Button, Alert, Badge, Spinner, Modal, Table, Tabs, Tab } from "react-bootstrap";
+import { Container, Row, Col, Card, Form, Button, Alert, Badge, Spinner, Modal, Table, Tabs, Tab, Dropdown } from "react-bootstrap";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import HotelsTabs from "../../components/HotelsTabs";
@@ -39,6 +39,119 @@ const HotelAvailabilityManager = () => {
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
+  // Gallery modal state for viewing multiple hotel images
+  const [showGallery, setShowGallery] = useState(false);
+  const [galleryPhotos, setGalleryPhotos] = useState([]);
+  const [galleryIndex, setGalleryIndex] = useState(0);
+
+  const openGallery = (hotel) => {
+    // Prefer `photos_data` (returned by serializer) then fallback to common fields
+    const photos = hotel.photos_data || hotel.photos || hotel.photo_urls || hotel.images || hotel.photos_list || [];
+    const arr = Array.isArray(photos) ? photos : [];
+    // Filter to entries that actually have an image/url (skip caption-only records)
+    const valid = arr.filter(p => {
+      if (!p) return false;
+      if (typeof p === 'string') return String(p).trim() !== '';
+      const raw = p.image || p.url || '';
+      return raw && String(raw).trim() !== '';
+    });
+    const items = valid.map((p) => {
+      const rawUrl = (typeof p === 'string') ? p : (p.image || p.url || '');
+      const full = normalizeMediaUrlGlobal(rawUrl);
+      return { id: (p && typeof p === 'object' && p.id) ? p.id : null, url: full, isNew: false };
+    });
+    // open gallery even if there are no photos so user can add
+    setGalleryPhotos(items);
+    setGalleryIndex(0);
+    setSelectedHotel(hotel);
+    setShowGallery(true);
+  };
+
+  // Handle selecting files to add to gallery (local preview)
+  const handleGalleryFileSelect = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    const previews = files.map((f, i) => ({ id: `new-${Date.now()}-${i}`, url: URL.createObjectURL(f), file: f, isNew: true }));
+    setGalleryPhotos(prev => [...(prev || []), ...previews]);
+  };
+
+  const closeGallery = () => {
+    // revoke object URLs for local previews
+    try {
+      (galleryPhotos || []).forEach(p => {
+        if (p && p.isNew && p.url && p.url.startsWith('blob:')) {
+          try { URL.revokeObjectURL(p.url); } catch (e) {}
+        }
+      });
+    } catch (e) {}
+    setGalleryPhotos([]);
+    setGalleryIndex(0);
+    setSelectedHotel(null);
+    setShowGallery(false);
+  };
+
+  // Upload new selected files for the currently opened hotel
+  const uploadGalleryFiles = async () => {
+    if (!selectedHotel) return showAlert('danger', 'No hotel selected');
+    // collect new files
+    const newFiles = (galleryPhotos || []).filter(p => p.isNew && p.file).map(p => p.file);
+    if (newFiles.length === 0) return showAlert('warning', 'No new files selected');
+    const fd = new FormData();
+    newFiles.forEach(f => fd.append('photo_files', f));
+    try {
+      // send PATCH to hotel's endpoint; include organization param if available
+      await api.patch(`/hotels/${selectedHotel.id}/`, fd, { params: { organization: organizationId } });
+      showAlert('success', 'Uploaded photos');
+      // fetch updated hotel detail and re-open gallery with fresh data
+      const resp = await api.get(`/hotels/${selectedHotel.id}/`, { params: { organization: organizationId } });
+      const updated = resp?.data || selectedHotel;
+      // update global hotels state so table thumbnails/count update immediately
+      try {
+        setHotels(prev => (Array.isArray(prev) ? prev.map(h => (h && h.id === updated.id ? updated : h)) : prev));
+      } catch (e) {}
+      openGallery(updated);
+    } catch (err) {
+      console.error('Upload gallery files error', err);
+      showAlert('danger', err?.response?.data?.detail || 'Failed to upload photos');
+    }
+  };
+
+  // Delete a photo (if existing on server) or remove local preview
+  const deleteGalleryPhoto = async (photoIndex) => {
+    const p = galleryPhotos[photoIndex];
+    if (!p) return;
+    // if it's a local new file not yet uploaded, just remove it
+    if (p.isNew) {
+      setGalleryPhotos(prev => prev.filter((_, idx) => idx !== photoIndex));
+      return;
+    }
+    // attempt server-side delete via HotelsViewSet convenience endpoint
+    // optimistic removal from gallery UI
+    setGalleryPhotos(prev => prev.filter((_, idx) => idx !== photoIndex));
+    try {
+      if (p.id) {
+        await api.patch(`/hotels/${selectedHotel.id}/`, { remove_photo_id: p.id }, { params: { organization: organizationId } });
+      } else {
+        // no id: try to find matching photo record by URL and then request hotel PATCH to remove it
+        const listResp = await api.get(`/hotel-photos/`, { params: { hotel: selectedHotel.id } });
+        let list = listResp?.data || [];
+        if (!Array.isArray(list)) list = list.results || list.data || [];
+        const match = list.find(it => (it.image && p.url && p.url.endsWith(it.image)) || (it.image && p.url && p.url.includes(it.image)));
+        if (match) await api.patch(`/hotels/${selectedHotel.id}/`, { remove_photo_id: match.id }, { params: { organization: organizationId } });
+      }
+      showAlert('success', 'Deleted photo');
+      // refresh and update global hotels state
+      const resp = await api.get(`/hotels/${selectedHotel.id}/`, { params: { organization: organizationId } });
+      const updated = resp?.data || selectedHotel;
+      try {
+        setHotels(prev => (Array.isArray(prev) ? prev.map(h => (h && h.id === updated.id ? updated : h)) : prev));
+      } catch (e) {}
+      openGallery(updated);
+    } catch (err) {
+      console.error('delete gallery photo error', err);
+      showAlert('danger', err?.response?.data?.detail || 'Failed to delete photo');
+    }
+  };
   
   // Selected items
   const [selectedHotel, setSelectedHotel] = useState(null);
@@ -60,6 +173,7 @@ const HotelAvailabilityManager = () => {
     category: "",
     distance: "",
     walking_time: "",
+    walking_distance: "",
     is_active: true,
     available_start_date: "",
     available_end_date: ""
@@ -102,6 +216,26 @@ const HotelAvailabilityManager = () => {
   }
   const defaultOrgFromEnv = import.meta.env.VITE_DEFAULT_ORG_ID ? Number(import.meta.env.VITE_DEFAULT_ORG_ID) : null;
   const organizationId = parsedOrg?.id ?? defaultOrgFromEnv ?? null;
+
+  // API base used to normalize media URLs (keep consistent across gallery + table thumbnails)
+  const apiBaseGlobal = (import.meta.env.VITE_API_BASE && import.meta.env.VITE_API_BASE.replace(/\/api\/?$/, '')) || 'http://127.0.0.1:8000';
+  const normalizeMediaUrlGlobal = (rawUrl) => {
+    if (!rawUrl) return '';
+    try {
+      if (/^https?:\/\//i.test(rawUrl)) return rawUrl;
+      // collapse repeated slashes but do NOT strip duplicate 'media' prefixes
+      // because some existing DB entries include a leading 'media/' in the stored
+      // filename (e.g. 'media/hotel_photos/..') and Django will correctly
+      // expose them at '/media/media/...'. Removing the duplicate prefix would
+      // point to a different path that may not exist on disk.
+      const path = rawUrl.replace(/\/+/g, '/');
+      if (path.startsWith('/media')) return `${apiBaseGlobal}${path}`;
+      if (path.indexOf('media/') === 0) return `${apiBaseGlobal}/${path}`;
+      return path;
+    } catch (e) {
+      return rawUrl;
+    }
+  };
 
   // Map human-friendly floor labels to backend choice values
   const mapFloorLabelToValue = (floorLabel) => {
@@ -435,9 +569,10 @@ const HotelAvailabilityManager = () => {
       // send it directly to the server; fallback to null if not selected
       const mappedCategory = hotelForm.category || null;
 
-      // Store distance as entered (meters, no conversion)
+      // Store distance and walking distance/time as entered (meters/minutes, no conversion)
       const distanceRaw = parseDistanceRaw(hotelForm.distance);
       const walkingTime = hotelForm.walking_time !== undefined && hotelForm.walking_time !== null && hotelForm.walking_time !== "" ? Number(hotelForm.walking_time) : null;
+      const walkingDistance = hotelForm.walking_distance !== undefined && hotelForm.walking_distance !== null && hotelForm.walking_distance !== "" ? parseDistanceRaw(hotelForm.walking_distance) : null;
 
       // Ensure at least one price section exists (backend requires Prices)
       if (!priceSections || priceSections.length === 0) {
@@ -456,11 +591,12 @@ const HotelAvailabilityManager = () => {
         return;
       }
 
-      const { walking_time, ...hotelFormRest } = hotelForm;
+      const { walking_time, walking_distance, ...hotelFormRest } = hotelForm;
       const plainPayload = {
         ...hotelFormRest,
         distance: distanceRaw,
         walking_time: walkingTime, // send as walking_time
+        walking_distance: walkingDistance,
         city: normalizedCity,
         category: mappedCategory,
         // include contact details and prices as expected by serializer
@@ -470,7 +606,22 @@ const HotelAvailabilityManager = () => {
           // base room price for this section (if provided)
           const basePriceNum = parseFloat(p.price) || 0;
           const basePurchaseNum = parseFloat(p.purchase_price) || 0;
+          // Always create a section-level 'room' price so Room Price column has a dedicated record
           if ((p.price !== undefined && p.price !== "") || (p.purchase_price !== undefined && p.purchase_price !== "")) {
+            acc.push({
+              start_date: sectionStart,
+              end_date: sectionEnd,
+              room_type: 'room',
+              price: basePriceNum,
+              purchase_price: basePurchaseNum,
+              profit: Number((basePriceNum - basePurchaseNum).toFixed(2)),
+            });
+          }
+
+          // If no bed-specific prices are provided, also create a record for the section's room_type
+          // to preserve previous behavior where the section price populated the specific room_type column.
+          const hasBedPrices = Array.isArray(p.bed_prices) && p.bed_prices.length > 0;
+          if (!hasBedPrices && ((p.price !== undefined && p.price !== "") || (p.purchase_price !== undefined && p.purchase_price !== "")) && p.room_type) {
             acc.push({
               start_date: sectionStart,
               end_date: sectionEnd,
@@ -482,14 +633,16 @@ const HotelAvailabilityManager = () => {
           }
 
           // include any bed-specific prices defined in this section
-          if (Array.isArray(p.bed_prices)) {
+          if (hasBedPrices) {
             p.bed_prices.forEach(bp => {
               const bpPrice = parseFloat(bp.price) || 0;
               const bpPurchase = parseFloat(bp.purchase_price) || 0;
+              // preserve the selected bed type when provided (do not coerce 'sharing' to section room_type)
+              const resolvedRoomType = bp.type || p.room_type;
               acc.push({
                 start_date: sectionStart,
                 end_date: sectionEnd,
-                room_type: bp.type || p.room_type,
+                room_type: resolvedRoomType,
                 price: bpPrice,
                 purchase_price: bpPurchase,
                 profit: Number((bpPrice - bpPurchase).toFixed(2)),
@@ -499,6 +652,7 @@ const HotelAvailabilityManager = () => {
 
           return acc;
         }, []),
+        // validate contact details: require contact_number when entries are present
         contact_details: contactDetails.map(c => ({ contact_person: c.contact_person, contact_number: c.contact_number })),
         photos: photoFiles && photoFiles.length > 0 ? photoFiles.map(f => f.name) : [],
         reselling_allowed: !!resellingAllowed,
@@ -517,14 +671,24 @@ const HotelAvailabilityManager = () => {
         return;
       }
 
+      // Validate contact details now: ensure any provided contact has a phone/number
+      const missingContactNumber = (contactDetails || []).some(c => (c.contact_person && (!c.contact_number || String(c.contact_number).trim() === "")) || (!c.contact_person && !c.contact_number && false));
+      if (missingContactNumber) {
+        showAlert('error', 'Please provide a contact number for each contact entry.');
+        return;
+      }
+
       // If any files are attached, send as multipart/form-data so video is uploaded; include photo filenames as captions
       let res;
       if ((photoFiles && photoFiles.length > 0) || videoFile) {
         const form = new FormData();
+        const hasFiles = (photoFiles && photoFiles.length > 0) || !!videoFile;
         // Append simple fields
         Object.entries(plainPayload).forEach(([k, v]) => {
           if (v === undefined || v === null) return;
-          // prices, contact_details and photos should be sent as JSON strings
+          // If we have files, do NOT append the `photos` JSON array (server will create photo records from uploaded files).
+          if (k === 'photos' && hasFiles) return;
+          // prices and contact_details should be sent as JSON strings
           if (k === 'prices' || k === 'contact_details' || k === 'photos') {
             form.append(k, JSON.stringify(v));
           } else {
@@ -546,7 +710,9 @@ const HotelAvailabilityManager = () => {
         // eslint-disable-next-line no-console
         console.debug('Posting hotel as FormData (files present)', { meta: plainPayload, photoFiles, videoFile });
 
-        res = await api.post(`/hotels/`, form, { headers: { 'Content-Type': 'multipart/form-data' } });
+        // Let the browser/axios set the Content-Type including the multipart boundary.
+        // Setting 'Content-Type' manually here can omit the required boundary and break file parsing server-side.
+        res = await api.post(`/hotels/`, form);
       } else {
         // No files: send JSON
         // Helpful debug
@@ -625,7 +791,10 @@ const HotelAvailabilityManager = () => {
   const handleEditHotel = async () => {
     // Prevent unauthorized organizations from modifying hotel rates
     try {
-      const hotelOrgRaw = selectedHotel?.organization;
+      // Determine hotel's owning organization id. Some API responses no longer
+      // include `organization` (we now use `owner_organization_id`), so fall
+      // back through several possible field names and shapes.
+      const hotelOrgRaw = selectedHotel?.owner_organization_id ?? selectedHotel?.organization ?? selectedHotel?.organization_id ?? selectedHotel?.owner_organization;
       const hotelOrg = hotelOrgRaw && typeof hotelOrgRaw === 'object' ? (hotelOrgRaw.id ?? hotelOrgRaw) : hotelOrgRaw;
 
       // Also validate that the current JWT belongs to the hotel's organization (server enforces permissions based on token)
@@ -671,25 +840,44 @@ const HotelAvailabilityManager = () => {
         const sectionEnd = p.end_date || null;
         const entries = [];
 
-        // Base section price (if provided)
+        // Base section price: create a dedicated 'room' entry so Room Price is stored separately
+        const basePrice = parseFloat(p.price) || 0;
+        const basePurchase = parseFloat(p.purchase_price) || 0;
         entries.push({
           id: p.id || undefined,
           start_date: sectionStart,
           end_date: sectionEnd,
-          room_type: p.room_type,
-          price: parseFloat(p.price) || 0,
-          purchase_price: parseFloat(p.purchase_price) || 0,
-          profit: Number(((parseFloat(p.price) || 0) - (parseFloat(p.purchase_price) || 0)).toFixed(2)),
+          room_type: 'room',
+          price: basePrice,
+          purchase_price: basePurchase,
+          profit: Number((basePrice - basePurchase).toFixed(2)),
         });
+
+        // If there are no bed-specific prices provided, also create a record targeting the section's room_type
+        // so legacy clients that expect the section price to populate the specific room_type continue to work.
+        const hasBeds = Array.isArray(p.bed_prices) && p.bed_prices.length > 0;
+        if (!hasBeds && p.room_type) {
+          entries.push({
+            id: p.id || undefined,
+            start_date: sectionStart,
+            end_date: sectionEnd,
+            room_type: p.room_type,
+            price: basePrice,
+            purchase_price: basePurchase,
+            profit: Number((basePrice - basePurchase).toFixed(2)),
+          });
+        }
 
         // Any bed-specific prices defined for this section
         if (Array.isArray(p.bed_prices)) {
           p.bed_prices.forEach(bp => {
+            // preserve the selected bed type when provided (do not coerce 'sharing' to section room_type)
+            const resolvedRoomType = bp.type || p.room_type;
             entries.push({
               id: bp.id || undefined,
               start_date: sectionStart,
               end_date: sectionEnd,
-              room_type: bp.type || p.room_type,
+              room_type: resolvedRoomType,
               price: parseFloat(bp.price) || 0,
               purchase_price: parseFloat(bp.purchase_price) || 0,
               profit: Number(((parseFloat(bp.price) || 0) - (parseFloat(bp.purchase_price) || 0)).toFixed(2)),
@@ -709,15 +897,17 @@ const HotelAvailabilityManager = () => {
       }
 
       // Update hotel fields (owner only)
-      // Store distance as entered (meters, no conversion)
+      // Store distance and walking distance/time as entered (meters/minutes, no conversion)
       const distanceRaw = parseDistanceRaw(hotelForm.distance);
       const walkingTime = hotelForm.walking_time !== undefined && hotelForm.walking_time !== null && hotelForm.walking_time !== "" ? Number(hotelForm.walking_time) : null;
+      const walkingDistance = hotelForm.walking_distance !== undefined && hotelForm.walking_distance !== null && hotelForm.walking_distance !== "" ? parseDistanceRaw(hotelForm.walking_distance) : null;
 
-      const { walking_time, ...hotelFormRest } = hotelForm;
+      const { walking_time, walking_distance, ...hotelFormRest } = hotelForm;
       const updatePayload = {
         ...hotelFormRest,
         distance: distanceRaw,
         walking_time: walkingTime, // send as walking_time
+        walking_distance: walkingDistance,
         reselling_allowed: !!resellingAllowed,
         ...(isOwner ? { prices: pricesPayload } : {}),
       };
@@ -730,14 +920,55 @@ const HotelAvailabilityManager = () => {
         // Use a longer timeout for updates and retry once on timeout to handle slow backend operations
         const updateConfig = { params: { organization: organizationId }, timeout: 30000 };
         try {
-          await api.put(`/hotels/${selectedHotel.id}/`, updatePayload, updateConfig);
+          // If files are attached, send as FormData so backend can receive request.FILES
+          if ((photoFiles && photoFiles.length > 0) || videoFile) {
+            const form = new FormData();
+            Object.entries(updatePayload).forEach(([k, v]) => {
+              if (v === undefined || v === null) return;
+              // When uploading files, skip the photos JSON to avoid creating caption-only records.
+              if (k === 'photos' && photoFiles && photoFiles.length > 0) return;
+              if (k === 'prices' || k === 'contact_details' || k === 'photos') {
+                form.append(k, JSON.stringify(v));
+              } else {
+                form.append(k, typeof v === 'boolean' ? String(v) : v);
+              }
+            });
+
+            if (photoFiles && photoFiles.length > 0) {
+              photoFiles.forEach((f) => form.append('photo_files', f));
+            }
+            if (videoFile) {
+              form.append('video', videoFile);
+            }
+
+            // Let axios set Content-Type/boundary
+            await api.put(`/hotels/${selectedHotel.id}/`, form, updateConfig);
+          } else {
+            await api.put(`/hotels/${selectedHotel.id}/`, updatePayload, updateConfig);
+          }
         } catch (putErr) {
           // If timeout occurred, retry once with an even larger timeout
           if (putErr && (putErr.code === 'ECONNABORTED' || (putErr?.message || '').toLowerCase().includes('timeout'))) {
             // eslint-disable-next-line no-console
             console.warn('Hotel update timed out, retrying with extended timeout...');
             try {
-              await api.put(`/hotels/${selectedHotel.id}/`, updatePayload, { params: { organization: organizationId }, timeout: 60000 });
+              if ((photoFiles && photoFiles.length > 0) || videoFile) {
+                const form2 = new FormData();
+                Object.entries(updatePayload).forEach(([k, v]) => {
+                  if (v === undefined || v === null) return;
+                  if (k === 'photos' && photoFiles && photoFiles.length > 0) return;
+                  if (k === 'prices' || k === 'contact_details' || k === 'photos') {
+                    form2.append(k, JSON.stringify(v));
+                  } else {
+                    form2.append(k, typeof v === 'boolean' ? String(v) : v);
+                  }
+                });
+                if (photoFiles && photoFiles.length > 0) photoFiles.forEach((f) => form2.append('photo_files', f));
+                if (videoFile) form2.append('video', videoFile);
+                await api.put(`/hotels/${selectedHotel.id}/`, form2, { params: { organization: organizationId }, timeout: 60000 });
+              } else {
+                await api.put(`/hotels/${selectedHotel.id}/`, updatePayload, { params: { organization: organizationId }, timeout: 60000 });
+              }
             } catch (secondErr) {
               // rethrow to be handled by outer catch
               throw secondErr;
@@ -1172,6 +1403,7 @@ const HotelAvailabilityManager = () => {
       category: "",
       distance: "",
       walking_time: "",
+      walking_distance: "",
       is_active: true,
       available_start_date: "",
       available_end_date: ""
@@ -1196,9 +1428,10 @@ const HotelAvailabilityManager = () => {
       address: "",
       google_location: "",
       contact_number: "",
-      category: "ECO",
+      category: "",
       distance: "",
       walking_time: "",
+      walking_distance: "",
       is_active: true,
       available_start_date: "",
       available_end_date: ""
@@ -1227,6 +1460,7 @@ const HotelAvailabilityManager = () => {
       category: hotel.category,
       distance: hotel.distance || "",
       walking_time: hotel.walking_time || hotel.walking_minutes || "",
+      walking_distance: hotel.walking_distance || hotel.walking_distance_meters || "",
       is_active: hotel.is_active,
       available_start_date: hotel.available_start_date || "",
       available_end_date: hotel.available_end_date || ""
@@ -1238,17 +1472,54 @@ const HotelAvailabilityManager = () => {
       hotel.reselling_allowed === "1"
     );
     
-    // Load existing prices
-    const existingPrices = (hotel.prices || []).map(p => ({
-      id: p.id,
-      start_date: p.start_date || "",
-      end_date: p.end_date || "",
-      room_type: p.room_type || "double",
-      price: (p.price ?? p.selling_price ?? ""),
-      purchase_price: p.purchase_price || "",
-      bed_prices: []
-    }));
-    setPriceSections(existingPrices.length > 0 ? existingPrices : [{ start_date: "", end_date: "", room_type: "double", price: "", purchase_price: "", bed_prices: [] }]);
+    // Load existing prices and attempt to reconstruct price sections with bed-specific prices.
+    // The API returns a flat list of price entries; group them by (start_date, end_date)
+    // and pick a representative room_type as the section's room_type. Remaining
+    // entries in the same date range are treated as bed_prices.
+    try {
+      const pricesList = Array.isArray(hotel.prices) ? hotel.prices : (hotel.prices?.results || hotel.prices?.data || []);
+      const groups = {};
+      (pricesList || []).forEach(p => {
+        const key = `${p.start_date || ''}::${p.end_date || ''}`;
+        groups[key] = groups[key] || [];
+        groups[key].push(p);
+      });
+      const reconstructed = Object.keys(groups).map(k => {
+        const items = groups[k];
+        // Determine the most common room_type in this group to act as the section type
+        const counts = {};
+        items.forEach(it => { const t = it.room_type || 'double'; counts[t] = (counts[t] || 0) + 1; });
+        const sectionRoomType = Object.keys(counts).sort((a,b) => counts[b]-counts[a])[0] || 'double';
+
+        // Find a base entry for the section (prefer one that matches sectionRoomType)
+        let base = items.find(it => (it.room_type || 'double') === sectionRoomType) || items[0];
+        // Remaining entries become bed_prices (exclude the chosen base by id)
+        const bedPrices = items.filter(it => it !== base).map(it => ({ id: it.id, type: it.room_type || sectionRoomType, price: it.price ?? it.selling_price ?? '', purchase_price: it.purchase_price ?? '' }));
+
+        return {
+          id: base.id,
+          start_date: base.start_date || '',
+          end_date: base.end_date || '',
+          room_type: sectionRoomType || 'double',
+          price: base.price ?? base.selling_price ?? '',
+          purchase_price: base.purchase_price ?? '',
+          bed_prices: bedPrices
+        };
+      });
+      setPriceSections(reconstructed.length > 0 ? reconstructed : [{ start_date: "", end_date: "", room_type: "double", price: "", purchase_price: "", bed_prices: [] }]);
+    } catch (e) {
+      // Fallback: simple mapping if reconstruction fails
+      const existingPrices = (hotel.prices || []).map(p => ({
+        id: p.id,
+        start_date: p.start_date || "",
+        end_date: p.end_date || "",
+        room_type: p.room_type || "double",
+        price: (p.price ?? p.selling_price ?? ""),
+        purchase_price: p.purchase_price || "",
+        bed_prices: []
+      }));
+      setPriceSections(existingPrices.length > 0 ? existingPrices : [{ start_date: "", end_date: "", room_type: "double", price: "", purchase_price: "", bed_prices: [] }]);
+    }
     // Populate contact details if present (backend may return contact_details or contactDetails)
     const existingContacts = hotel.contact_details || hotel.contactDetails || [];
     setContactDetails((existingContacts && existingContacts.length > 0) ? existingContacts.map(c => ({ contact_person: c.contact_person || c.name || '', contact_number: c.contact_number || c.phone || '' })) : [{ contact_person: '', contact_number: '' }]);
@@ -1330,6 +1601,7 @@ const HotelAvailabilityManager = () => {
           <th>Distance</th>
           <th>Walking Time</th>
           <th>Price Dates</th>
+          <th>Room Price</th>
           <th>Sharing Price</th>
           <th>Quint Price</th>
           <th>Quad Price</th>
@@ -1363,13 +1635,27 @@ const HotelAvailabilityManager = () => {
           const quadPrice = pickPrice('quad');
           const quintPrice = pickPrice('quint');
 
-          // sharing price: choose the lowest selling_price among entries where is_sharing_allowed === true
+          // room price: choose the lowest selling_price (or price) among all entries
+          let roomPrice = null;
+          prices.forEach(p => {
+            if (!p) return;
+            const sp = p.selling_price != null ? p.selling_price : p.price;
+            if (sp != null && (roomPrice == null || sp < roomPrice)) roomPrice = sp;
+          });
+
+          // sharing price: prefer the lowest selling_price among entries where is_sharing_allowed === true
+          // if none are marked as sharing, fall back to any price entry with room_type === 'sharing'
           let sharingPrice = null;
           prices.forEach(p => {
             if (p && p.is_sharing_allowed) {
-              if (sharingPrice == null || (p.selling_price != null && p.selling_price < sharingPrice)) sharingPrice = p.selling_price;
+              const sp = p.selling_price != null ? p.selling_price : p.price;
+              if (sharingPrice == null || (sp != null && sp < sharingPrice)) sharingPrice = sp;
             }
           });
+          if (sharingPrice == null) {
+            const byType = prices.find(p => p && String(p.room_type).toLowerCase() === 'sharing');
+            if (byType) sharingPrice = byType.selling_price != null ? byType.selling_price : byType.price;
+          }
 
           const fmt = (v) => (v == null ? '-' : (Number.isFinite(Number(v)) ? Number(v).toLocaleString() : String(v)));
 
@@ -1381,6 +1667,7 @@ const HotelAvailabilityManager = () => {
               <td>{hotel.distance != null ? hotel.distance : '-'}</td>
               <td>{hotel.walking_time != null ? hotel.walking_time : (hotel.walking_distance != null ? hotel.walking_distance : '-')}</td>
               <td>{priceDates}</td>
+              <td>{fmt(roomPrice)}</td>
               <td>{fmt(sharingPrice)}</td>
               <td>{fmt(quintPrice)}</td>
               <td>{fmt(quadPrice)}</td>
@@ -1445,6 +1732,46 @@ const HotelAvailabilityManager = () => {
               Add New Hotel
             </Button>
           </div>
+
+          {/* Gallery modal (for multiple photos) */}
+          <Modal show={showGallery} onHide={closeGallery} size="xl" centered>
+            <Modal.Header closeButton>
+              <Modal.Title>Photos</Modal.Title>
+            </Modal.Header>
+            <Modal.Body>
+              <div>
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <div>
+                    <input type="file" accept="image/*" multiple onChange={handleGalleryFileSelect} />
+                    <Button size="sm" className="ms-2" onClick={uploadGalleryFiles}><Save size={14} className="me-1" /> Upload</Button>
+                  </div>
+                  <div>
+                    <Button size="sm" onClick={() => setGalleryIndex(i => (i - 1 + (galleryPhotos?.length || 1)) % (galleryPhotos?.length || 1))}>Previous</Button>
+                    <span className="mx-2">{(galleryPhotos && galleryPhotos.length) ? (galleryIndex + 1) : 0} / {(galleryPhotos && galleryPhotos.length) || 0}</span>
+                    <Button size="sm" onClick={() => setGalleryIndex(i => (i + 1) % (galleryPhotos?.length || 1))}>Next</Button>
+                  </div>
+                </div>
+
+                {galleryPhotos && galleryPhotos.length > 0 ? (
+                  <div>
+                    <div className="text-center mb-3">
+                      <img src={galleryPhotos[galleryIndex]?.url} alt={`photo-${galleryIndex}`} style={{ maxWidth: '100%', maxHeight: '80vh', borderRadius: 6 }} />
+                    </div>
+                    <div className="d-flex flex-wrap">
+                      {galleryPhotos.map((p, idx) => (
+                        <div key={p.id || idx} style={{ position: 'relative', marginRight: 8, marginBottom: 8 }}>
+                          <img src={p.url} alt={`thumb-${idx}`} onClick={() => setGalleryIndex(idx)} style={{ width: 120, height: 90, objectFit: 'cover', cursor: 'pointer', border: idx === galleryIndex ? '3px solid #0d6efd' : '1px solid #ddd', borderRadius: 6 }} />
+                          <Button size="sm" variant="danger" style={{ position: 'absolute', top: 4, right: 4, padding: '2px 6px' }} onClick={() => deleteGalleryPhoto(idx)}><Trash2 size={12} /></Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center text-muted">No photos available</div>
+                )}
+              </div>
+            </Modal.Body>
+          </Modal>
 
           {/* Hotel Filters */}
           <div className="d-flex flex-wrap gap-3 align-items-center mb-3 px-2 pt-2">
@@ -1609,30 +1936,34 @@ const HotelAvailabilityManager = () => {
                       <th style={{ minWidth: "120px" }}>City</th>
                       <th style={{ minWidth: "200px" }}>Address</th>
                       <th style={{ minWidth: "100px" }}>Category</th>
+                       <th style={{ minWidth: "120px" }}>Contact</th>
+                      <th style={{ minWidth: "100px" }}>Status</th>
+                      <th style={{ minWidth: "150px" }}>Availability</th>
                       <th style={{ minWidth: "100px" }}>Distance (m)</th>
                       <th style={{ minWidth: "110px" }}>Walk Time (min)</th>
+                      <th style={{ minWidth: "110px" }}>Walking Distance (m)</th>
                       <th style={{ minWidth: "160px" }}>Price Dates</th>
+                      <th style={{ minWidth: "120px" }}>Room Price</th>
                       <th style={{ minWidth: "120px" }}>Sharing Price</th>
                       <th style={{ minWidth: "120px" }}>Quint Price</th>
                       <th style={{ minWidth: "120px" }}>Quad Price</th>
                       <th style={{ minWidth: "120px" }}>Triple Price</th>
                       <th style={{ minWidth: "120px" }}>Double Price</th>
-                      <th style={{ minWidth: "120px" }}>Contact</th>
-                      <th style={{ minWidth: "100px" }}>Status</th>
-                      <th style={{ minWidth: "150px" }}>Availability</th>
+                      <th style={{ minWidth: "120px" }}>Pictures</th>
+                      <th style={{ minWidth: "120px" }}>Location</th>
                       <th style={{ minWidth: "150px", textAlign: "center" }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
                     {loading ? (
                       <tr>
-                        <td colSpan="10" className="text-center py-4">
+                        <td colSpan="19" className="text-center py-4">
                           <Spinner animation="border" variant="primary" />
                         </td>
                       </tr>
                     ) : filteredHotels.length === 0 ? (
                       <tr>
-                        <td colSpan="10" className="text-center py-4">
+                        <td colSpan="19" className="text-center py-4">
                           <AlertCircle size={48} className="text-muted mb-3" />
                           <p className="text-muted">No hotels found</p>
                         </td>
@@ -1661,63 +1992,7 @@ const HotelAvailabilityManager = () => {
                           </td>
                           <td>{hotel.address}</td>
                           <td>{getCategoryBadge(hotel.category)}</td>
-                          <td>
-                            {hotel.distance !== undefined && hotel.distance !== null && hotel.distance !== "" ? (
-                              <span>{hotel.distance} m</span>
-                            ) : (
-                              "N/A"
-                            )}
-                          </td>
-                          <td>
-                            {(hotel.walking_time !== undefined && hotel.walking_time !== null && hotel.walking_time !== "") ? (
-                              <span>{String(hotel.walking_time)} min</span>
-                            ) : (
-                              "N/A"
-                            )}
-                          </td>
-                          {/* Price extraction */}
-                          {(() => {
-                            const prices = hotel.prices || hotel.price_sections || [];
-                            let minStart = null;
-                            let maxEnd = null;
-                            prices.forEach(p => {
-                              if (!p) return;
-                              if (p.start_date && (!minStart || p.start_date < minStart)) minStart = p.start_date;
-                              if (p.end_date && (!maxEnd || p.end_date > maxEnd)) maxEnd = p.end_date;
-                            });
-                            const priceDates = minStart || maxEnd ? `${minStart || ''}${minStart && maxEnd ? ' — ' : ''}${maxEnd || ''}` : '-';
-
-                            const pickPrice = (type) => {
-                              const found = prices.find(p => String(p.room_type).toLowerCase() === String(type).toLowerCase());
-                              return found && found.selling_price != null ? found.selling_price : null;
-                            };
-
-                            const doublePrice = pickPrice('double');
-                            const triplePrice = pickPrice('triple');
-                            const quadPrice = pickPrice('quad');
-                            const quintPrice = pickPrice('quint');
-
-                            let sharingPrice = null;
-                            prices.forEach(p => {
-                              if (p && p.is_sharing_allowed) {
-                                if (sharingPrice == null || (p.selling_price != null && p.selling_price < sharingPrice)) sharingPrice = p.selling_price;
-                              }
-                            });
-
-                            const fmt = (v) => (v == null ? 'N/A' : (Number.isFinite(Number(v)) ? Number(v).toLocaleString() : String(v)));
-
-                            return (
-                              <>
-                                <td>{priceDates}</td>
-                                <td>{fmt(sharingPrice)}</td>
-                                <td>{fmt(quintPrice)}</td>
-                                <td>{fmt(quadPrice)}</td>
-                                <td>{fmt(triplePrice)}</td>
-                                <td>{fmt(doublePrice)}</td>
-                              </>
-                            );
-                          })()}
-                          <td>
+                           <td>
                             {hotel.contact_number ? (
                               <span>
                                 <Phone size={14} className="me-1" />
@@ -1747,63 +2022,151 @@ const HotelAvailabilityManager = () => {
                             ) : (
                               <Badge bg="secondary">Not Set</Badge>
                             )}
+                          </td> 
+                          <td>
+                            {hotel.distance !== undefined && hotel.distance !== null && hotel.distance !== "" ? (
+                              <span>{hotel.distance} m</span>
+                            ) : (
+                              "N/A"
+                            )}
                           </td>
                           <td>
-                            <div className="d-flex gap-2 justify-content-center flex-wrap">
-                              <Button 
-                                size="sm" 
-                                variant="outline-success"
-                                onClick={() => openAvailabilityModal(hotel)}
-                                title="View Availability"
-                              >
-                                <BedDouble size={16} />
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline-primary"
-                                onClick={() => {
-                                  setSelectedHotel(hotel);
-                                  setShowViewModal(true);
-                                }}
-                                title="View Details"
-                              >
-                                <Eye size={16} />
-                              </Button>
-                              {(() => {
-                                const hotelOrg = hotel.organization || hotel.organization_id || hotel.owner_organization_id || hotel.org || null;
-                                const isOwner = organizationId && hotelOrg && String(hotelOrg) === String(organizationId);
-                                return (
-                                  <Button
-                                    size="sm"
-                                    variant="outline-info"
-                                    onClick={() => {
-                                      if (isOwner) openEditModal(hotel);
-                                      else { setSelectedHotel(hotel); setShowResellerPopup(true); }
-                                    }}
-                                    title={isOwner ? "Edit Hotel" : "Click to see why editing is disabled"}
-                                  >
-                                    <Edit2 size={16} />
-                                  </Button>
-                                );
-                              })()}
-                              {(() => {
-                                const hotelOrg = hotel.organization || hotel.organization_id || hotel.owner_organization_id || hotel.org || null;
-                                const isOwner = organizationId && hotelOrg && String(hotelOrg) === String(organizationId);
-                                return (
-                                  <Button
-                                    size="sm"
-                                    variant="outline-danger"
-                                    onClick={() => {
-                                      if (isOwner) { setSelectedHotel(hotel); setShowDeleteModal(true); }
-                                      else { setSelectedHotel(hotel); setShowResellerPopup(true); }
-                                    }}
-                                    title={isOwner ? "Delete Hotel" : "Deleting disabled for resellers"}
-                                  >
-                                    <Trash2 size={16} />
-                                  </Button>
-                                );
-                              })()}
-                            </div>
+                            {(hotel.walking_time !== undefined && hotel.walking_time !== null && hotel.walking_time !== "") ? (
+                              <span>{String(hotel.walking_time)} min</span>
+                            ) : (
+                              "N/A"
+                            )}
+                          </td>
+                          <td>
+                            {(hotel.walking_distance !== undefined && hotel.walking_distance !== null && hotel.walking_distance !== "") ? (
+                              <span>{String(hotel.walking_distance)} m</span>
+                            ) : (
+                              "N/A"
+                            )}
+                          </td>
+                          {/* Price extraction */}
+                          {(() => {
+                            const prices = hotel.prices || hotel.price_sections || [];
+                            let minStart = null;
+                            let maxEnd = null;
+                            prices.forEach(p => {
+                              if (!p) return;
+                              if (p.start_date && (!minStart || p.start_date < minStart)) minStart = p.start_date;
+                              if (p.end_date && (!maxEnd || p.end_date > maxEnd)) maxEnd = p.end_date;
+                            });
+                            const priceDates = minStart || maxEnd ? `${minStart || ''}${minStart && maxEnd ? ' — ' : ''}${maxEnd || ''}` : '-';
+
+                            const pickPrice = (type) => {
+                              const found = prices.find(p => String(p.room_type).toLowerCase() === String(type).toLowerCase());
+                              return found && found.selling_price != null ? found.selling_price : null;
+                            };
+
+                            const doublePrice = pickPrice('double');
+                            const triplePrice = pickPrice('triple');
+                            const quadPrice = pickPrice('quad');
+                            const quintPrice = pickPrice('quint');
+
+                            // room price: choose the lowest selling_price (or price) among all entries
+                            let roomPrice = null;
+                            prices.forEach(p => {
+                              if (!p) return;
+                              const sp = p.selling_price != null ? p.selling_price : p.price;
+                              if (sp != null && (roomPrice == null || sp < roomPrice)) roomPrice = sp;
+                            });
+
+                            let sharingPrice = null;
+                            prices.forEach(p => {
+                              if (p && p.is_sharing_allowed) {
+                                const sp = p.selling_price != null ? p.selling_price : p.price;
+                                if (sharingPrice == null || (sp != null && sp < sharingPrice)) sharingPrice = sp;
+                              }
+                            });
+                            if (sharingPrice == null) {
+                              const byType = prices.find(p => p && String(p.room_type).toLowerCase() === 'sharing');
+                              if (byType) sharingPrice = byType.selling_price != null ? byType.selling_price : byType.price;
+                            }
+
+                            const fmt = (v) => (v == null ? 'N/A' : (Number.isFinite(Number(v)) ? Number(v).toLocaleString() : String(v)));
+
+                            return (
+                              <>
+                                <td>{priceDates}</td>
+                                <td>{fmt(roomPrice)}</td>
+                                <td>{fmt(sharingPrice)}</td>
+                                <td>{fmt(quintPrice)}</td>
+                                <td>{fmt(quadPrice)}</td>
+                                <td>{fmt(triplePrice)}</td>
+                                <td>{fmt(doublePrice)}</td>
+                              </>
+                            );
+                          })()}
+                         
+                          <td>
+                            {/* Pictures: show first photo thumbnail if available and open gallery on click */}
+                            {(() => {
+                              const photos = hotel.photos_data || hotel.photos || hotel.photo_urls || hotel.images || hotel.photos_list || [];
+                              const arr = Array.isArray(photos) ? photos : [];
+                              // Prefer entries that actually have an image/url (skip caption-only records)
+                              const imgs = arr.filter(p => {
+                                if (!p) return false;
+                                if (typeof p === 'string') return String(p).trim() !== '';
+                                const raw = p.image || p.url || '';
+                                return raw && String(raw).trim() !== '';
+                              });
+                              if (imgs.length === 0) return 'N/A';
+                              const first = imgs[0];
+                              const rawSrc = typeof first === 'string' ? first : (first.image || first.url || '');
+                              const src = normalizeMediaUrlGlobal(rawSrc);
+                              if (!src) return 'N/A';
+                              return (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                  <img src={src} alt="hotel" style={{ width: 60, height: 40, objectFit: 'cover', borderRadius: 6, cursor: 'pointer' }} onClick={() => openGallery(hotel)} />
+                                  <Button variant="link" size="sm" onClick={() => openGallery(hotel)}>View ({imgs.length})</Button>
+                                </div>
+                              );
+                            })()}
+                          </td>
+                          <td>
+                            {/* Location: link to google_location if present */}
+                            {hotel.google_location ? (
+                              <a href={hotel.google_location} target="_blank" rel="noreferrer"><MapPin size={14} className="me-1" />Map</a>
+                            ) : (
+                              'N/A'
+                            )}
+                          </td>
+                          <td>
+                            {(() => {
+                              const hotelOrg = hotel.organization || hotel.organization_id || hotel.owner_organization_id || hotel.org || null;
+                              const isOwner = organizationId && hotelOrg && String(hotelOrg) === String(organizationId);
+                              return (
+                                <Dropdown>
+                                  <Dropdown.Toggle variant="secondary" size="sm" id={`hotel-actions-${hotel.id}`}>
+                                    Actions
+                                  </Dropdown.Toggle>
+
+                                  <Dropdown.Menu align="end">
+                                    <Dropdown.Item onClick={() => openAvailabilityModal(hotel)}>
+                                      <BedDouble size={14} className="me-2" /> View Availability
+                                    </Dropdown.Item>
+                                    <Dropdown.Item onClick={() => { setSelectedHotel(hotel); setShowViewModal(true); }}>
+                                      <Eye size={14} className="me-2" /> View Details
+                                    </Dropdown.Item>
+                                    <Dropdown.Item
+                                      onClick={() => { if (isOwner) openEditModal(hotel); else { setSelectedHotel(hotel); setShowResellerPopup(true); } }}
+                                      title={isOwner ? "Edit Hotel" : "Click to see why editing is disabled"}
+                                    >
+                                      <Edit2 size={14} className="me-2" /> Edit
+                                    </Dropdown.Item>
+                                    <Dropdown.Item
+                                      onClick={() => { if (isOwner) { setSelectedHotel(hotel); setShowDeleteModal(true); } else { setSelectedHotel(hotel); setShowResellerPopup(true); } }}
+                                      title={isOwner ? "Delete Hotel" : "Deleting disabled for resellers"}
+                                    >
+                                      <Trash2 size={14} className="me-2" /> Delete
+                                    </Dropdown.Item>
+                                  </Dropdown.Menu>
+                                </Dropdown>
+                              );
+                            })()}
                           </td>
                         </tr>
                       ))
@@ -1912,7 +2275,31 @@ const HotelAvailabilityManager = () => {
                       </Form.Group>
                     </Col>
 
-                    <Col md={6}>
+                    <Col md={3}>
+                      <Form.Group>
+                        <Form.Label className="fw-medium">Walking Time (min)</Form.Label>
+                        <Form.Control
+                          type="text"
+                          value={hotelForm.walking_time}
+                          onChange={(e) => setHotelForm({ ...hotelForm, walking_time: e.target.value })}
+                          placeholder="e.g., 10"
+                        />
+                      </Form.Group>
+                    </Col>
+
+                    <Col md={3}>
+                      <Form.Group>
+                        <Form.Label className="fw-medium">Walking Distance (m)</Form.Label>
+                        <Form.Control
+                          type="text"
+                          value={hotelForm.walking_distance}
+                          onChange={(e) => setHotelForm({ ...hotelForm, walking_distance: e.target.value })}
+                          placeholder="e.g., 400"
+                        />
+                      </Form.Group>
+                    </Col>
+
+                    <Col md={3}>
                       <Form.Group>
                         <Form.Label className="fw-medium">Contact Number</Form.Label>
                         <Form.Control
@@ -2010,21 +2397,21 @@ const HotelAvailabilityManager = () => {
                           </div>
 
                           <Row className="g-2 align-items-center">
-                            <Col md={4}><Form.Control type="date" value={p.start_date} onChange={(e) => { const copy = [...priceSections]; copy[idx].start_date = e.target.value; setPriceSections(copy); }} /></Col>
-                            <Col md={4}><Form.Control type="date" value={p.end_date} onChange={(e) => { const copy = [...priceSections]; copy[idx].end_date = e.target.value; setPriceSections(copy); }} /></Col>
-                            <Col md={4}><Form.Select value={p.room_type} onChange={(e) => { const copy = [...priceSections]; copy[idx].room_type = e.target.value; setPriceSections(copy); }}>{roomTypes.map(rt => <option key={rt.value} value={rt.value}>{rt.label}</option>)}</Form.Select></Col>
+                            <Col md={6}><Form.Control type="date" value={p.start_date} onChange={(e) => { const copy = [...priceSections]; copy[idx].start_date = e.target.value; setPriceSections(copy); }} /></Col>
+                            <Col md={6}><Form.Control type="date" value={p.end_date} onChange={(e) => { const copy = [...priceSections]; copy[idx].end_date = e.target.value; setPriceSections(copy); }} /></Col>
                           </Row>
                           <Row className="g-2 mt-2">
                             <Col xs={12} className="mb-2"><strong>Only-Room Price</strong></Col>
-                            <Col md={6}><Form.Control type="number" placeholder="Selling Price (SAR)" value={p.price} onChange={(e) => { const copy = [...priceSections]; copy[idx].price = e.target.value; setPriceSections(copy); }} /></Col>
-                            <Col md={6}><Form.Control type="number" placeholder="Purchase Price (SAR)" value={p.purchase_price} onChange={(e) => { const copy = [...priceSections]; copy[idx].purchase_price = e.target.value; setPriceSections(copy); }} /></Col>
+                            <Col md={4}><Form.Select value={""} disabled><option value="">Room price</option></Form.Select></Col>
+                            <Col md={4}><Form.Control type="number" placeholder="Selling Price (SAR)" value={p.price} onChange={(e) => { const copy = [...priceSections]; copy[idx].price = e.target.value; setPriceSections(copy); }} /></Col>
+                            <Col md={4}><Form.Control type="number" placeholder="Purchase Price (SAR)" value={p.purchase_price} onChange={(e) => { const copy = [...priceSections]; copy[idx].purchase_price = e.target.value; setPriceSections(copy); }} /></Col>
                           </Row>
 
                           {/* Bed-specific prices within this price section */}
                           {(p.bed_prices || []).map((bp, bidx) => (
                             <Row key={bidx} className="g-2 align-items-center mt-2">
                               <Col md={4}>
-                                <Form.Select value={bp.type} onChange={(e) => { const copy = [...priceSections]; copy[idx].bed_prices[bidx].type = e.target.value; setPriceSections(copy); }}>
+                                <Form.Select value={bp.type || p.room_type || "sharing"} onChange={(e) => { const copy = [...priceSections]; copy[idx].bed_prices[bidx].type = e.target.value; setPriceSections(copy); }}>
                                   <option value="sharing">Sharing</option>
                                   <option value="single">Single Bed</option>
                                   <option value="double">Double Bed</option>
@@ -2044,7 +2431,8 @@ const HotelAvailabilityManager = () => {
                           <div className="d-flex gap-3 mt-2">
                             <Button size="sm" className="" onClick={() => {
                               const copy = [...priceSections];
-                              copy[idx].bed_prices = copy[idx].bed_prices ? [...copy[idx].bed_prices, { type: 'sharing', price: '', purchase_price: '' }] : [{ type: 'sharing', price: '', purchase_price: '' }];
+                              const defaultType = (copy[idx] && copy[idx].room_type) ? copy[idx].room_type : 'sharing';
+                              copy[idx].bed_prices = copy[idx].bed_prices ? [...copy[idx].bed_prices, { type: defaultType, price: '', purchase_price: '' }] : [{ type: defaultType, price: '', purchase_price: '' }];
                               setPriceSections(copy);
                             }} style={{ backgroundColor: '#1B78CE', border: 'none', color: '#fff' }}>+ Add Bed Type</Button>
                           </div>
@@ -2417,7 +2805,7 @@ const HotelAvailabilityManager = () => {
                         />
                       </Form.Group>
                     </Col>
-                    <Col md={3}>
+                    <Col md={2}>
                       <Form.Group>
                         <Form.Label className="fw-medium">Walking Time (minutes)</Form.Label>
                         <Form.Control
@@ -2428,7 +2816,18 @@ const HotelAvailabilityManager = () => {
                         />
                       </Form.Group>
                     </Col>
-                    <Col md={2} className="d-flex align-items-center">
+                    <Col md={2}>
+                      <Form.Group>
+                        <Form.Label className="fw-medium">Walking Distance (m)</Form.Label>
+                        <Form.Control
+                          type="text"
+                          value={hotelForm.walking_distance}
+                          onChange={(e) => setHotelForm({ ...hotelForm, walking_distance: e.target.value })}
+                          placeholder="e.g., 400"
+                        />
+                      </Form.Group>
+                    </Col>
+                    <Col md={1} className="d-flex align-items-center">
                       <Form.Check
                         type="checkbox"
                         label={<span className="fw-medium">Active</span>}
@@ -2437,7 +2836,7 @@ const HotelAvailabilityManager = () => {
                       />
                     </Col>
 
-                    <Col md={6}>
+                    <Col md={3}>
                       <Form.Group>
                         <Form.Label className="fw-medium">Contact Number</Form.Label>
                         <Form.Control
@@ -2535,21 +2934,21 @@ const HotelAvailabilityManager = () => {
                           </div>
 
                           <Row className="g-2 align-items-center">
-                            <Col md={4}><Form.Control type="date" value={p.start_date} onChange={(e) => { const copy = [...priceSections]; copy[idx].start_date = e.target.value; setPriceSections(copy); }} /></Col>
-                            <Col md={4}><Form.Control type="date" value={p.end_date} onChange={(e) => { const copy = [...priceSections]; copy[idx].end_date = e.target.value; setPriceSections(copy); }} /></Col>
-                            <Col md={4}><Form.Select value={p.room_type} onChange={(e) => { const copy = [...priceSections]; copy[idx].room_type = e.target.value; setPriceSections(copy); }}>{roomTypes.map(rt => <option key={rt.value} value={rt.value}>{rt.label}</option>)}</Form.Select></Col>
+                            <Col md={6}><Form.Control type="date" value={p.start_date} onChange={(e) => { const copy = [...priceSections]; copy[idx].start_date = e.target.value; setPriceSections(copy); }} /></Col>
+                            <Col md={6}><Form.Control type="date" value={p.end_date} onChange={(e) => { const copy = [...priceSections]; copy[idx].end_date = e.target.value; setPriceSections(copy); }} /></Col>
                           </Row>
                           <Row className="g-2 mt-2">
                             <Col xs={12} className="mb-2"><strong>Only-Room Price</strong></Col>
-                            <Col md={6}><Form.Control type="number" placeholder="Selling Price (SAR)" value={p.price} onChange={(e) => { const copy = [...priceSections]; copy[idx].price = e.target.value; setPriceSections(copy); }} /></Col>
-                            <Col md={6}><Form.Control type="number" placeholder="Purchase Price (SAR)" value={p.purchase_price} onChange={(e) => { const copy = [...priceSections]; copy[idx].purchase_price = e.target.value; setPriceSections(copy); }} /></Col>
+                            <Col md={4}><Form.Select value={""} disabled><option value="">Room price</option></Form.Select></Col>
+                            <Col md={4}><Form.Control type="number" placeholder="Selling Price (SAR)" value={p.price} onChange={(e) => { const copy = [...priceSections]; copy[idx].price = e.target.value; setPriceSections(copy); }} /></Col>
+                            <Col md={4}><Form.Control type="number" placeholder="Purchase Price (SAR)" value={p.purchase_price} onChange={(e) => { const copy = [...priceSections]; copy[idx].purchase_price = e.target.value; setPriceSections(copy); }} /></Col>
                           </Row>
 
                           {/* Bed-specific prices within this price section */}
                           {(p.bed_prices || []).map((bp, bidx) => (
                             <Row key={bidx} className="g-2 align-items-center mt-2">
                               <Col md={4}>
-                                <Form.Select value={bp.type} onChange={(e) => { const copy = [...priceSections]; copy[idx].bed_prices[bidx].type = e.target.value; setPriceSections(copy); }}>
+                                <Form.Select value={bp.type || p.room_type || "sharing"} onChange={(e) => { const copy = [...priceSections]; copy[idx].bed_prices[bidx].type = e.target.value; setPriceSections(copy); }}>
                                   <option value="sharing">Sharing</option>
                                   <option value="single">Single Bed</option>
                                   <option value="double">Double Bed</option>
@@ -2569,7 +2968,8 @@ const HotelAvailabilityManager = () => {
                           <div className="d-flex gap-3 mt-2">
                             <Button size="sm" className="" onClick={() => {
                               const copy = [...priceSections];
-                              copy[idx].bed_prices = copy[idx].bed_prices ? [...copy[idx].bed_prices, { type: 'sharing', price: '', purchase_price: '' }] : [{ type: 'sharing', price: '', purchase_price: '' }];
+                              const defaultType = (copy[idx] && copy[idx].room_type) ? copy[idx].room_type : 'sharing';
+                              copy[idx].bed_prices = copy[idx].bed_prices ? [...copy[idx].bed_prices, { type: defaultType, price: '', purchase_price: '' }] : [{ type: defaultType, price: '', purchase_price: '' }];
                               setPriceSections(copy);
                             }} style={{ backgroundColor: '#1B78CE', border: 'none', color: '#fff' }}>+ Add Bed Type</Button>
                           </div>

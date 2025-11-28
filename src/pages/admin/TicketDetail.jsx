@@ -46,14 +46,6 @@ const TicketDetail = () => {
 
   useEffect(() => {
     const fetchAirlinesAndCities = async () => {
-      // Ensure we have a selected organization; otherwise bail and show an error
-      if (!selectedOrg) {
-        console.error('TicketDetail: no selectedOrganization in localStorage');
-        setError('No organization selected. Please select an organization first.');
-        setLoading(false);
-        return;
-      }
-
       const orgId = typeof selectedOrg === "object" ? selectedOrg.id : selectedOrg;
       try {
         const [airlinesRes, citiesRes] = await Promise.all([
@@ -65,12 +57,10 @@ const TicketDetail = () => {
           }),
         ]);
 
-        setAirlines(airlinesRes.data || []);
-        setCities(citiesRes.data || []);
+        setAirlines(airlinesRes.data);
+        setCities(citiesRes.data);
       } catch (err) {
         console.error("Error fetching reference data:", err);
-        setError("Failed to load reference data. Please try again later.");
-        setLoading(false);
       }
     };
 
@@ -244,6 +234,7 @@ const TicketDetail = () => {
   const ticketData = {
     airline: airlineMap[ticket.airline] || ticket.airline,
     flightNumber: ticket.flight_number || "N/A",
+    returnFlightNumber: ticket.return_flight_number || ticket.returnFlightNumber || null,
     meal: ticket.is_meal_included ? "Yes" : "No",
     type: ticket.is_refundable ? "Refundable" : "Non-refundable",
     pnr: ticket.pnr,
@@ -261,23 +252,30 @@ const TicketDetail = () => {
     infantPurchasePrice: ticket.infant_purchase_price || 0,
   };
 
-  // Prepare trip data from API with city names
-  const firstTrip = ticket.trip_details[0];
+  // Prepare trip data from API with city names — support departure and return legs
+  const departureTrip = (Array.isArray(ticket.trip_details) && ticket.trip_details.length > 0)
+    ? (ticket.trip_details.find(t => String(t.trip_type).toLowerCase().includes('depart') || String(t.trip_type).toLowerCase().includes('departure')) || ticket.trip_details[0])
+    : null;
+
+  const returnTrip = (Array.isArray(ticket.trip_details) && ticket.trip_details.length > 1)
+    ? (ticket.trip_details.find(t => String(t.trip_type).toLowerCase().includes('return')) || ticket.trip_details[1])
+    : null;
+
   const tripData = {
-    tripType: firstTrip?.trip_type || "N/A",
-    departureDate: firstTrip
-      ? formatDateTime(firstTrip.departure_date_time)
-      : "N/A",
-    arrivalDate: firstTrip
-      ? formatDateTime(firstTrip.arrival_date_time)
-      : "N/A",
-    departure: firstTrip?.departure_city
-      ? cityMap[firstTrip.departure_city] || firstTrip.departure_city
-      : "N/A",
-    arrival: firstTrip?.arrival_city
-      ? cityMap[firstTrip.arrival_city] || firstTrip.arrival_city
-      : "N/A",
+    tripType: departureTrip?.trip_type || (returnTrip ? 'Round-trip' : 'One-way'),
+    departureDate: departureTrip ? formatDateTime(departureTrip.departure_date_time) : 'N/A',
+    arrivalDate: departureTrip ? formatDateTime(departureTrip.arrival_date_time) : 'N/A',
+    departure: departureTrip?.departure_city ? cityMap[departureTrip.departure_city] || departureTrip.departure_city : 'N/A',
+    arrival: departureTrip?.arrival_city ? cityMap[departureTrip.arrival_city] || departureTrip.arrival_city : 'N/A',
   };
+
+  const returnTripData = returnTrip ? {
+    tripType: returnTrip?.trip_type || 'Return',
+    departureDate: returnTrip ? formatDateTime(returnTrip.departure_date_time) : 'N/A',
+    arrivalDate: returnTrip ? formatDateTime(returnTrip.arrival_date_time) : 'N/A',
+    departure: returnTrip?.departure_city ? cityMap[returnTrip.departure_city] || returnTrip.departure_city : 'N/A',
+    arrival: returnTrip?.arrival_city ? cityMap[returnTrip.arrival_city] || returnTrip.arrival_city : 'N/A',
+  } : null;
 
   // Determine flight type
   const flightType = ticket.stopover_details.length === 0 ? "Non-Stop" : "With Stopovers";
@@ -369,6 +367,23 @@ const TicketDetail = () => {
         returnStopLocation1: ticket.stopover_details[1]?.stopover_city,
         returnStopTime1: ticket.stopover_details[1]?.stopover_duration,
       }),
+      // Ensure per-leg flight numbers are passed so the edit form can prefill them
+      flightNumber: (function(){
+        try {
+          const out = Array.isArray(ticket.trip_details) && ticket.trip_details.length ? (ticket.trip_details.find(t=>t.trip_type==='Departure') || ticket.trip_details[0]) : null;
+          const s = out && (out.flight_number || out.flightNumber || out.number || out.flight) ? (out.flight_number || out.flightNumber || out.number || out.flight) : (ticket.flight_number || "");
+          const str = String(s || "");
+          return str.includes('-') ? str.split('-').pop().replace(/\D/g,'') : str.replace(/\D/g,'');
+        } catch { return "" }
+      })(),
+      returnFlightNumber: (function(){
+        try {
+          const ret = Array.isArray(ticket.trip_details) && ticket.trip_details.length ? (ticket.trip_details.find(t=>t.trip_type==='Return') || ticket.trip_details[1]) : null;
+          const s = ret && (ret.flight_number || ret.flightNumber || ret.number || ret.flight) ? (ret.flight_number || ret.flightNumber || ret.number || ret.flight) : (ticket.return_flight_number || ticket.returnFlightNumber || "");
+          const str = String(s || "");
+          return str.includes('-') ? str.split('-').pop().replace(/\D/g,'') : str.replace(/\D/g,'');
+        } catch { return "" }
+      })(),
     };
 
     // Navigate to add-ticket route with state
@@ -720,6 +735,38 @@ const TicketDetail = () => {
                                     </td>
                                     <td className="text-muted">
                                       {passenger.lastName}
+                    {/* Return Trip Details (if available) */}
+                    {returnTripData && (
+                      <div className="row mb-4">
+                        <div className="col-12">
+                          <div className="card border-0">
+                            <div className="card-header border-0 bg-white">
+                              <h5 className="mb-0 fw-bold">Return Trip (Details)</h5>
+                            </div>
+                            <div className="card-body rounded-5" style={{ background: "#F3FAFF" }}>
+                              <div className="row">
+                                <div className="col-md-3 mb-2">
+                                  <small className="fw-bold">Departure Date & Time</small>
+                                  <div className="text-muted">{returnTripData.departureDate}</div>
+                                </div>
+                                <div className="col-md-3 mb-2">
+                                  <small className="fw-bold">Arrival Date & Time</small>
+                                  <div className="text-muted">{returnTripData.arrivalDate}</div>
+                                </div>
+                                <div className="col-md-3 mb-2">
+                                  <small className="fw-bold">Departure</small>
+                                  <div className="text-muted">{returnTripData.departure}</div>
+                                </div>
+                                <div className="col-md-3 mb-2">
+                                  <small className="fw-bold">Arrival</small>
+                                  <div className="text-muted">{returnTripData.arrival}</div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                                     </td>
                                     <td className="text-muted">{passenger.dob}</td>
                                     <td className="text-muted">
@@ -827,7 +874,7 @@ const TicketDetail = () => {
                           {/* {agentData.logo && (
                             <div className="mt-3 text-center">
                               <img 
-                                src={`http://127.0.0.1:8000/${agentData.logo}`} 
+                                src={`http://127.0.0.1:8000/api/${agentData.logo}`} 
                                 alt="Agency Logo" 
                                 style={{ maxWidth: '150px', maxHeight: '80px' }}
                                 className="img-thumbnail"

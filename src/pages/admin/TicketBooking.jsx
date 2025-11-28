@@ -62,47 +62,53 @@ const FlightCard = ({ ticket, airlineMap, cityMap, orgId }) => {
 
   // Resolve city name with additional fallbacks using the trip/stopover object
   const resolveCityName = (cityRef, contextObj) => {
-    // Primary lookup
-    const primary = getCityName(cityRef);
-    // If primary gives a numeric string equal to the ref or 'Unknown City', try fallbacks
     const isNumericString = (s) => typeof s === 'string' && /^\d+$/.test(s.trim());
+
+    // If there's no explicit cityRef, try sensible context fallbacks (trip arrival, nested names)
+    if (cityRef === null || cityRef === undefined || (typeof cityRef === 'string' && cityRef.trim() === '')) {
+      if (contextObj && typeof contextObj === 'object') {
+        const candidates = [
+          contextObj.name,
+          contextObj.city_name,
+          contextObj.departure_city_name,
+          contextObj.arrival_city_name,
+          contextObj.display_name,
+          contextObj.label,
+        ];
+        for (const c of candidates) {
+          if (c && typeof c === 'string' && c.trim() !== '') return c;
+        }
+        const nested = contextObj.departure_city || contextObj.arrival_city || contextObj.stopover_city;
+        if (nested && typeof nested === 'object') {
+          if (nested.name) return nested.name;
+          if (nested.city_name) return nested.city_name;
+        }
+        if (contextObj.arrival_city) {
+          const arrivalFallback = getCityName(contextObj.arrival_city);
+          if (arrivalFallback && arrivalFallback !== 'Unknown City' && !isNumericString(arrivalFallback)) return arrivalFallback;
+        }
+      }
+      return 'Unknown City';
+    }
+
+    // We have an explicit cityRef (could be id, object, or name). Prefer it.
+    const primary = getCityName(cityRef);
+
+    // If the primary lookup returned a readable name (non-numeric and not Unknown), use it
     if (primary && primary !== 'Unknown City' && !isNumericString(primary)) return primary;
 
-    // Check common context fields that may contain readable names
-    if (contextObj && typeof contextObj === 'object') {
-      const candidates = [
-        contextObj.name,
-        contextObj.city_name,
-        contextObj.departure_city_name,
-        contextObj.arrival_city_name,
-        contextObj.display_name,
-        contextObj.label,
-      ];
-      for (const c of candidates) {
-        if (c && typeof c === 'string' && c.trim() !== '') return c;
-      }
-
-      // Sometimes the context contains nested objects with a name
-      const nested = contextObj.departure_city || contextObj.arrival_city || contextObj.stopover_city;
-      if (nested && typeof nested === 'object') {
-        if (nested.name) return nested.name;
-        if (nested.city_name) return nested.city_name;
-      }
+    // If we have a numeric id or unresolved primary, try lazy-fallback maps first
+    const idKey = (typeof cityRef === 'object' && (cityRef.id !== undefined && cityRef.id !== null)) ? String(cityRef.id).trim() : String(cityRef).trim();
+    if (idKey) {
+      if (fallbackCities[idKey]) return fallbackCities[idKey];
     }
 
-    // If primary looks numeric, check our lazy-fetched fallback names first
-    if (primary && (typeof primary === 'string' && /^\d+$/.test(primary))) {
-      const fb = fallbackCities[String(primary)];
-      if (fb) return fb;
+    // If primary is numeric string but no fallback available yet, return a sensible placeholder
+    if (primary && isNumericString(primary)) {
+      return `City (${primary})`;
     }
 
-    // Last resort: return primary even if numeric, or Unknown City
-    // Also check fallbackCities directly for numeric cityRef
-    if ((typeof cityRef === 'number' || (typeof cityRef === 'string' && /^\d+$/.test(String(cityRef).trim())))) {
-      const fb2 = fallbackCities[String(cityRef).trim()];
-      if (fb2) return fb2;
-    }
-
+    // Fallback to the raw primary value or Unknown City
     return primary || 'Unknown City';
   };
 
@@ -170,10 +176,27 @@ const FlightCard = ({ ticket, airlineMap, cityMap, orgId }) => {
     console.warn(`Ticket ${ticket.id} has a return trip but no flight number in trip_details`, returnTrip, ticket);
   }
 
-  const outboundStopover = stopoverDetails.find(
-    (s) => s.trip_type === "Departure"
-  );
-  const returnStopover = stopoverDetails.find((s) => s.trip_type === "Return");
+  // Prefer explicit trip_type on stopovers, but accept legacy shape where
+  // stopover entries lack trip_type by falling back to positional entries.
+  const outboundStopover = stopoverDetails.find((s) => s.trip_type === "Departure") || (stopoverDetails.length ? stopoverDetails[0] : undefined);
+  const returnStopover = stopoverDetails.find((s) => s.trip_type === "Return") || (stopoverDetails.length > 1 ? stopoverDetails[1] : undefined);
+
+  // Debug: log resolved city names and raw values to diagnose stopover vs arrival mapping
+  useEffect(() => {
+    try {
+      console.debug("FlightCard debug:", {
+        ticketId: ticket && ticket.id,
+        outboundTrip: outboundTrip,
+        outboundStopover: outboundStopover,
+        stopoverCityRaw: outboundStopover?.stopover_city,
+        resolvedStopover: resolveCityName(outboundStopover?.stopover_city, outboundStopover),
+        resolvedArrival: resolveCityName(outboundTrip?.arrival_city, outboundTrip),
+        cityMapKeys: Object.keys(cityMap || {}).slice(0, 20),
+      });
+    } catch (e) {
+      console.debug('FlightCard debug failed', e);
+    }
+  }, [ticket, outboundTrip, outboundStopover, cityMap]);
 
   // If this ticket belongs to another organization (shared inventory), try to fetch any missing
   // city names by id from the owning organization so linked org can display names.
@@ -255,6 +278,29 @@ const FlightCard = ({ ticket, airlineMap, cityMap, orgId }) => {
 
     // normalize to string keys and check fallbackAirlines/airlineMap
     for (const idRaw of potentialIds) {
+      if (idRaw === null || idRaw === undefined) continue;
+      // If idRaw is an object like { id, name }, prefer readable name if present
+      if (typeof idRaw === 'object') {
+        if (idRaw.name) {
+          // Directly return the provided name on the trip/stopover when available
+          return { name: idRaw.name || "Unknown Airline", logo: idRaw.logo || "" };
+        }
+        // If object contains an id, try to resolve by that id
+        if (idRaw.id !== undefined && idRaw.id !== null) {
+          const idStrObj = String(idRaw.id).trim();
+          if (/^\d+$/.test(idStrObj)) {
+            if (fallbackAirlines[idStrObj] && fallbackAirlines[idStrObj].name) {
+              return { name: fallbackAirlines[idStrObj].name, logo: fallbackAirlines[idStrObj].logo || fromMap?.logo || "" };
+            }
+            if (airlineMap[idStrObj] && airlineMap[idStrObj].name) {
+              return { name: airlineMap[idStrObj].name, logo: airlineMap[idStrObj].logo || fromMap?.logo || "" };
+            }
+          }
+        }
+        // otherwise fall through to next candidate
+        continue;
+      }
+
       const idStr = String(idRaw).trim();
       if (/^\d+$/.test(idStr)) {
         if (fallbackAirlines[idStr] && fallbackAirlines[idStr].name) {
@@ -445,10 +491,12 @@ const FlightCard = ({ ticket, airlineMap, cityMap, orgId }) => {
     if (!dateString) return "-- ---";
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString("en-US", {
-        day: "numeric",
-        month: "short",
-      });
+      if (isNaN(date.getTime())) return "";
+      // Get day and month
+      const day = date.getDate();
+      // Use short month names
+      const month = date.toLocaleString("en-US", { month: "short" });
+      return `${day} ${month}`;
     } catch (e) {
       return "-- ---";
     }
@@ -609,9 +657,7 @@ const FlightCard = ({ ticket, airlineMap, cityMap, orgId }) => {
                 Resolved: {fallbackAirlines[String(ticket.airline)].name}
               </div>
             )}
-            <div className="text-muted mt-1 small">
-              PNR: {ticket && (ticket.pnr || ticket.pnr_number || ticket.pnr_no || "N/A")}
-            </div>
+          
             <div className="d-flex flex-column align-items-center justify-content-center gap-2">
               <div className="flight-number">{outboundFlightNumber}</div>
               {(ticket.reselling_allowed === true || ticket.reselling_allowed === "true" || ticket.reselling_allowed === 1 || ticket.reselling_allowed === "1") && String(ticket.organization) !== String(orgId) && (
@@ -677,7 +723,7 @@ const FlightCard = ({ ticket, airlineMap, cityMap, orgId }) => {
             </div>
 
             <div className="text-muted mt-4 small mt-1">
-              {outboundStopover ? `${resolveCityName(outboundStopover.stopover_city, outboundStopover) || 'Stopover'} Stopover — ${formatStopoverDurationForDisplay("Departure", outboundStopover) || "N/A"}` : "Non-stop"}
+              {outboundStopover ? ` Stopover — ${formatStopoverDurationForDisplay("Departure", outboundStopover) || "N/A"}` : "Non-stop"}
             </div>
           </div>
           <div className="col-md-2 text-center text-md-start">
@@ -1398,7 +1444,7 @@ const TicketBooking = () => {
     console.log(`After filtering: ${result.length} tickets from ${tickets.length} total`);
 
     // PNR search (robust): search common pnr fields and nested booking objects
-    if (pnr && String(pnr).trim() !== "") {
+    if (pnr && String(pnr).trim() !== "") { 
       const q = String(pnr).toLowerCase().trim();
       result = result.filter((ticket) => {
         if (!ticket) return false;

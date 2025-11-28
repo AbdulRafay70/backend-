@@ -1,4 +1,8 @@
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.response import Response
+from rest_framework import status
+import json
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
@@ -54,18 +58,20 @@ from users.models import GroupExtension
                 value={
                     "trip_details": [
                         {
+                            "airline": {"id": 100, "name": "Example Air"},
                             "flight_number": "string",
                             "departure_date_time": "2025-11-12T14:17:44.827Z",
                             "arrival_date_time": "2025-11-12T14:17:44.827Z",
-                            "departure_city": 0,
-                            "arrival_city": 0
+                            "departure_city": {"id": 0, "name": "Departure City"},
+                            "arrival_city": {"id": 0, "name": "Arrival City"}
                         }
                     ],
                     "stopover_details": [
                         {
+                            "airline": {"id": 200, "name": "StopAir"},
                             "stopover_duration": "string",
                             "trip_type": "string",
-                            "stopover_city": 0
+                            "stopover_city": {"id": 0, "name": "Stopover City"}
                         }
                     ],
                     "adult_fare": 0,
@@ -88,8 +94,7 @@ from users.models import GroupExtension
                     "trip_type": "string",
                     "owner_organization_id": 2147483647,
                     "reselling_allowed": True,
-                    "branch": 0,
-                    "airline": 0,
+                    "branch": 0
                 },
                 request_only=True,
             )
@@ -239,6 +244,110 @@ class TicketViewSet(ModelViewSet):
 class HotelsViewSet(ModelViewSet):
     serializer_class = HotelsSerializer
     permission_classes = [IsAuthenticated]
+    # Accept multipart/form-data for file uploads in create/update
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def _parse_json_fields(self, data):
+        """Helper to parse JSON-encoded strings in multipart form data into Python structures."""
+        # Convert Django QueryDict (from multipart/form-data) into a plain dict
+        simple = {}
+        try:
+            if hasattr(data, 'getlist'):
+                for k in data.keys():
+                    vals = data.getlist(k)
+                    if len(vals) > 1:
+                        simple[k] = vals
+                    else:
+                        simple[k] = vals[0]
+            else:
+                # standard dict-like
+                simple = dict(data)
+        except Exception:
+            # fallback: shallow copy
+            try:
+                simple = dict(data.copy())
+            except Exception:
+                simple = {}
+
+        # Parse JSON-encoded nested fields which are commonly sent as strings in multipart forms
+        for key in ('prices', 'contact_details', 'photos'):
+            if key in simple and isinstance(simple.get(key), str):
+                try:
+                    simple[key] = json.loads(simple.get(key))
+                except Exception:
+                    # leave as-is; serializer will raise a validation error if malformed
+                    pass
+
+        return simple
+
+    def create(self, request, *args, **kwargs):
+        # Preprocess multipart fields so nested lists are parsed from JSON strings
+        data = self._parse_json_fields(request.data)
+        # Debug: log incoming request metadata to help diagnose multipart issues
+        try:
+            print('DEBUG HotelsViewSet.create - Content-Type:', request.content_type)
+            print('DEBUG HotelsViewSet.create - FILES keys:', list(request.FILES.keys()))
+            print('DEBUG HotelsViewSet.create - raw prices field type:', type(request.data.get('prices')),
+                  'value:', request.data.get('prices'))
+        except Exception:
+            pass
+
+        serializer = self.get_serializer(data=data)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception as e:
+            # Log serializer errors for easier debugging
+            try:
+                print('DEBUG HotelsViewSet.create - serializer errors:', getattr(serializer, 'errors', str(e)))
+            except Exception:
+                pass
+            raise
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        data = self._parse_json_fields(request.data)
+        # Debug: log incoming request metadata to help diagnose multipart issues
+        try:
+            print('DEBUG HotelsViewSet.update - Content-Type:', request.content_type)
+            print('DEBUG HotelsViewSet.update - FILES keys:', list(request.FILES.keys()))
+            print('DEBUG HotelsViewSet.update - raw prices field type:', type(request.data.get('prices')),
+                  'value:', request.data.get('prices'))
+        except Exception:
+            pass
+
+        # Support a convenience single-photo delete via multipart/form-data or JSON payload
+        # Clients may send { "remove_photo_id": 7 } to remove that HotelPhoto for this hotel.
+        try:
+            if 'remove_photo_id' in data and data.get('remove_photo_id'):
+                from .models import HotelPhoto
+                try:
+                    pid = int(data.get('remove_photo_id'))
+                    HotelPhoto.objects.filter(id=pid, hotel=instance).delete()
+                except Exception:
+                    # ignore errors and continue to normal update flow
+                    pass
+                # return the updated representation
+                serializer = self.get_serializer(instance)
+                return Response(serializer.data)
+        except Exception:
+            # swallow and continue
+            pass
+
+        serializer = self.get_serializer(instance, data=data, partial=partial)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except Exception as e:
+            try:
+                print('DEBUG HotelsViewSet.update - serializer errors:', getattr(serializer, 'errors', str(e)))
+            except Exception:
+                pass
+            raise
+        self.perform_update(serializer)
+        return Response(serializer.data)
 
     def get_queryset(self):
         from organization.models import OrganizationLink
