@@ -173,9 +173,13 @@ class UmrahVisaPriceTwo(models.Model):
     title = models.CharField(max_length=100)
     person_from = models.IntegerField(default=0)  # in months
     person_to = models.IntegerField(default=0)  # in months
-    adault_price = models.FloatField(default=0)
-    child_price = models.FloatField(default=0)
-    infant_price = models.FloatField(default=0)
+     # Replace legacy single-price fields with explicit selling/purchase fields
+    adult_selling_price = models.FloatField(default=0)
+    adult_purchase_price = models.FloatField(default=0)
+    child_selling_price = models.FloatField(default=0)
+    child_purchase_price = models.FloatField(default=0)
+    infant_selling_price = models.FloatField(default=0)
+    infant_purchase_price = models.FloatField(default=0)
     is_transport = models.BooleanField(default=False)
     
     vehicle_types = models.ManyToManyField(
@@ -186,14 +190,6 @@ class UmrahVisaPriceTwo(models.Model):
     def __str__(self):
         return f"{self.title} ({self.organization.name})"
 
-class UmrahVisaPriceTwoHotel(models.Model):
-    """
-    Model to store the hotel details for Umrah visa price for two categories.
-    """
-
-    umrah_visa_price = models.ForeignKey(
-        UmrahVisaPriceTwo, on_delete=models.CASCADE, related_name="hotel_details")
-    hotel = models.ForeignKey("tickets.Hotels", on_delete=models.CASCADE)
 
 class OnlyVisaPrice(models.Model):
     """
@@ -219,6 +215,37 @@ class OnlyVisaPrice(models.Model):
     )
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="active", blank=True, null=True)
 
+    # New explicit per-person selling/purchase fields (kept alongside legacy fields)
+    adult_selling_price = models.FloatField(default=0)
+    adult_purchase_price = models.FloatField(default=0)
+    child_selling_price = models.FloatField(default=0)
+    child_purchase_price = models.FloatField(default=0)
+    infant_selling_price = models.FloatField(default=0)
+    infant_purchase_price = models.FloatField(default=0)
+
+    # Support both 'only' and 'long_term' visa options in a single table
+    VISA_OPTION_CHOICES = (
+        ("only", "Only"),
+        ("long_term", "Long Term"),
+    )
+    visa_option = models.CharField(max_length=20, choices=VISA_OPTION_CHOICES, default="only")
+
+    # Optional long-term specific fields (only used when visa_option='long_term')
+    validity_days = models.IntegerField(null=True, blank=True, help_text="Optional validity/duration in days for long term visas")
+    multi_entry = models.BooleanField(default=False, help_text="Whether this visa supports multiple entry (long-term)")
+    long_term_discount_pct = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True, help_text="Optional discount percentage for long-term visas")
+    
+    # Human-friendly title for this price record (admin UI uses this)
+    title = models.CharField(max_length=255, blank=True, null=True)
+
+    # Whether this visa price includes transport (frontend: withTransport)
+    is_transport = models.BooleanField(default=False)
+
+    # Optional relation to small sectors (transport sectors) to indicate which sectors
+    # this visa price can be paired with in the agent UI. Use string reference to avoid
+    # circular import issues at module import time.
+    sectors = models.ManyToManyField('booking.Sector', related_name='only_visa_prices', blank=True)
+
     def __str__(self):
         return f"{self.organization} - {self.city} ({self.type})"
 
@@ -240,6 +267,15 @@ class TransportSectorPrice(models.Model):
     infant_price = models.FloatField(default=0)
     is_visa = models.BooleanField(default=False)
     only_transport_charge = models.BooleanField(default=False)
+
+        # New explicit per-person selling/purchase fields
+    adult_selling_price = models.FloatField(default=0)
+    adult_purchase_price = models.FloatField(default=0)
+    child_selling_price = models.FloatField(default=0)
+    child_purchase_price = models.FloatField(default=0)
+    infant_selling_price = models.FloatField(default=0)
+    infant_purchase_price = models.FloatField(default=0)
+
 
     def __str__(self):
         return self.name
@@ -296,6 +332,13 @@ class FoodPrice(models.Model):
     price = models.FloatField(default=0)
     # Purchase/cost to the seller (frontend uses this for package cost)
     purchase_price = models.FloatField(default=0)
+    # New explicit per-person selling/purchase fields
+    adult_selling_price = models.FloatField(default=0)
+    adult_purchase_price = models.FloatField(default=0)
+    child_selling_price = models.FloatField(default=0)
+    child_purchase_price = models.FloatField(default=0)
+    infant_selling_price = models.FloatField(default=0)
+    infant_purchase_price = models.FloatField(default=0)
     def __str__(self):
         return f"({self.city.name})"
 
@@ -328,6 +371,13 @@ class ZiaratPrice(models.Model):
     max_pex = models.FloatField(default=0)
     # Purchase/cost to the seller for ziarat
     purchase_price = models.FloatField(default=0)
+    # New explicit per-person selling/purchase fields
+    adult_selling_price = models.FloatField(default=0)
+    adult_purchase_price = models.FloatField(default=0)
+    child_selling_price = models.FloatField(default=0)
+    child_purchase_price = models.FloatField(default=0)
+    infant_selling_price = models.FloatField(default=0)
+    infant_purchase_price = models.FloatField(default=0)
     def __str__(self):
         return f"{self.ziarat_title} ({self.city.name})"
 

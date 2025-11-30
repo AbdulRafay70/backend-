@@ -27,6 +27,8 @@ const AgentBankAccounts = () => {
 
   const [dropdownOpen, setDropdownOpen] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [accountToDelete, setAccountToDelete] = useState(null);
   const [formData, setFormData] = useState({
     bankName: "",
     accountTitle: "",
@@ -99,11 +101,21 @@ const AgentBankAccounts = () => {
           raw: it,
         }));
 
-  // agentAccounts: organization accounts that are NOT company accounts (editable by agent)
-  // If orgId is not available (agentOrganization missing), fall back to showing all non-company accounts.
-  const agentOnly = normalized.filter((a) => (orgId ? Number(a.organizationId) === Number(orgId) : true) && !a.raw?.is_company_account);
-  // saer/company accounts: organization accounts where is_company_account === true (read-only)
-  const companyOnly = normalized.filter((a) => (orgId ? Number(a.organizationId) === Number(orgId) : true) && !!a.raw?.is_company_account);
+        // Helper to safely resolve agency id from the raw payload
+        const resolveAgencyId = (raw) => raw?.agency?.id || raw?.agency_id || raw?.agency || null;
+
+        // agentOnly: only non-company accounts that belong to THIS agency (the logged-in agent's agency)
+        const agentOnly = normalized.filter((a) => {
+          const sameOrg = orgId ? Number(a.organizationId) === Number(orgId) : true;
+          const isNotCompany = !a.raw?.is_company_account;
+          const acctAgencyId = resolveAgencyId(a.raw);
+          const sameAgency = agencyId ? (acctAgencyId ? Number(acctAgencyId) === Number(agencyId) : false) : true;
+          return sameOrg && isNotCompany && sameAgency;
+        });
+
+        // saer/company accounts: organization accounts where is_company_account === true (read-only)
+        // Keep these limited to the agent's organization only
+        const companyOnly = normalized.filter((a) => (orgId ? Number(a.organizationId) === Number(orgId) : true) && !!a.raw?.is_company_account);
 
         setAgentAccounts(agentOnly);
         setSaerAccounts(companyOnly);
@@ -179,13 +191,18 @@ const AgentBankAccounts = () => {
         })
         .finally(() => setIsSubmitting(false));
     } else {
-      // include organization/branch if available
+      // include organization/agency and mark as non-company account
       if (orgId) payload.organization_id = orgId;
-      if (branchId) payload.branch_id = branchId;
       if (agencyId) payload.agency_id = agencyId;
+      // ensure agency-created accounts are flagged as not company accounts
+      payload.is_company_account = false;
       axios.post('http://127.0.0.1:8000/api/bank-accounts/', payload, { headers })
         .then((res) => {
           const created = res.data;
+          // server may or may not echo back is_company_account; ensure UI treats this as agency account
+          if (created && typeof created === 'object' && created.is_company_account === undefined) {
+            created.is_company_account = false;
+          }
           const item = {
             id: created.id,
             bankName: created.bank_name || created.bankName || formData.bankName,
@@ -215,8 +232,16 @@ const AgentBankAccounts = () => {
     setEditingAccountId(null);
   };
 
-  const handleDelete = async (accountId) => {
-    if (!confirm('Are you sure you want to delete this bank account?')) return;
+  // open confirmation modal instead of using native confirm()
+  const handleDelete = (accountId) => {
+    setAccountToDelete(accountId);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    const accountId = accountToDelete;
+    setShowDeleteModal(false);
+    setAccountToDelete(null);
     if (!token) {
       toast.error('Not authenticated');
       return;
@@ -554,6 +579,26 @@ const AgentBankAccounts = () => {
                             </button>
                           </div>
                         </form>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Delete confirmation modal (replace native confirm()) */}
+              {showDeleteModal && (
+                <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+                  <div className="modal-dialog modal-dialog-centered">
+                    <div className="modal-content">
+                      <div className="modal-header">
+                        <h5 className="modal-title">Confirm Delete</h5>
+                      </div>
+                      <div className="modal-body">
+                        <p>Are you sure you want to delete this bank account? This action cannot be undone.</p>
+                      </div>
+                      <div className="modal-footer">
+                        <button className="btn btn-secondary" onClick={() => { setShowDeleteModal(false); setAccountToDelete(null); }}>Cancel</button>
+                        <button className="btn btn-danger" onClick={confirmDelete}>Delete</button>
                       </div>
                     </div>
                   </div>

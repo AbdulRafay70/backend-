@@ -1,6 +1,6 @@
 import React, { createContext, useState, useContext, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
+import jwtDecode from "../utils/jwtDecode";
 import Modal from "react-bootstrap/Modal";
 import Button from "react-bootstrap/Button";
 

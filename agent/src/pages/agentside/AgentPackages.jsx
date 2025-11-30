@@ -391,75 +391,144 @@ const AgentPackages = () => {
   };
 
 
-  // Cleaned up calculation function
-  const calculatePackagePrice = (pkg, roomType) => {
-    const ticketInfo = pkg?.ticket_details?.[0]?.ticket_info;
-
-    // helper to prefer various naming conventions from backend
-    const pick = (obj, ...keys) => {
+  // --- Robust Package Price Calculation (copied from Packages.jsx) ---
+  const computePackageTotals = (pkg, hotelsList = [], airlinesList = [], ticketsList = []) => {
+    // Helper: pick first defined value from keys
+    const pick = (obj, keys) => {
+      if (!obj) return undefined;
       for (const k of keys) {
-        if (obj && obj[k] != null) return obj[k];
+        if (typeof obj[k] !== 'undefined' && obj[k] !== null) return obj[k];
       }
       return undefined;
     };
-
-    const pkgNumber = (v) => (v == null ? 0 : Number(v));
-
-    // Resolve base components with fallbacks between *_price and *_selling_price
-    const visaPrice = pkgNumber(pick(pkg, 'adault_visa_price', 'adault_visa_selling_price', 'adault_visa_selling'));
-    const transportPrice = pkgNumber(pick(pkg, 'transport_price', 'transport_selling_price'));
-    const ticketAdultPrice = pkgNumber(pick(ticketInfo || {}, 'adult_price', 'adult_fare')) || pkgNumber(pick(pkg, 'adult_price'));
-    const foodPrice = pkgNumber(pick(pkg, 'food_price', 'food_selling_price'));
-    const makkahZiyarat = pkgNumber(pick(pkg, 'makkah_ziyarat_price', 'makkah_ziyarat_selling_price'));
-    const madinahZiyarat = pkgNumber(pick(pkg, 'madinah_ziyarat_price', 'madinah_ziyarat_selling_price'));
-
-    const basePrice = visaPrice + transportPrice + ticketAdultPrice + foodPrice + makkahZiyarat + madinahZiyarat;
-
-    // Helper to get bed price for a hotel detail entry
-    const getBedPriceFromHotel = (hotelEntry, roomTypeKey) => {
-      if (!hotelEntry) return 0;
-
-      // try direct fields like sharing_bed_selling_price, sharing_bed_selling_price, sharing_bed_purchase_price
-      const aliases = {
-        sharing: ['sharing_bed_selling_price', 'sharing_bed_price', 'sharing_bed_purchase_price', 'sharing_bed_selling'],
-        quint: ['quaint_bed_selling_price', 'quaint_bed_price', 'quint_bed_selling_price', 'quint_bed_price'],
-        quad: ['quad_bed_selling_price', 'quad_bed_price', 'quad_bed_purchase_price'],
-        triple: ['triple_bed_selling_price', 'triple_bed_price', 'triple_bed_purchase_price'],
-        double: ['double_bed_selling_price', 'double_bed_price', 'double_bed_purchase_price'],
-        single: ['single_bed_selling_price', 'single_bed_price', 'single_bed_purchase_price'],
+    // Build hotelDetails with robust price picking
+    const hotelDetails = (pkg?.hotel_details || []).map((hotelEntry) => {
+      const hotelInfo = hotelsList.find((h) => h.id === hotelEntry.hotel_info?.id) || hotelEntry.hotel_info || {};
+      const nights = hotelEntry?.number_of_nights || hotelEntry?.nights || hotelEntry?.total_nights || 0;
+      // priceSources: prefer explicit entry values, then first prices entry, then hotelInfo root
+      const priceSources = [hotelEntry || {}, (hotelInfo?.prices?.[0] || {}), hotelInfo || {}];
+      // helper: try the usual keys and also include '*_bed_selling_price' variants
+      const priceCandidates = (keys, altKeys = []) => {
+        const candidates = [...keys, ...altKeys];
+        for (const src of priceSources) {
+          const v = pick(src, candidates);
+          if (typeof v !== 'undefined' && v !== null) return v;
+        }
+        return undefined;
       };
-
-      const tryKeys = aliases[roomTypeKey] || [];
-      for (const k of tryKeys) {
-        const v = pick(hotelEntry, k);
-        if (v != null) return Number(v);
-      }
-
-      // Fallback: check hotel_info.prices array (common normalized structure)
-      const priceArr = hotelEntry.hotel_info && hotelEntry.hotel_info.prices ? hotelEntry.hotel_info.prices : hotelEntry.prices;
-      if (Array.isArray(priceArr)) {
-        // try to find by room_type
-        const found = priceArr.find((p) => {
-          if (!p) return false;
+      // try to read price from hotelInfo.prices[] matching a room_type
+      const findPriceInPricesArray = (roomTypeNames = []) => {
+        const pricesArr = hotelInfo?.prices || [];
+        for (const p of pricesArr) {
+          if (!p) continue;
           const rt = (p.room_type || '').toString().toLowerCase();
-          return rt === roomTypeKey || (roomTypeKey === 'quint' && (rt === 'quaint' || rt === 'quint'));
-        });
-        if (found && (found.selling_price != null)) return Number(found.selling_price);
+          if (roomTypeNames.some(rn => rt.includes(rn))) {
+            return p.price || p.selling_price || p.purchase_price || undefined;
+          }
+        }
+        return undefined;
+      };
+      const sharing = priceCandidates(
+        ['sharing_bed_selling_price','sharing_bed_price','sharing_selling_price','sharing_price','sharing'],
+        ['sharing_bed_purchase_price']
+      ) || findPriceInPricesArray(['sharing','shared']);
+      const quaint = priceCandidates(
+        ['quaint_bed_selling_price','quaint_bed_price','quaint_selling_price','quaint_price','quaint'],
+        ['quaint_bed_purchase_price']
+      ) || findPriceInPricesArray(['quaint','quint','quintet']);
+      const quad = priceCandidates(
+        ['quad_bed_selling_price','quad_bed_price','quad_selling_price','quad_price','quad'],
+        ['quad_bed_purchase_price']
+      ) || findPriceInPricesArray(['quad']);
+      const triple = priceCandidates(
+        ['triple_bed_selling_price','triple_bed_price','triple_selling_price','triple_price','triple'],
+        ['triple_bed_purchase_price']
+      ) || findPriceInPricesArray(['triple']);
+      const doubleBed = priceCandidates(
+        ['double_bed_selling_price','double_bed_price','double_selling_price','double_price','double'],
+        ['double_bed_purchase_price']
+      ) || findPriceInPricesArray(['double']);
+      const single = priceCandidates(
+        ['single_bed_selling_price','single_bed_price','single_selling_price','single_price','single'],
+        ['single_bed_purchase_price']
+      ) || findPriceInPricesArray(['single']);
+      return {
+        ...hotelEntry,
+        hotel_info: hotelInfo,
+        nights,
+        sharing_per_night: Number(sharing) || 0,
+        quaint_per_night: Number(quaint) || 0,
+        quad_per_night: Number(quad) || 0,
+        triple_per_night: Number(triple) || 0,
+        double_per_night: Number(doubleBed) || 0,
+        single_per_night: Number(single) || 0,
+      };
+    });
+    // helper to sum per-night prices across hotels
+    const sumPerNight = (key) =>
+      hotelDetails.reduce((s, h) => s + (Number(h[key] || 0) * (Number(h.nights || 0) || 0)), 0);
+    // resolve package-level selling price fields with fallbacks
+    const pkgPick = (keys) => {
+      for (const k of keys) {
+        if (typeof pkg?.[k] !== 'undefined' && pkg?.[k] !== null) return Number(pkg[k]) || 0;
       }
-
       return 0;
     };
+    const food = pkgPick(['food_selling_price','food_price','food_selling_price']);
+    const makkah = pkgPick(['makkah_ziyarat_selling_price','makkah_ziyarat_price']);
+    const madinah = pkgPick(['madinah_ziyarat_selling_price','madinah_ziyarat_price']);
+    const transport = pkgPick(['transport_selling_price','transport_price']);
+    const visaAdult = pkgPick(['adault_visa_selling_price','adault_visa_price']);
+    const ticketInfo = pkg?.ticket_details?.[0]?.ticket_info || {};
+    let adultTicketRaw = pick(ticketInfo, ['adult_selling_price', 'adult_price', 'adult_fare', 'adult_ticket_price']);
+    let childTicketRaw = pick(ticketInfo, ['child_selling_price', 'child_price', 'child_fare', 'child_ticket_price']);
+    let ticketAdult = Number(adultTicketRaw) || 0;
+    let ticketChild = Number(childTicketRaw) || 0;
+    const adultCost = food + makkah + madinah + transport + visaAdult + ticketAdult;
+    // hotel totals per bed-type
+    const sharingHotelTotal = sumPerNight('sharing_per_night');
+    const quaintHotelTotal = sumPerNight('quaint_per_night');
+    const quadHotelTotal = sumPerNight('quad_per_night');
+    const tripleHotelTotal = sumPerNight('triple_per_night');
+    const doubleHotelTotal = sumPerNight('double_per_night');
+    const singleHotelTotal = sumPerNight('single_per_night');
+    const totalSharing = adultCost + sharingHotelTotal;
+    const totalQuint = adultCost + quaintHotelTotal;
+    const totalQuad = adultCost + quadHotelTotal;
+    const totalTriple = adultCost + tripleHotelTotal;
+    const totalDouble = adultCost + doubleHotelTotal;
+    const totalSingle = adultCost + singleHotelTotal;
+    // Infant price should be ticket selling price + infant visa selling price.
+    let infantTicketRaw = pick(ticketInfo, ['infant_selling_price', 'infant_price', 'infant_ticket_selling_price', 'infant_ticket_price', 'infantTicketPrice','infant_fare']);
+    let infantTicket = Number(infantTicketRaw) || 0;
+    const infantVisa = pkgPick(['infant_visa_selling_price', 'infant_visa_price', 'infant_visa_cost']);
+    const totalInfant = Number(infantTicket) + Number(infantVisa || 0);
+    return {
+      hotelDetails,
+      adultCost,
+      totalSharing,
+      totalQuint,
+      totalQuad,
+      totalTriple,
+      totalDouble,
+      totalSingle,
+      totalInfant,
+    };
+  };
 
-    let hotelCost = 0;
-    if (Array.isArray(pkg?.hotel_details)) {
-      hotelCost = pkg.hotel_details.reduce((sum, hotel) => {
-        const nights = Number(hotel.number_of_nights || 0);
-        const bedPrice = getBedPriceFromHotel(hotel, roomType);
-        return sum + (bedPrice * nights);
-      }, 0);
+  // New function to get price by room type (for UI compatibility)
+  const calculatePackagePrice = (pkg, roomType) => {
+    const totals = computePackageTotals(pkg, [], [], []);
+    switch (roomType) {
+      case 'sharing': return totals.totalSharing;
+      case 'quint': return totals.totalQuint;
+      case 'quad': return totals.totalQuad;
+      case 'triple': return totals.totalTriple;
+      case 'double': return totals.totalDouble;
+      case 'single': return totals.totalSingle;
+      case 'infant': return totals.totalInfant;
+      default: return 0;
     }
-
-    return basePrice + hotelCost;
   };
 
   // Helper: resolve airline name from various possible shapes

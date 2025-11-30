@@ -44,6 +44,7 @@ class Lead(models.Model):
     passport_number = models.CharField(max_length=50, blank=True, null=True)
     passport_expiry = models.DateField(blank=True, null=True)
     contact_number = models.CharField(max_length=50, blank=True, null=True)
+    whatsapp_number = models.CharField(max_length=50, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
     cnic_number = models.CharField(max_length=50, blank=True, null=True)
     address = models.TextField(blank=True, null=True)
@@ -109,12 +110,16 @@ class FollowUpHistory(models.Model):
         ("call", "call"),
         ("whatsapp", "whatsapp"),
         ("in-person", "in-person"),
+        ("cash", "cash"),
     ]
 
     FOLLOWUP_RESULT = [
         ("pending", "pending"),
         ("confirmed", "confirmed"),
         ("lost", "lost"),
+        ("loan_collection", "loan_collection"),
+        ("loan_cleared", "loan_cleared"),
+        ("loan_rescheduled", "loan_rescheduled"),
     ]
 
     lead = models.ForeignKey(Lead, on_delete=models.CASCADE, related_name="followups")

@@ -8,9 +8,19 @@ User = get_user_model()
 class LeadSerializer(serializers.ModelSerializer):
     customer_full_name = serializers.CharField(required=False, allow_blank=True, allow_null=True, default=None)
     last_contacted_date = serializers.DateField(required=False, allow_null=True)
+    # WhatsApp number (optional) — include help_text so schema shows description
+    whatsapp_number = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+        default=None,
+        help_text="WhatsApp number in international format, e.g. +923001234567",
+    )
     # Accept any free-text identifier for assignee (string). API will store and return the string.
     assigned_to = serializers.CharField(required=False, allow_blank=True, allow_null=True, default=None)
     task_type = serializers.CharField(required=False, allow_blank=True, allow_null=True, default=None)
+    # include followup history (read-only)
+    followups = serializers.SerializerMethodField()
 
     class Meta:
         model = Lead
@@ -69,11 +79,38 @@ class LeadSerializer(serializers.ModelSerializer):
 
         return data
 
+    def get_followups(self, obj):
+        # Use the FollowUpHistorySerializer to present related followups
+        qs = getattr(obj, 'followups', None)
+        if qs is None:
+            return []
+        return FollowUpHistorySerializer(qs.all().order_by('-followup_date', '-followup_time'), many=True).data
+
 
 class FollowUpHistorySerializer(serializers.ModelSerializer):
+    created_by_username = serializers.SerializerMethodField()
+    # allow client to omit followup_date/contacted_via and let server fill defaults
+    followup_date = serializers.DateField(required=False, allow_null=True)
+    contacted_via = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+
     class Meta:
         model = FollowUpHistory
         fields = "__all__"
+
+    def get_created_by_username(self, obj):
+        try:
+            return obj.created_by_user.username if obj.created_by_user else None
+        except Exception:
+            return None
+
+    def create(self, validated_data):
+        # Ensure sensible defaults when client omitted fields
+        from datetime import date
+        if not validated_data.get('followup_date'):
+            validated_data['followup_date'] = date.today()
+        if not validated_data.get('contacted_via'):
+            validated_data['contacted_via'] = 'call'
+        return super().create(validated_data)
 
 
 class LoanCommitmentSerializer(serializers.ModelSerializer):

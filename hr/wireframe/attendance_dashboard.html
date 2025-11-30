@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>HR — Attendance Dashboard (Wireframe)</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="topbar">
+        <div class="container">
+          <h1 class="app-title">Attendance Dashboard</h1>
+          <div class="actions">
+            <button class="btn primary">Bulk Check-in</button>
+            <button class="btn ghost">Export</button>
+          </div>
+        </div>
+      </header>
+
+      <nav class="wire-nav container">
+        <a href="index.html">Index</a>
+        <a href="employees_list.html">Employees</a>
+        <a href="employee_profile.html">Profile</a>
+        <a href="movements.html">Movements</a>
+        <a href="commissions.html">Commissions</a>
+      </nav>
+
+      <main class="container" style="padding:20px 0">
+        <section style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+          <label>Date <input type="date" value="2025-11-25" /></label>
+          <select style="padding:10px;border-radius:8px;border:1px solid var(--border)">
+            <option>All employees</option>
+            <option>Branch A</option>
+          </select>
+          <button class="btn small">Load</button>
+        </section>
+
+        <section class="card-section" style="background:var(--card);padding:12px;border-radius:8px;border:1px solid var(--border)">
+          <table class="table">
+            <thead>
+              <tr><th>Employee</th><th>Check-in</th><th>Check-out</th><th>Working Hours</th><th>Status</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Aisha Khan</td>
+                <td>09:05</td>
+                <td>18:00</td>
+                <td>8h55m</td>
+                <td><span class="badge success">Present</span></td>
+                <td><button class="btn tiny">Edit</button></td>
+              </tr>
+              <tr>
+                <td>Usman Tariq</td>
+                <td>--</td>
+                <td>--</td>
+                <td>--</td>
+                <td><span class="badge danger">Absent</span></td>
+                <td><button class="btn tiny">Mark Present</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <div class="container muted">Attendance dashboard wireframe</div>
+      </footer>
+    </div>
+    <div id="wf-modal" class="wf-modal" aria-hidden="true">
+      <div class="wf-modal-backdrop" data-wf-close></div>
+      <div class="wf-modal-content">
+        <button class="wf-close" data-wf-close>×</button>
+        <div id="wf-modal-body" class="wf-modal-body"></div>
+      </div>
+    </div>
+    <script src="wireframe.js"></script>
+  </body>
+</html>

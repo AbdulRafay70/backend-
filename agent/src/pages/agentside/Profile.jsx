@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import AgentSidebar from "../../components/AgentSidebar";
 import AgentHeader from "../../components/AgentHeader";
 import axios from "axios";
-import { jwtDecode } from "jwt-decode";
+import jwtDecode from "../../utils/jwtDecode";
 import { toast, ToastContainer } from "react-toastify";
 
 const ProfileShimmer = () => {

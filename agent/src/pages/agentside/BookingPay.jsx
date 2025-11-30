@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import AgentSidebar from "../../components/AgentSidebar";
 import AgentHeader from "../../components/AgentHeader";
 import logo from "../../assets/flightlogo.png";
@@ -93,8 +93,17 @@ const BookingPay = () => {
   };
 
   const handleSlipSelect = () => {
-    // console.log('SLIP SELECT clicked');
-    // Add your slip select logic here
+    // Trigger native file picker for slip upload
+    if (fileInputRef && fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const f = e?.target?.files && e.target.files[0];
+    if (f) {
+      setSlipFile(f);
+    }
   };
 
   // Beneficiary accounts will be fetched from backend
@@ -105,6 +114,8 @@ const BookingPay = () => {
   const [isConfirming, setIsConfirming] = useState(false);
   const [confirmError, setConfirmError] = useState(null);
   const navigate = useNavigate();
+  const [slipFile, setSlipFile] = useState(null);
+  const fileInputRef = useRef(null);
 
   // Update amount field when computedTotal changes
   useEffect(() => {
@@ -247,6 +258,11 @@ const BookingPay = () => {
         if (!formData.cashDepositorCnic) throw new Error('Enter depositor CNIC for cash deposit');
       }
 
+      // For bank transfer / cheque, ensure a slip has been uploaded
+      if ((selectedPayment === 'bank-transfer' || selectedPayment === 'cheque' || selectedPayment === 'bank') && !slipFile) {
+        throw new Error('Please upload the payment slip for bank transfer or cheque before confirming.');
+      }
+
       // Build multipart form data similar to admin AddPayment
       const formPayload = new FormData();
       // Map method to readable label
@@ -272,6 +288,11 @@ const BookingPay = () => {
         if (formData.agentAccount) formPayload.append('agent_bank_account', String(formData.agentAccount));
       }
       if (formData.kuickpay_trn) formPayload.append('kuickpay_trn', String(formData.kuickpay_trn));
+
+      // Append slip file (if provided)
+      if (slipFile) {
+        formPayload.append('slip', slipFile);
+      }
 
       // send payment to backend
       const resp = await axios.post('http://127.0.0.1:8000/api/payments/', formPayload, {
@@ -747,14 +768,33 @@ const BookingPay = () => {
 
                 {/* SLIP SELECT Button */}
                 <div className="col-lg-2 col-md-2 d-flex align-items-end">
-                  <button
-                    type="button"
-                    className="btn btn-primary px-4 py-2 fw-semibold"
-                    onClick={handleSlipSelect}
-                    style={{ backgroundColor: '#007bff', border: 'none' }}
-                  >
-                    SLIP SELECT
-                  </button>
+                  <div>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      style={{ display: 'none' }}
+                      accept="image/*,application/pdf"
+                      onChange={(e) => handleFileChange(e)}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-primary px-4 py-2 fw-semibold"
+                      onClick={handleSlipSelect}
+                      style={{ backgroundColor: '#007bff', border: 'none' }}
+                    >
+                      SLIP SELECT
+                    </button>
+                    <div className="mt-2 small text-muted">
+                      {slipFile ? (
+                        <>
+                          <span>{slipFile.name}</span>
+                          <button type="button" className="btn btn-link btn-sm ms-2 p-0" onClick={() => setSlipFile(null)}>Remove</button>
+                        </>
+                      ) : (
+                        <span>No slip selected</span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 

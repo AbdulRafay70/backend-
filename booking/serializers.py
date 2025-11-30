@@ -9,6 +9,7 @@ from users.serializers import UserSerializer
 from organization.models import Organization, Agency, Branch
 from users.models import UserProfile
 from tickets.models import Hotels
+from packages.models import City
 from datetime import datetime
 from decimal import Decimal
 from .models import (
@@ -1208,9 +1209,42 @@ class PaymentSerializer(serializers.ModelSerializer):
         return data
         
 class SectorSerializer(serializers.ModelSerializer):
+    # Expose city codes instead of numeric FK ids so frontends can
+    # display city codes directly (e.g. for transport sector display).
+    departure_city = serializers.CharField(source='departure_city.code', read_only=True, allow_null=True)
+    arrival_city = serializers.CharField(source='arrival_city.code', read_only=True, allow_null=True)
+    # Accept writeable FK fields for creating/updating via API
+    departure_city_id = serializers.PrimaryKeyRelatedField(
+        queryset=City.objects.all(), source='departure_city', write_only=True, required=False, allow_null=True
+    )
+    arrival_city_id = serializers.PrimaryKeyRelatedField(
+        queryset=City.objects.all(), source='arrival_city', write_only=True, required=False, allow_null=True
+    )
+
+    # Accept sector_type and boolean flags from frontend
+    sector_type = serializers.CharField(required=False, allow_blank=True, allow_null=True)
+    is_airport_pickup = serializers.BooleanField(required=False)
+    is_airport_drop = serializers.BooleanField(required=False)
+    is_hotel_to_hotel = serializers.BooleanField(required=False)
+
     class Meta:
         model = Sector
-        fields = "__all__"
+        # Only include commonly used fields to keep payload small and stable.
+        fields = (
+            'id',
+            'contact_name',
+            'contact_number',
+            'sector_type',
+            'is_airport_pickup',
+            'is_airport_drop',
+            'is_hotel_to_hotel',
+            'organization',
+            'departure_city',
+            'arrival_city',
+            'departure_city_id',
+            'arrival_city_id',
+        )
+        extra_kwargs = {'organization': {'required': True}}
 class BigSectorSerializer(serializers.ModelSerializer):
     organization = OrganizationSerializer(read_only=True)
     organization_id = serializers.PrimaryKeyRelatedField(
@@ -1262,6 +1296,7 @@ class VehicleTypeSerializer(serializers.ModelSerializer):
         queryset=BigSector.objects.all(), source="big_sector", write_only=True, required=False, allow_null=True
     )
 
+    price = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
     class Meta:
         model = VehicleType
         fields = [
@@ -1269,6 +1304,13 @@ class VehicleTypeSerializer(serializers.ModelSerializer):
             "vehicle_name",
             "vehicle_type",
             "price",
+            # per-person explicit prices
+            "adult_selling_price",
+            "adult_purchase_price",
+            "child_selling_price",
+            "child_purchase_price",
+            "infant_selling_price",
+            "infant_purchase_price",
             "note",
             "visa_type",
             "status",
@@ -1278,6 +1320,26 @@ class VehicleTypeSerializer(serializers.ModelSerializer):
             "big_sector",
             "big_sector_id",
         ]
+
+    def create(self, validated_data):
+        # Map legacy `price` into `adult_selling_price` if explicit per-person field not provided.
+        price_val = validated_data.pop('price', None)
+        if price_val is not None and 'adult_selling_price' not in validated_data:
+            try:
+                validated_data['adult_selling_price'] = float(price_val)
+            except Exception:
+                validated_data['adult_selling_price'] = price_val
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        price_val = validated_data.pop('price', None)
+        if price_val is not None and 'adult_selling_price' not in validated_data:
+            try:
+                validated_data['adult_selling_price'] = float(price_val)
+            except Exception:
+                validated_data['adult_selling_price'] = price_val
+        return super().update(instance, validated_data)
+    
 class InternalNoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = InternalNote

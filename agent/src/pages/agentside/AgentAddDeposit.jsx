@@ -643,7 +643,7 @@ const AddDepositForm = () => {
                           </select>
                         </div>
 
-                        <div className="col-md-3">
+                        <div className="col-md-2">
                           <label htmlFor="" className="Control-label">Beneficiary Account
                           </label>
 
@@ -662,37 +662,43 @@ const AddDepositForm = () => {
                           </select>
                         </div>
 
-                        <div className="col-md-3">
+                        <div className="col-md-4">
                           {formData.modeOfPayment === 'Cash' ? (
-                            <>
-                              <label htmlFor="" className="Control-label">Bank Name</label>
-                              <input
-                                type="text"
-                                className="form-control shadow-none"
-                                name="bankName"
-                                placeholder="Enter bank name"
-                                value={formData.bankName}
-                                onChange={handleInputChange}
-                              />
-                              <label htmlFor="" className="Control-label mt-2">Cash Depositor Name</label>
-                              <input
-                                type="text"
-                                className="form-control shadow-none"
-                                name="cashDepositorName"
-                                placeholder="Depositor full name"
-                                value={formData.cashDepositorName}
-                                onChange={handleInputChange}
-                              />
-                              <label htmlFor="" className="Control-label mt-2">Cash Depositor CNIC</label>
-                              <input
-                                type="text"
-                                className="form-control shadow-none"
-                                name="cashDepositorCnic"
-                                placeholder="12345-1234567-1"
-                                value={formData.cashDepositorCnic}
-                                onChange={handleInputChange}
-                              />
-                            </>
+                            <div className="row g-2">
+                              <div className="col-12 col-md-4">
+                                <label className="form-label small mb-1">Bank Name</label>
+                                <input
+                                  type="text"
+                                  className="form-control form-control-sm"
+                                  name="bankName"
+                                  placeholder="Bank name"
+                                  value={formData.bankName}
+                                  onChange={handleInputChange}
+                                />
+                              </div>
+                              <div className="col-12 col-md-4">
+                                <label className="form-label small mb-1">Depositor Name</label>
+                                <input
+                                  type="text"
+                                  className="form-control form-control-sm"
+                                  name="cashDepositorName"
+                                  placeholder="Full name"
+                                  value={formData.cashDepositorName}
+                                  onChange={handleInputChange}
+                                />
+                              </div>
+                              <div className="col-12 col-md-4">
+                                <label className="form-label small mb-1">Depositor CNIC</label>
+                                <input
+                                  type="text"
+                                  className="form-control form-control-sm"
+                                  name="cashDepositorCnic"
+                                  placeholder="12345-1234567-1"
+                                  value={formData.cashDepositorCnic}
+                                  onChange={handleInputChange}
+                                />
+                              </div>
+                            </div>
                           ) : (
                             <>
                               <label htmlFor="" className="Control-label">Agent Account</label>

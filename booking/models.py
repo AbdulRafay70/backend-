@@ -1165,6 +1165,17 @@ class Sector(models.Model):
     )
     contact_name = models.CharField(max_length=100)
     contact_number = models.CharField(max_length=20)
+    SECTOR_TYPE_CHOICES = [
+        ("AIRPORT PICKUP", "Airport Pickup"),
+        ("AIRPORT DROP", "Airport Drop"),
+        ("HOTEL TO HOTEL", "Hotel to Hotel"),
+    ]
+    sector_type = models.CharField(max_length=32, choices=SECTOR_TYPE_CHOICES, blank=True, null=True)
+    # Convenience boolean flags (only one should be true based on sector_type)
+    is_airport_pickup = models.BooleanField(default=False)
+    is_airport_drop = models.BooleanField(default=False)
+    is_hotel_to_hotel = models.BooleanField(default=False)
+    
     organization = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="sectors"
     )
@@ -1194,7 +1205,14 @@ class VehicleType(models.Model):
         BigSector, on_delete=models.SET_NULL, related_name="vehicle_types", null=True, blank=True
     )
     vehicle_type = models.CharField(max_length=100)  # simple varchar
-    price = models.DecimalField(max_digits=10, decimal_places=2)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0, blank=True)
+    # New explicit per-person selling/purchase fields
+    adult_selling_price = models.FloatField(default=0)
+    adult_purchase_price = models.FloatField(default=0)
+    child_selling_price = models.FloatField(default=0)
+    child_purchase_price = models.FloatField(default=0)
+    infant_selling_price = models.FloatField(default=0)
+    infant_purchase_price = models.FloatField(default=0)
     note = models.TextField(null=True, blank=True)
     visa_type = models.CharField(max_length=100)  
     status = models.CharField(max_length=10, choices=[("active", "Active"), ("inactive", "Inactive")], default="active")

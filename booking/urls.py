@@ -9,8 +9,11 @@ from .views import get_ticket_price, get_inventory_price  # Import the new views
 router = DefaultRouter()
 router.register(r'bookings', BookingViewSet, basename='booking')
 router.register(r'payments', PaymentViewSet, basename='payment')
-router.register(r'sectors', SectorViewSet, basename='sector')
+router.register(r'small-sectors', SectorViewSet, basename='small-sector')
+
 router.register(r'big-sectors', BigSectorViewSet, basename='big-sector')
+router.register(r'transport-prices', VehicleTypeViewSet, basename='transport-prices')
+
 router.register(r'vehicle-types', VehicleTypeViewSet, basename='vehicle-types')
 router.register(r'internal-notes', InternalNoteViewSet, basename="internal-notes")
 router.register(r'organization-links', OrganizationLinkViewSet, basename='organization-link')

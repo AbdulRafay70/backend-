@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>HR — Employees List (Wireframe)</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="topbar">
+        <div class="container">
+          <h1 class="app-title">Employees</h1>
+          <div class="actions">
+            <button class="btn primary">Add Employee</button>
+            <button class="btn ghost">Export</button>
+          </div>
+        </div>
+      </header>
+
+      <!-- nav added by prototype script if missing; kept here for fallback -->
+      <nav class="wire-nav container">
+        <a href="index.html">Index</a>
+        <a href="employee_profile.html">Profile</a>
+        <a href="attendance_dashboard.html">Attendance</a>
+        <a href="movements.html">Movements</a>
+        <a href="commissions.html">Commissions</a>
+      </nav>
+
+      <main class="container" style="padding:20px 0">
+        <section class="card-section" style="background:transparent;padding:0;margin-bottom:12px;display:flex;gap:12px;align-items:center">
+          <input style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border)" placeholder="Search employees by name or role" />
+          <select style="padding:10px;border-radius:8px;border:1px solid var(--border)">
+            <option>All roles</option>
+            <option>Sales</option>
+            <option>Manager</option>
+          </select>
+          <button class="btn small">Filter</button>
+        </section>
+
+        <section class="card-section" style="background:var(--card);padding:12px;border-radius:8px;border:1px solid var(--border)">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Role</th>
+                <th>Salary</th>
+                <th>Status</th>
+                <th>Last Updated</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>1</td>
+                <td>Aisha Khan</td>
+                <td>Sales</td>
+                <td>PKR 50,000</td>
+                <td><span class="badge success">Active</span></td>
+                <td>2025-11-15</td>
+                <td><button class="btn tiny">View</button> <button class="btn tiny outline">Edit</button></td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td>Bilal Ahmed</td>
+                <td>Cashier</td>
+                <td>PKR 30,000</td>
+                <td><span class="badge warn">Inactive</span></td>
+                <td>2025-10-01</td>
+                <td><button class="btn tiny">View</button> <button class="btn tiny outline">Edit</button></td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="margin-top:12px;display:flex;justify-content:space-between;align-items:center">
+            <div class="muted">Showing 1-2 of 50</div>
+            <div>
+              <button class="btn small">Prev</button>
+              <button class="btn small">Next</button>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <div class="container muted">Employees list wireframe</div>
+      </footer>
+    </div>
+
+    <div id="wf-modal" class="wf-modal" aria-hidden="true">
+      <div class="wf-modal-backdrop" data-wf-close></div>
+      <div class="wf-modal-content">
+        <button class="wf-close" data-wf-close>×</button>
+        <div id="wf-modal-body" class="wf-modal-body"></div>
+      </div>
+    </div>
+    <script src="wireframe.js"></script>
+  </body>
+</html>

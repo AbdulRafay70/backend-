@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     "logs",
     "promotion_center",
     "pax_movements",
+    "hr",
     "passport_leads",  # Passport Leads & Follow-up Management
     "customers",  # Customer Auto-Collection & Lead Management
     "forms",  # Dynamic Forms for Lead Generation
@@ -201,6 +202,10 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "SAER.PK API",
     "DESCRIPTION": "All endpoints for organization, booking, packages, and more.",
     "VERSION": "1.0.0",
+    # postprocessing hooks to mutate the generated schema (we add the packages example)
+    "POSTPROCESSING_HOOKS": [
+        "configuration.spectacular_hooks_fixed.add_packages_example"
+    ],
 }
 
 # ----------------------------------------------------

@@ -1826,18 +1826,56 @@ class SectorViewSet(viewsets.ModelViewSet):
     serializer_class = SectorSerializer
 
     def create(self, request, *args, **kwargs):
-        response = super().create(request, *args, **kwargs)
-        return Response(
-            {"message": "Sector created successfully!", "data": response.data},
-            status=status.HTTP_201_CREATED
-        )
+        # Perform explicit validation so we can log incoming data and validated output
+        serializer = self.get_serializer(data=request.data)
+        try:
+            serializer.is_valid(raise_exception=False)
+        except Exception:
+            pass
+        # Debug logging for troubleshooting why departure/arrival may be null
+        try:
+            import logging
+            logger = logging.getLogger(_name_)
+            logger.debug("Sector.create - request.data: %s", request.data)
+            logger.debug("Sector.create - initial_data: %s", getattr(serializer, 'initial_data', None))
+            logger.debug("Sector.create - is_valid: %s", serializer.is_valid())
+            logger.debug("Sector.create - validated_data: %s", getattr(serializer, 'validated_data', None))
+            logger.debug("Sector.create - errors: %s", getattr(serializer, 'errors', None))
+        except Exception:
+            pass
+
+        if not serializer.is_valid():
+            return Response({"message": "Validation failed", "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        self.perform_create(serializer)
+        instance = serializer.instance
+        out_serializer = self.get_serializer(instance)
+        return Response({"message": "Sector created successfully!", "data": out_serializer.data}, status=status.HTTP_201_CREATED)
 
     def update(self, request, *args, **kwargs):
-        response = super().update(request, *args, **kwargs)
-        return Response(
-            {"message": "Sector updated successfully!", "data": response.data},
-            status=status.HTTP_200_OK
-        )
+        serializer = self.get_serializer(instance=self.get_object(), data=request.data)
+        try:
+            serializer.is_valid(raise_exception=False)
+        except Exception:
+            pass
+        try:
+            import logging
+            logger = logging.getLogger(_name_)
+            logger.debug("Sector.update - request.data: %s", request.data)
+            logger.debug("Sector.update - initial_data: %s", getattr(serializer, 'initial_data', None))
+            logger.debug("Sector.update - is_valid: %s", serializer.is_valid())
+            logger.debug("Sector.update - validated_data: %s", getattr(serializer, 'validated_data', None))
+            logger.debug("Sector.update - errors: %s", getattr(serializer, 'errors', None))
+        except Exception:
+            pass
+
+        if not serializer.is_valid():
+            return Response({"message": "Validation failed", "errors": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        self.perform_update(serializer)
+        instance = serializer.instance
+        out_serializer = self.get_serializer(instance)
+        return Response({"message": "Sector updated successfully!", "data": out_serializer.data}, status=status.HTTP_200_OK)
 
     def destroy(self, request, *args, **kwargs):
         super().destroy(request, *args, **kwargs)

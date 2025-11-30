@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Container, Row, Col, Card, Form, Button, Alert, Badge, Spinner, Modal, Table, Tabs, Tab, Dropdown } from "react-bootstrap";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
@@ -322,7 +322,26 @@ const HotelAvailabilityManager = () => {
       else if (payload.results && Array.isArray(payload.results)) citiesArr = payload.results;
       else if (payload.data && Array.isArray(payload.data)) citiesArr = payload.data;
 
-      setCities(citiesArr.map(c => ({ id: c.id, name: c.name })));
+      // Deduplicate cities by normalized name to avoid duplicate display (e.g., same city with different ids)
+      const seenByName = new Map();
+      citiesArr.forEach(c => {
+        const rawName = c && c.name ? String(c.name) : '';
+        const nameKey = rawName.trim().toLowerCase();
+        // Prefer the first encountered entry for a city name; if that entry lacks an id, prefer a later one with an id
+        if (!seenByName.has(nameKey)) {
+          seenByName.set(nameKey, { id: c.id, name: rawName });
+        } else {
+          const existing = seenByName.get(nameKey);
+          if ((!existing.id || existing.id === null) && c.id) {
+            // replace with one that has an id
+            seenByName.set(nameKey, { id: c.id, name: rawName });
+          }
+        }
+      });
+      const unique = Array.from(seenByName.values()).filter(x => x && (x.name || x.id));
+      // Optionally sort alphabetically for nicer UX
+      unique.sort((a, b) => String(a.name || '').localeCompare(String(b.name || '')));
+      setCities(unique);
     } catch (error) {
       console.error("Error fetching cities:", error);
     }
@@ -504,12 +523,33 @@ const HotelAvailabilityManager = () => {
         setCategoryLoading(true);
         const params = {};
         if (organizationId) params.organization = organizationId;
-        const resp = await api.get(`/hotel-categories/`, { params });
-        const data = Array.isArray(resp.data) ? resp.data : resp.data?.results ?? [];
-        setCategoriesList(data);
+          // If an organization is selected, fetch both org-scoped categories and
+          // the global categories (organization=null) so admins can still pick
+          // global categories created without an organization. Prefer org-scoped
+          // entries when merging.
+          let data = [];
+          if (organizationId) {
+            const [orgResp, globalResp] = await Promise.all([
+              api.get(`/hotel-categories/`, { params: { organization: organizationId } }),
+              api.get(`/hotel-categories/`)
+            ]);
+            const orgCats = Array.isArray(orgResp.data) ? orgResp.data : orgResp.data?.results ?? [];
+            const globalCats = Array.isArray(globalResp.data) ? globalResp.data : globalResp.data?.results ?? [];
+            // Merge, preferring orgCats when slug/id collide
+            const map = new Map();
+            (globalCats || []).forEach(c => { if (c && c.slug) map.set(String(c.slug), c); else if (c && c.id) map.set(String(c.id), c); });
+            (orgCats || []).forEach(c => { if (c && c.slug) map.set(String(c.slug), c); else if (c && c.id) map.set(String(c.id), c); });
+            data = Array.from(map.values());
+          } else {
+            const resp = await api.get(`/hotel-categories/`, { params });
+            data = Array.isArray(resp.data) ? resp.data : resp.data?.results ?? [];
+          }
+          setCategoriesList(data);
+          return data;
       } catch (err) {
         console.error('Failed to load categories', err);
         setCategoriesList([]);
+          return [];
       } finally {
         setCategoryLoading(false);
       }
@@ -565,9 +605,28 @@ const HotelAvailabilityManager = () => {
         }
       }
 
-      // category is provided as a slug from `categoriesList` (backend-driven)
-      // send it directly to the server; fallback to null if not selected
-      const mappedCategory = hotelForm.category || null;
+      // category may be selected as an id in the UI. Convert to a value the
+      // backend expects: prefer the category's `slug` when available,
+      // otherwise fall back to the id. If user typed a raw slug/name, leave it.
+      let mappedCategory = hotelForm.category || null;
+      let mappedCategoryId = null;
+      try {
+        if (mappedCategory && Array.isArray(categoriesList) && categoriesList.length > 0) {
+          const found = categoriesList.find(c => String(c.id) === String(mappedCategory) || String(c.slug) === String(mappedCategory) || String(c.name) === String(mappedCategory));
+          if (found) {
+            // prefer sending both slug and id so server can accept either
+            mappedCategory = found.slug ?? String(found.id);
+            mappedCategoryId = found.id ?? null;
+          } else if ((String(mappedCategory) || '').match(/^\d+$/)) {
+            // if UI value is numeric string, treat as id
+            mappedCategoryId = Number(mappedCategory);
+          }
+        } else if (mappedCategory && (String(mappedCategory) || '').match(/^\d+$/)) {
+          mappedCategoryId = Number(mappedCategory);
+        }
+      } catch (e) {
+        // ignore mapping errors and send raw value
+      }
 
       // Store distance and walking distance/time as entered (meters/minutes, no conversion)
       const distanceRaw = parseDistanceRaw(hotelForm.distance);
@@ -658,7 +717,10 @@ const HotelAvailabilityManager = () => {
         reselling_allowed: !!resellingAllowed,
         status: hotelStatus,
         // only include organization when we have a valid value
-        ...(orgToUse ? { organization: orgToUse } : {})
+        ...(orgToUse ? { organization: orgToUse } : {}),
+        // ensure category is sent in backend-expected form
+        ...(mappedCategory ? { category: mappedCategory } : {}),
+        ...(mappedCategoryId ? { category_id: mappedCategoryId } : {})
       };
 
       // Debug: ensure prices prepared correctly before sending
@@ -903,6 +965,23 @@ const HotelAvailabilityManager = () => {
       const walkingDistance = hotelForm.walking_distance !== undefined && hotelForm.walking_distance !== null && hotelForm.walking_distance !== "" ? parseDistanceRaw(hotelForm.walking_distance) : null;
 
       const { walking_time, walking_distance, ...hotelFormRest } = hotelForm;
+      // Map category id -> slug when possible so backend receives expected value
+      let categoryToSend = hotelForm.category || null;
+      let categoryIdToSend = null;
+      try {
+        if (categoryToSend && Array.isArray(categoriesList) && categoriesList.length > 0) {
+          const found = categoriesList.find(c => String(c.id) === String(categoryToSend) || String(c.slug) === String(categoryToSend) || String(c.name) === String(categoryToSend));
+          if (found) {
+            categoryToSend = found.slug ?? String(found.id);
+            categoryIdToSend = found.id ?? null;
+          } else if ((String(categoryToSend) || '').match(/^\d+$/)) {
+            categoryIdToSend = Number(categoryToSend);
+          }
+        } else if (categoryToSend && (String(categoryToSend) || '').match(/^\d+$/)) {
+          categoryIdToSend = Number(categoryToSend);
+        }
+      } catch (e) {}
+
       const updatePayload = {
         ...hotelFormRest,
         distance: distanceRaw,
@@ -910,6 +989,8 @@ const HotelAvailabilityManager = () => {
         walking_distance: walkingDistance,
         reselling_allowed: !!resellingAllowed,
         ...(isOwner ? { prices: pricesPayload } : {}),
+        ...(categoryToSend ? { category: categoryToSend } : {}),
+        ...(categoryIdToSend ? { category_id: categoryIdToSend } : {})
       };
 
         // Debug: log payload about to be sent (helps diagnose server 403/400)
@@ -1532,7 +1613,15 @@ const HotelAvailabilityManager = () => {
     // Fetch existing rooms for this hotel so they are editable
     (async () => {
       // ensure categories are loaded before showing edit modal so dropdown contains latest items
-      try { await fetchCategories(); } catch (e) { /* ignore */ }
+      let freshCats = [];
+      try { freshCats = await fetchCategories(); } catch (e) { /* ignore */ }
+      // If we can resolve the hotel's category to an id, update the form so the select shows correctly
+      try {
+        if (freshCats && freshCats.length > 0) {
+          const matched = freshCats.find(c => String(c.slug) === String(hotel.category) || String(c.id) === String(hotel.category) || String(c.name) === String(hotel.category));
+          if (matched) setHotelForm(prev => ({ ...prev, category: matched.id }));
+        }
+      } catch (e) {}
       try {
         const resp = await api.get(`/hotel-rooms/`, { params: { hotel: hotel.id } });
         const list = resp?.data || [];
@@ -1565,7 +1654,15 @@ const HotelAvailabilityManager = () => {
   }
   // Filter by category
   if (categoryFilter && categoryFilter !== "all") {
-    filteredHotels = filteredHotels.filter(h => String(h.category) === String(categoryFilter));
+    // categoryFilter is an id from the select. Find the category object and
+    // compare hotels by the category's slug or id to support servers that
+    // return either a slug or an id for the `category` field.
+    const selectedCat = (categoriesList || []).find(c => String(c.id) === String(categoryFilter));
+    if (selectedCat) {
+      filteredHotels = filteredHotels.filter(h => String(h.category) === String(selectedCat.slug) || String(h.category) === String(selectedCat.id));
+    } else {
+      filteredHotels = filteredHotels.filter(h => String(h.category) === String(categoryFilter));
+    }
   }
   // Text search (name/address)
   if (searchTerm && searchTerm.trim() !== "") {
@@ -1595,7 +1692,7 @@ const HotelAvailabilityManager = () => {
     <table className="table table-bordered">
       <thead>
         <tr>
-          <th>Name</th>
+          <th style={{ position: 'sticky', left: 0, zIndex: 6, background: '#fff', boxShadow: '2px 0 4px rgba(0,0,0,0.05)' }}>Name</th>
           <th>City</th>
           <th>Category</th>
           <th>Distance</th>
@@ -1661,7 +1758,7 @@ const HotelAvailabilityManager = () => {
 
           return (
             <tr key={hotel.id}>
-              <td>{hotel.name}</td>
+              <td style={{ position: 'sticky', left: 0, zIndex: 5, background: '#fff' }}>{hotel.name}</td>
               <td>{getCityName(hotel.city)}</td>
               <td>{getCategoryBadge(hotel.category)}</td>
               <td>{hotel.distance != null ? hotel.distance : '-'}</td>
@@ -1706,6 +1803,29 @@ const HotelAvailabilityManager = () => {
     // Fallback: show raw value
     return <Badge bg="secondary">{String(category)}</Badge>;
   };
+
+  // Deduplicate cities list by normalized name and prefer entries that have an id
+  const dedupedCities = useMemo(() => {
+    try {
+      const map = new Map();
+      (Array.isArray(cities) ? cities : []).forEach(c => {
+        const rawName = c && c.name ? String(c.name) : '';
+        const key = rawName.trim().toLowerCase();
+        if (!map.has(key)) {
+          map.set(key, c);
+        } else {
+          const existing = map.get(key);
+          // prefer entry that has an id
+          if ((!existing?.id || existing.id === null) && c?.id) map.set(key, c);
+        }
+      });
+      const arr = Array.from(map.values());
+      arr.sort((a, b) => String(a?.name || '').localeCompare(String(b?.name || '')));
+      return arr;
+    } catch (e) {
+      return Array.isArray(cities) ? cities : [];
+    }
+  }, [cities]);
 
   return (
     <>
@@ -1784,7 +1904,7 @@ const HotelAvailabilityManager = () => {
               >
                 <option value="">All</option>
                 {categoriesList.map(cat => (
-                  <option key={cat.slug || cat.name} value={cat.slug || cat.name}>{cat.name}</option>
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
               </Form.Select>
             </Form.Group>
@@ -1859,7 +1979,7 @@ const HotelAvailabilityManager = () => {
                     </div>
                     <div className="ms-3">
                       <h6 className="text-muted mb-1">Cities</h6>
-                      <h3 className="mb-0">{cities.length}</h3>
+                      <h3 className="mb-0">{dedupedCities.length}</h3>
                     </div>
                   </div>
                 </Card.Body>
@@ -1900,11 +2020,11 @@ const HotelAvailabilityManager = () => {
                 </Col>
                 <Col md={4}>
                   <Form.Select value={selectedCity} onChange={(e) => setSelectedCity(e.target.value)}>
-                    <option value="">All Cities</option>
-                    {cities.map(city => (
-                      <option key={city.id} value={city.id}>{city.name}</option>
-                    ))}
-                  </Form.Select>
+                      <option value="">All Cities</option>
+                      {dedupedCities.map(city => (
+                        <option key={city.id ?? city.name} value={city.id}>{city.name}</option>
+                      ))}
+                    </Form.Select>
                 </Col>
                 <Col md={2}>
                   <Button 
@@ -1932,7 +2052,7 @@ const HotelAvailabilityManager = () => {
                 <Table hover responsive>
                   <thead style={{ backgroundColor: "#f8f9fa" }}>
                     <tr>
-                      <th style={{ minWidth: "200px" }}>Hotel Name</th>
+                      <th style={{ minWidth: "200px", position: 'sticky', left: 0, zIndex: 7, background: '#fff', boxShadow: '2px 0 4px rgba(0,0,0,0.05)' }}>Hotel Name</th>
                       <th style={{ minWidth: "120px" }}>City</th>
                       <th style={{ minWidth: "200px" }}>Address</th>
                       <th style={{ minWidth: "100px" }}>Category</th>
@@ -1971,7 +2091,7 @@ const HotelAvailabilityManager = () => {
                     ) : (
                       filteredHotels.map(hotel => (
                         <tr key={hotel.id}>
-                          <td>
+                          <td style={{ position: 'sticky', left: 0, zIndex: 6, background: '#fff' }}>
                             <div className="d-flex align-items-center">
                               <Hotel size={20} className="me-2 text-primary" />
                               <div>
@@ -2212,8 +2332,8 @@ const HotelAvailabilityManager = () => {
                           onChange={(e) => setHotelForm({ ...hotelForm, city: e.target.value })}
                         >
                           <option value="">Select City</option>
-                          {cities.map(city => (
-                            <option key={city.id} value={city.id}>{city.name}</option>
+                          {dedupedCities.map(city => (
+                            <option key={city.id ?? city.name} value={city.id}>{city.name}</option>
                           ))}
                         </Form.Select>
                       </Form.Group>
@@ -2252,12 +2372,12 @@ const HotelAvailabilityManager = () => {
                             onChange={(e) => setHotelForm({ ...hotelForm, category: e.target.value })}
                           >
                             {Array.isArray(categoriesList) && categoriesList.length > 0 ? (
-                              categoriesList.map(cat => (
-                                <option key={cat.id} value={cat.slug || cat.name}>{cat.name}</option>
-                              ))
-                            ) : (
-                              <option value="">-- No categories --</option>
-                            )}
+                                categoriesList.map(cat => (
+                                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                ))
+                              ) : (
+                                <option value="">-- No categories --</option>
+                              )}
                           </Form.Select>
                           <Button variant="outline-primary" className="ms-2" onClick={async () => { setShowCategoryModal(true); await fetchCategories(); }} title="Manage Categories">+</Button>
                         </div>
@@ -2746,8 +2866,8 @@ const HotelAvailabilityManager = () => {
                           onChange={(e) => setHotelForm({ ...hotelForm, city: e.target.value })}
                         >
                           <option value="">Select City</option>
-                          {cities.map(city => (
-                            <option key={city.id} value={city.id}>{city.name}</option>
+                          {dedupedCities.map(city => (
+                            <option key={city.id ?? city.name} value={city.id}>{city.name}</option>
                           ))}
                         </Form.Select>
                       </Form.Group>
@@ -2786,7 +2906,7 @@ const HotelAvailabilityManager = () => {
                         >
                           {categoriesList && categoriesList.length > 0 ? (
                             categoriesList.map(cat => (
-                              <option key={cat.id} value={cat.slug}>{cat.name}</option>
+                              <option key={cat.id} value={cat.id}>{cat.name}</option>
                             ))
                           ) : (
                             <option value="">-- No categories --</option>

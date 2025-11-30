@@ -53,7 +53,7 @@ from django.utils import timezone
 from rest_framework import generics
 from .serializers import PublicUmrahPackageListSerializer, PublicUmrahPackageDetailSerializer
 from django.utils.text import slugify
-
+from decimal import Decimal
 
 class VisaViewSet(ModelViewSet):
     """
@@ -729,6 +729,20 @@ class UmrahVisaPriceTwoViewSet(ModelViewSet):
         if not organization_id:
             raise PermissionDenied("Missing 'organization' query parameter.")
         return UmrahVisaPriceTwo.objects.filter(organization_id=organization_id)
+    
+    def perform_create(self, serializer):
+        """Set organization from query param (or request data) before saving."""
+        org_id = self.request.query_params.get("organization") or self.request.data.get("organization")
+        if not org_id:
+            raise PermissionDenied("Missing 'organization' query parameter.")
+        try:
+            from organization.models import Organization
+            org = Organization.objects.get(pk=int(org_id))
+        except Exception:
+            raise PermissionDenied("Invalid 'organization' query parameter.")
+
+        # Pass organization explicitly to serializer.save() so organization_id is not null
+        serializer.save(organization=org)
 
 
 class OnlyVisaPriceViewSet(ModelViewSet):
@@ -738,7 +752,105 @@ class OnlyVisaPriceViewSet(ModelViewSet):
         organization_id = self.request.query_params.get("organization")
         if not organization_id:
             raise PermissionDenied("Missing 'organization' query parameter.")
-        return OnlyVisaPrice.objects.filter(organization_id=organization_id)
+        qs = OnlyVisaPrice.objects.filter(organization_id=organization_id)
+
+        # Optional filters exposed to the agent Umrah calculator and admin UI
+        visa_option = self.request.query_params.get('visa_option')
+        if visa_option:
+            qs = qs.filter(visa_option=visa_option)
+
+        city_id = self.request.query_params.get('city_id') or self.request.query_params.get('city')
+        if city_id:
+            try:
+                qs = qs.filter(city_id=int(city_id))
+            except Exception:
+                pass
+
+        is_transport = self.request.query_params.get('is_transport')
+        if is_transport is not None:
+            if str(is_transport).lower() in ('1', 'true', 'yes'):
+                qs = qs.filter(is_transport=True)
+            elif str(is_transport).lower() in ('0', 'false', 'no'):
+                qs = qs.filter(is_transport=False)
+
+        # Filter by sector id (single) or multiple comma-separated ids
+        sector_ids = self.request.query_params.get('sector_id') or self.request.query_params.get('sectors')
+        if sector_ids:
+            try:
+                ids = [int(s) for s in str(sector_ids).split(',') if s.strip()]
+                if ids:
+                    qs = qs.filter(sectors__id__in=ids).distinct()
+            except Exception:
+                pass
+
+        return qs
+
+    def list(self, request, *args, **kwargs):
+        """
+        Extend list to optionally compute totals when query includes pax counts and
+        `include_totals=true`. Returns the serialized objects and, when requested,
+        attaches a `totals` object per entry with adult/child/infant and grand totals.
+        """
+        include_totals = request.query_params.get('include_totals')
+        qs = self.get_queryset()
+        serializer = self.get_serializer(qs, many=True)
+        data = serializer.data
+
+        if include_totals and str(include_totals).lower() in ('1', 'true', 'yes'):
+            try:
+                adult_count = int(request.query_params.get('adult_count') or 0)
+            except Exception:
+                adult_count = 0
+            try:
+                child_count = int(request.query_params.get('child_count') or 0)
+            except Exception:
+                child_count = 0
+            try:
+                infant_count = int(request.query_params.get('infant_count') or 0)
+            except Exception:
+                infant_count = 0
+
+            # Build a map from id -> model instance for numeric fields access
+            model_map = {str(obj.id): obj for obj in qs}
+
+            out = []
+            for item in data:
+                obj_id = str(item.get('id'))
+                obj = model_map.get(obj_id)
+                if not obj:
+                    out.append(item)
+                    continue
+
+                # Safe numeric extraction; fall back to Decimal('0')
+                def _num(v):
+                    try:
+                        if v is None:
+                            return Decimal('0')
+                        return Decimal(str(v))
+                    except Exception:
+                        return Decimal('0')
+
+                adult_price = _num(getattr(obj, 'adult_selling_price', None) or item.get('adult_selling_price'))
+                child_price = _num(getattr(obj, 'child_selling_price', None) or item.get('child_selling_price'))
+                infant_price = _num(getattr(obj, 'infant_selling_price', None) or item.get('infant_selling_price'))
+
+                adult_total = adult_price * Decimal(adult_count)
+                child_total = child_price * Decimal(child_count)
+                infant_total = infant_price * Decimal(infant_count)
+                grand_total = adult_total + child_total + infant_total
+
+                # Attach totals as floats for JSON friendliness
+                item['totals'] = {
+                    'adult_total': float(adult_total),
+                    'child_total': float(child_total),
+                    'infant_total': float(infant_total),
+                    'grand_total': float(grand_total),
+                }
+                out.append(item)
+
+            return Response(out)
+
+        return Response(data)
 
 class TransportSectorPriceViewSet(ModelViewSet):
     serializer_class = TransportSectorPriceSerializer

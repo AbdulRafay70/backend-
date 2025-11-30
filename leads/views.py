@@ -16,6 +16,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework import status
 from drf_spectacular.utils import extend_schema, OpenApiExample
+from django.db import transaction
+from datetime import date
 
 
 @extend_schema(
@@ -120,30 +122,44 @@ class LeadRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
 class FollowUpCreateAPIView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated, IsBranchUser]
     serializer_class = FollowUpHistorySerializer
-
     def create(self, request, *args, **kwargs):
-        resp = super().create(request, *args, **kwargs)
-        # Optionally update lead next_followup_date and last_contacted_date
-        lead_id = request.data.get("lead")
-        try:
-            lead = Lead.objects.get(pk=lead_id)
-            # Update next follow-up date/time if provided
-            lead.next_followup_date = request.data.get("next_followup_date") or lead.next_followup_date
-            # accept next_followup_time as well
-            if request.data.get("next_followup_time"):
-                try:
-                    lead.next_followup_time = request.data.get("next_followup_time")
-                except Exception:
-                    pass
+        # Build a mutable copy of incoming data so we can set defaults
+        data = request.data.copy() if hasattr(request.data, 'copy') else dict(request.data)
+        # Default followup_date to today and contacted_via to 'call' when missing
+        if not data.get('followup_date'):
+            data['followup_date'] = date.today().isoformat()
+        if not data.get('contacted_via'):
+            data['contacted_via'] = 'call'
 
-            # Update last contacted date from followup_date if provided
-            lead.last_contacted_date = request.data.get("followup_date") or lead.last_contacted_date
-            # If followup_time provided, store it as part of next_followup_time if appropriate
-            # (lead model does not have a separate last_contacted_time field)
-            lead.save()
-        except Exception:
-            pass
-        return resp
+        serializer = self.get_serializer(data=data)
+        serializer.is_valid(raise_exception=True)
+
+        # Save inside a transaction so followup creation and lead updates are atomic
+        with transaction.atomic():
+            instance = serializer.save(created_by_user=self.request.user)
+
+            # Update lead meta fields if lead present
+            lead_obj = None
+            try:
+                lead_id = data.get('lead') or getattr(instance, 'lead_id', None)
+                if lead_id:
+                    lead_obj = Lead.objects.select_for_update().get(pk=lead_id)
+                    # Update next follow-up date/time if provided
+                    if data.get('next_followup_date'):
+                        lead_obj.next_followup_date = data.get('next_followup_date')
+                    if data.get('next_followup_time'):
+                        try:
+                            lead_obj.next_followup_time = data.get('next_followup_time')
+                        except Exception:
+                            pass
+                    # Update last contacted date from followup_date
+                    if data.get('followup_date'):
+                        lead_obj.last_contacted_date = data.get('followup_date')
+                    lead_obj.save()
+            except Lead.DoesNotExist:
+                pass
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 class LoanPromiseAPIView(generics.CreateAPIView):

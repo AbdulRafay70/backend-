@@ -1,7 +1,7 @@
 from rest_framework.serializers import ModelSerializer
 from organization.serializers import OrganizationSerializer
 from .models import City
-from booking.models import VehicleType
+from booking.models import VehicleType, Sector
 from users.serializers import UserSerializer
 from .models import (
     Visa,
@@ -11,7 +11,6 @@ from .models import (
     Shirka,
     UmrahVisaPrice,
     UmrahVisaPriceTwo,
-    UmrahVisaPriceTwoHotel,
     TransportSectorPrice,
     Airlines,
     City,
@@ -111,39 +110,42 @@ class UmrahVisaPriceSerializer(ModelSerializer):
         fields = "__all__"
 
 
-class UmrahVisaPriceTwoHotelSerializer(ModelSerializer):
-    hotel_name = serializers.CharField(
-        source="hotel.name", read_only=True
-    )  # optional: include hotel name
-
-    class Meta:
-        model = UmrahVisaPriceTwoHotel
-        exclude = ["umrah_visa_price"]
-
-
 class UmrahVisaPriceTwoSerializer(serializers.ModelSerializer):
-    hotel_details = UmrahVisaPriceTwoHotelSerializer(many=True, required=False)
     vehicle_types = serializers.PrimaryKeyRelatedField(
         many=True,
         queryset=VehicleType.objects.all(),
         required=False
     )
     organization = OrganizationSerializer(read_only=True)
+    # Accept legacy single-price keys from older frontends and map them
+    adault_price = serializers.FloatField(write_only=True, required=False)
+    child_price = serializers.FloatField(write_only=True, required=False)
+    infant_price = serializers.FloatField(write_only=True, required=False)
 
     class Meta:
         model = UmrahVisaPriceTwo
         fields = "__all__"
 
     def create(self, validated_data):
-        hotel_data = validated_data.pop("hotel_details", [])
         vehicle_types = validated_data.pop("vehicle_types", [])
+
+        # Map legacy single-price fields to new explicit selling fields when provided
+        legacy_adult = validated_data.pop("adault_price", None)
+        legacy_child = validated_data.pop("child_price", None)
+        legacy_infant = validated_data.pop("infant_price", None)
+
+        if legacy_adult is not None and not validated_data.get("adult_selling_price"):
+            validated_data["adult_selling_price"] = legacy_adult
+        if legacy_child is not None and not validated_data.get("child_selling_price"):
+            validated_data["child_selling_price"] = legacy_child
+        if legacy_infant is not None and not validated_data.get("infant_selling_price"):
+            validated_data["infant_selling_price"] = legacy_infant
+
 
         # create main record
         visa_price = UmrahVisaPriceTwo.objects.create(**validated_data)
 
         # create related hotel_details
-        for hotel in hotel_data:
-            UmrahVisaPriceTwoHotel.objects.create(umrah_visa_price=visa_price, **hotel)
 
         # set ManyToMany vehicle_types
         if vehicle_types:
@@ -152,7 +154,6 @@ class UmrahVisaPriceTwoSerializer(serializers.ModelSerializer):
         return visa_price
 
     def update(self, instance, validated_data):
-        hotel_data = validated_data.pop("hotel_details", None)
         vehicle_types = validated_data.pop("vehicle_types", None)
 
         # update basic fields
@@ -161,12 +162,7 @@ class UmrahVisaPriceTwoSerializer(serializers.ModelSerializer):
         instance.save()
 
         # reset & recreate hotel_details if provided
-        if hotel_data is not None:
-            instance.hotel_details.all().delete()
-            for hotel in hotel_data:
-                UmrahVisaPriceTwoHotel.objects.create(
-                    umrah_visa_price=instance, **hotel
-                )
+        
 
         # update vehicle_types if provided
         if vehicle_types is not None:
@@ -196,7 +192,7 @@ class AirlinesSerializer(ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        request = self.context.get('request')
+        
         # Provide full URL for logo if available
         try:
             if instance.logo and hasattr(instance.logo, 'url'):
@@ -220,19 +216,89 @@ class OnlyVisaPriceSerializer(serializers.ModelSerializer):
     # nested city data read-only
     city = CitySerializer(read_only=True)
     city_id = serializers.PrimaryKeyRelatedField(
-        queryset=City.objects.all(), source="city", write_only=True
+        queryset=City.objects.all(), source="city", write_only=True, required=False, allow_null=True
     )
 
+    # Accept legacy single-price keys for backward compatibility
+    adault_price = serializers.FloatField(write_only=True, required=False)
+    child_price = serializers.FloatField(write_only=True, required=False)
+    infant_price = serializers.FloatField(write_only=True, required=False)
+     # Accept frontend variants for visa_option and map them to model choices
+    visa_option = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     class Meta:
         model = OnlyVisaPrice
         fields = [
             "id",
             "organization",
             "adault_price", "child_price", "infant_price",
-            "type", "min_days", "max_days",
+            "adult_selling_price", "adult_purchase_price",
+            "child_selling_price", "child_purchase_price",
+            "infant_selling_price", "infant_purchase_price",
+            "type",
             "city", "city_id",
-            "status"
+            "status",
+            "title",
+            "is_transport",
+            "sectors",
+            # unified option for only/long_term
+            "visa_option",
+            # long-term optional fields
+            "validity_days",
+            "multi_entry",
+            "long_term_discount_pct",
         ]
+
+    # Allow setting sectors by id list
+    sectors = serializers.PrimaryKeyRelatedField(many=True, queryset=Sector.objects.all(), required=False)
+
+    def create(self, validated_data):
+        # extract sectors list if provided so we can assign ManyToMany after create
+        sectors_data = validated_data.pop('sectors', None)
+        # map legacy keys to explicit per-person selling fields when provided
+        legacy_adult = validated_data.pop("adault_price", None)
+        legacy_child = validated_data.pop("child_price", None)
+        legacy_infant = validated_data.pop("infant_price", None)
+
+        if legacy_adult is not None and not validated_data.get("adult_selling_price"):
+            validated_data["adult_selling_price"] = legacy_adult
+        if legacy_child is not None and not validated_data.get("child_selling_price"):
+            validated_data["child_selling_price"] = legacy_child
+        if legacy_infant is not None and not validated_data.get("infant_selling_price"):
+            validated_data["infant_selling_price"] = legacy_infant
+
+        # Map frontend variant 'longterm' to model choice 'long_term'
+        vopt = validated_data.get('visa_option')
+        if isinstance(vopt, str) and vopt.lower() == 'longterm':
+            validated_data['visa_option'] = 'long_term'
+
+        instance = super().create(validated_data)
+        if sectors_data is not None:
+            instance.sectors.set(sectors_data)
+        return instance
+
+    def update(self, instance, validated_data):
+        # extract sectors to set after update
+        sectors_data = validated_data.pop('sectors', None)
+        legacy_adult = validated_data.pop("adault_price", None)
+        legacy_child = validated_data.pop("child_price", None)
+        legacy_infant = validated_data.pop("infant_price", None)
+
+        if legacy_adult is not None and not validated_data.get("adult_selling_price"):
+            validated_data["adult_selling_price"] = legacy_adult
+        if legacy_child is not None and not validated_data.get("child_selling_price"):
+            validated_data["child_selling_price"] = legacy_child
+        if legacy_infant is not None and not validated_data.get("infant_selling_price"):
+            validated_data["infant_selling_price"] = legacy_infant
+
+        # Map frontend variant 'longterm' to model choice 'long_term'
+        vopt = validated_data.get('visa_option')
+        if isinstance(vopt, str) and vopt.lower() == 'longterm':
+            validated_data['visa_option'] = 'long_term'
+
+        instance = super().update(instance, validated_data)
+        if sectors_data is not None:
+            instance.sectors.set(sectors_data)
+        return instance
 
 class FoodPriceSerializer(ModelSerializer):
     city = CitySerializer(read_only=True)

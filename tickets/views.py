@@ -32,6 +32,13 @@ from users.models import GroupExtension
                 required=False,
                 description='Organization ID to filter tickets (required for non-superusers)'
             ),
+            OpenApiParameter(
+                name='include_past',
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Set to '1' or 'true' to include past/expired tickets in the list",
+            ),
         ],
         responses=TicketListSerializer(many=True),
         description='List all available tickets. Superusers see all tickets, other users need to provide organization parameter.'
@@ -127,6 +134,9 @@ class TicketViewSet(ModelViewSet):
         
         # Always require organization parameter
         organization_id = self.request.query_params.get("organization")
+        # Optional: allow callers to opt-in to include past tickets
+        include_past = self.request.query_params.get("include_past")
+        include_past_flag = str(include_past).lower() in ("1", "true", "yes", "on") if include_past is not None else False
         
         # Debug logging
         print(f"DEBUG TicketViewSet.get_queryset - organization: {organization_id}")
@@ -201,15 +211,17 @@ class TicketViewSet(ModelViewSet):
         # Exclude tickets with no available seats
         queryset = queryset.filter(left_seats__gt=0)
 
-        # Exclude tickets with passed departure dates. Accept tickets that either
+        # Exclude tickets with passed departure dates by default. Accept tickets that either
         # have future trip_details departure datetimes or have a ticket-level
         # departure_date in the future (legacy data may use ticket fields).
-        now = timezone.now()
-        time_filter = (
-            Q(trip_details__departure_date_time__gte=now) |
-            Q(departure_date__gte=now.date())
-        )
-        queryset = queryset.filter(time_filter)
+        # If `include_past` is provided and truthy, skip this time-based filter.
+        if not include_past_flag:
+            now = timezone.now()
+            time_filter = (
+                Q(trip_details__departure_date_time__gte=now) |
+                Q(departure_date__gte=now.date())
+            )
+            queryset = queryset.filter(time_filter)
 
         # Separate own organization from linked organizations
         own_org_id = int(organization_id)
@@ -352,6 +364,9 @@ class HotelsViewSet(ModelViewSet):
     def get_queryset(self):
         from organization.models import OrganizationLink
         
+        # Debugging previously added here was removed.
+        # If further investigation is needed, enable structured logging instead of prints.
+
         # Check if user is superuser
         if self.request.user.is_superuser:
             # Superadmin can see all hotels

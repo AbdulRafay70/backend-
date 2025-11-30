@@ -420,6 +420,10 @@ class HotelContactDetailsSerializer(serializers.ModelSerializer):
 
 
 class HotelsSerializer(serializers.ModelSerializer):
+    # Accept free-form category values (allow frontend to send slug/name/id)
+    category = serializers.CharField(required=False, allow_blank=True)
+    # Allow clients to supply `category_id` (write-only) so we can map it server-side
+    category_id = serializers.IntegerField(required=False, write_only=True)
     prices = HotelPricesSerializer(many=True)
     contact_details = HotelContactDetailsSerializer(many=True, required=False)
     photos = serializers.ListField(child=serializers.CharField(), write_only=True, required=False)
@@ -431,6 +435,40 @@ class HotelsSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
     def create(self, validated_data):
+        # Allow clients to send a category by id (category_id) or as an object/number
+        # Map it to the string value expected by the Hotels.category field (slug or name)
+        try:
+            from .models import HotelCategory
+            if 'category_id' in validated_data and validated_data.get('category_id'):
+                try:
+                    cid = int(validated_data.pop('category_id'))
+                    hc = HotelCategory.objects.filter(id=cid).first()
+                    if hc:
+                        # prefer slug when present
+                        validated_data['category'] = hc.slug or hc.name
+                except Exception:
+                    # ignore mapping errors and leave category as-is
+                    validated_data.pop('category_id', None)
+            # If category provided as numeric or object with id, map similarly
+            if 'category' in validated_data:
+                cat_val = validated_data.get('category')
+                try:
+                    # numeric string or int -> lookup by id
+                    if isinstance(cat_val, (int,)) or (isinstance(cat_val, str) and cat_val.isdigit()):
+                        hc = HotelCategory.objects.filter(id=int(cat_val)).first()
+                        if hc:
+                            validated_data['category'] = hc.slug or hc.name
+                    # dict with id
+                    elif isinstance(cat_val, dict) and cat_val.get('id'):
+                        hc = HotelCategory.objects.filter(id=int(cat_val.get('id'))).first()
+                        if hc:
+                            validated_data['category'] = hc.slug or hc.name
+                except Exception:
+                    pass
+        except Exception:
+            # if models import fails for any reason, continue without mapping
+            pass
+
         prices_data = validated_data.pop("prices", [])
         contact_details_data = validated_data.pop("contact_details", [])
         photos = validated_data.pop("photos", [])
@@ -478,6 +516,33 @@ class HotelsSerializer(serializers.ModelSerializer):
         return hotel
 
     def update(self, instance, validated_data):
+        # Map incoming category/category_id values to the expected category string
+        try:
+            from .models import HotelCategory
+            if 'category_id' in validated_data and validated_data.get('category_id'):
+                try:
+                    cid = int(validated_data.pop('category_id'))
+                    hc = HotelCategory.objects.filter(id=cid).first()
+                    if hc:
+                        validated_data['category'] = hc.slug or hc.name
+                except Exception:
+                    validated_data.pop('category_id', None)
+            if 'category' in validated_data:
+                cat_val = validated_data.get('category')
+                try:
+                    if isinstance(cat_val, (int,)) or (isinstance(cat_val, str) and str(cat_val).isdigit()):
+                        hc = HotelCategory.objects.filter(id=int(cat_val)).first()
+                        if hc:
+                            validated_data['category'] = hc.slug or hc.name
+                    elif isinstance(cat_val, dict) and cat_val.get('id'):
+                        hc = HotelCategory.objects.filter(id=int(cat_val.get('id'))).first()
+                        if hc:
+                            validated_data['category'] = hc.slug or hc.name
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
         prices_data = validated_data.pop("prices", None)
         contact_details_data = validated_data.pop("contact_details", None)
         photos = validated_data.pop("photos", None)

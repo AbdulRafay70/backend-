@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>HR — Commissions (Wireframe)</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="topbar">
+        <div class="container">
+          <h1 class="app-title">Commissions</h1>
+          <div class="actions">
+            <button class="btn primary">Mark Paid</button>
+            <button class="btn ghost">Export CSV</button>
+          </div>
+        </div>
+      </header>
+
+      <nav class="wire-nav container">
+        <a href="index.html">Index</a>
+        <a href="employees_list.html">Employees</a>
+        <a href="employee_profile.html">Profile</a>
+        <a href="attendance_dashboard.html">Attendance</a>
+        <a href="movements.html">Movements</a>
+      </nav>
+
+      <main class="container" style="padding:20px 0">
+        <section style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+          <input placeholder="Search by employee, booking or note" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border)" />
+          <select style="padding:10px;border-radius:8px;border:1px solid var(--border)">
+            <option>All</option>
+            <option>Unpaid</option>
+            <option>Paid</option>
+          </select>
+          <button class="btn small">Apply</button>
+        </section>
+
+        <section class="card-section">
+          <table class="table">
+            <thead>
+              <tr><th>Employee</th><th>Amount</th><th>Booking</th><th>Status</th><th>Due Date</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Aisha Khan</td>
+                <td>PKR 4,500</td>
+                <td>#BKG-1023</td>
+                <td><span class="badge warn">Unpaid</span></td>
+                <td>2025-11-30</td>
+                <td>
+                  <button class="btn tiny">Mark Paid</button>
+                  <button class="btn ghost tiny">Details</button>
+                </td>
+              </tr>
+              <tr>
+                <td>Usman Tariq</td>
+                <td>PKR 1,200</td>
+                <td>#BKG-0999</td>
+                <td><span class="badge success">Paid</span></td>
+                <td>2025-10-15</td>
+                <td>
+                  <button class="btn ghost tiny">View</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <div class="container muted">Commissions wireframe</div>
+      </footer>
+    </div>
+    <div id="wf-modal" class="wf-modal" aria-hidden="true">
+      <div class="wf-modal-backdrop" data-wf-close></div>
+      <div class="wf-modal-content">
+        <button class="wf-close" data-wf-close>×</button>
+        <div id="wf-modal-body" class="wf-modal-body"></div>
+      </div>
+    </div>
+    <script src="wireframe.js"></script>
+  </body>
+</html>

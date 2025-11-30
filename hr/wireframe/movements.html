@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>HR — Movements (Wireframe)</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="topbar">
+        <div class="container">
+          <h1 class="app-title">Movements</h1>
+          <div class="actions">
+            <button class="btn primary">Start Movement</button>
+            <button class="btn ghost">Filter</button>
+          </div>
+        </div>
+      </header>
+
+      <nav class="wire-nav container">
+        <a href="index.html">Index</a>
+        <a href="employees_list.html">Employees</a>
+        <a href="employee_profile.html">Profile</a>
+        <a href="attendance_dashboard.html">Attendance</a>
+        <a href="commissions.html">Commissions</a>
+      </nav>
+
+      <main class="container" style="padding:20px 0">
+        <section style="display:flex;gap:12px;align-items:center;margin-bottom:12px">
+          <input placeholder="Search employee or destination" style="flex:1;padding:10px;border-radius:8px;border:1px solid var(--border)" />
+          <select style="padding:10px;border-radius:8px;border:1px solid var(--border)">
+            <option>All</option>
+            <option>In-progress</option>
+            <option>Completed</option>
+          </select>
+        </section>
+
+        <section class="card-section">
+          <div class="movement-item">
+            <div class="movement-meta">
+              <div class="avatar">AK</div>
+              <div>
+                <div class="muted">Aisha Khan</div>
+                <div class="small">Destination: Airport — ETA 15:30</div>
+              </div>
+            </div>
+            <div class="movement-actions">
+              <div class="muted">Started: 14:00</div>
+              <button class="btn small">End</button>
+              <button class="btn ghost small">Details</button>
+            </div>
+          </div>
+
+          <div class="movement-item">
+            <div class="movement-meta">
+              <div class="avatar">UT</div>
+              <div>
+                <div class="muted">Usman Tariq</div>
+                <div class="small">Destination: Client Office — ETA 16:45</div>
+              </div>
+            </div>
+            <div class="movement-actions">
+              <div class="muted">Planned</div>
+              <button class="btn small">Start</button>
+              <button class="btn ghost small">Edit</button>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <div class="container muted">Movements wireframe</div>
+      </footer>
+    </div>
+    <div id="wf-modal" class="wf-modal" aria-hidden="true">
+      <div class="wf-modal-backdrop" data-wf-close></div>
+      <div class="wf-modal-content">
+        <button class="wf-close" data-wf-close>×</button>
+        <div id="wf-modal-body" class="wf-modal-body"></div>
+      </div>
+    </div>
+    <script src="wireframe.js"></script>
+  </body>
+</html>

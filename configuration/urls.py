@@ -31,6 +31,7 @@ urlpatterns = [
     path("", include("packages.urls")),  
     path("", include("tickets.urls")), 
     path("", include("booking.urls")),
+    path("", include("hr.urls")),  # HR App URLs
     path("", include("ledger.urls")),
     path("", include("finance.urls")),  # Finance & Reports Module
     path("", include("payments.urls")),  # Kuickpay Payment Gateway

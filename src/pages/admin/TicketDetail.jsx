@@ -4,7 +4,7 @@ import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import { NavLink } from "react-router-dom";
 import { Search } from "lucide-react";
-import axios from "axios";
+import api from "../../utils/Api";
 import { formatDateTimeForInput } from "../../utils/dateUtils";
 
 const TicketDetail = () => {
@@ -49,12 +49,8 @@ const TicketDetail = () => {
       const orgId = typeof selectedOrg === "object" ? selectedOrg.id : selectedOrg;
       try {
         const [airlinesRes, citiesRes] = await Promise.all([
-          axios.get(`http://127.0.0.1:8000/api/airlines/?organization=${orgId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get(`http://127.0.0.1:8000/api/cities/?organization=${orgId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
+          api.get(`/airlines/`, { params: { organization: orgId } }),
+          api.get(`/cities/`, { params: { organization: orgId } }),
         ]);
 
         setAirlines(airlinesRes.data);
@@ -83,23 +79,8 @@ const TicketDetail = () => {
       try {
         console.debug("Fetching ticket and bookings", { id, selectedOrg });
         const [ticketResponse, bookingsResponse] = await Promise.all([
-          axios.get(
-            `http://127.0.0.1:8000/api/tickets/${id}/?organization=${orgId}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          ),
-          axios.get(
-            `http://127.0.0.1:8000/api/bookings/`,
-            {
-              params: { ticket_id: id, organization: orgId },
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          )
+          api.get(`/tickets/${id}/`, { params: { organization: orgId } }),
+          api.get(`/bookings/`, { params: { ticket_id: id, organization: orgId } }),
         ]);
 
         if (ticketResponse.status >= 200 && ticketResponse.status < 300) {
@@ -402,11 +383,8 @@ const TicketDetail = () => {
     const orgId = typeof selectedOrg === "object" ? selectedOrg.id : selectedOrg;
     setDeleting(true);
     setError(null);
-    try {
-      await axios.delete(`http://127.0.0.1:8000/api/tickets/${id}/`, {
-        params: { organization: orgId },
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      try {
+      await api.delete(`/tickets/${id}/`, { params: { organization: orgId } });
       setSuccessMessage("Ticket deleted successfully.");
       setShowDeleteModal(false);
       // clear cached ticket list for this org so UI refreshes elsewhere

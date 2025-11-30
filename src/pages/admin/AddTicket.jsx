@@ -13,6 +13,7 @@ const FlightBookingForm = () => {
   // Initial form state - moved to top
   const INITIAL_FORM_STATE = {
     airline: "",
+    returnAirline: "",
     // 1-stop segment fields (departure)
     stop1_airline: "",
     stop1_flightNumber: "",
@@ -56,8 +57,6 @@ const FlightBookingForm = () => {
   return_stop1_arrival: "",
     flightNumber: "",
     returnFlightNumber: "",
-    // returnAirline introduced so round-trip can have separate airline if needed
-    returnAirline: "",
     adultSellingPrice: "",
     adultPurchasePrice: "",
     childSellingPrice: "",
@@ -372,6 +371,87 @@ const FlightBookingForm = () => {
       }
     }
   }, [formData.tripType, formData.returnFlightType, formData.returnArrival, formData.return_stop1_departure]);
+
+  // Automatically compute stopover wait time (departure stop)
+  useEffect(() => {
+    // Only compute outbound wait when the departure flight is actually a 1-Stop itinerary
+    if (formData.flightType !== "1-Stop") {
+      if (formData.stopTime1) {
+        setFormData((prev) => ({ ...prev, stopTime1: "" }));
+      }
+      return;
+    }
+    const computeWait = (stopDepartureIso, tripArrivalIso) => {
+      // Compute time between trip arrival and stop departure: stopDeparture - tripArrival
+      if (!stopDepartureIso || !tripArrivalIso) return "";
+      try {
+        const dep = new Date(stopDepartureIso); // stop departure
+        const arr = new Date(tripArrivalIso); // trip arrival
+        if (isNaN(dep.getTime()) || isNaN(arr.getTime())) return "";
+        const diffMin = Math.round((dep.getTime() - arr.getTime()) / 60000);
+        if (diffMin <= 0) return "0m";
+        // under 1 hour -> minutes
+        if (diffMin < 60) return `${diffMin}m`;
+        // under 24 hours -> hours and minutes
+        const mins = diffMin % 60;
+        const totalHours = Math.floor(diffMin / 60);
+        if (diffMin < 24 * 60) {
+          return mins > 0 ? `${totalHours}h ${mins}m` : `${totalHours}h`;
+        }
+        // 24 hours or more -> show days and hours (omit minutes)
+        const days = Math.floor(totalHours / 24);
+        const remHours = totalHours % 24;
+        return remHours > 0 ? `${days}d ${remHours}h` : `${days}d`;
+      } catch (err) {
+        return "";
+      }
+    };
+
+    // For outbound stop: compare trip arrivalDateTime vs stop1_departureDateTime
+    const newWait = computeWait(formData.stop1_departureDateTime, formData.arrivalDateTime);
+    if (newWait !== formData.stopTime1) {
+      setFormData((prev) => ({ ...prev, stopTime1: newWait }));
+    }
+  }, [formData.stop1_departureDateTime, formData.arrivalDateTime, formData.flightType]);
+
+  // Automatically compute stopover wait time (return stop)
+  useEffect(() => {
+    // Only compute return wait when this is a round-trip with a 1-Stop return
+    if (!(formData.tripType === "Round-trip" && formData.returnFlightType === "1-Stop")) {
+      if (formData.returnStopTime1) {
+        setFormData((prev) => ({ ...prev, returnStopTime1: "" }));
+      }
+      return;
+    }
+    const computeWait = (stopDepartureIso, tripArrivalIso) => {
+      // Compute time between trip arrival and stop departure: stopDeparture - tripArrival
+      if (!stopDepartureIso || !tripArrivalIso) return "";
+      try {
+        const dep = new Date(stopDepartureIso);
+        const arr = new Date(tripArrivalIso);
+        if (isNaN(dep.getTime()) || isNaN(arr.getTime())) return "";
+        const diffMin = Math.round((dep.getTime() - arr.getTime()) / 60000);
+        if (diffMin <= 0) return "0m";
+        if (diffMin < 60) return `${diffMin}m`;
+        const mins = diffMin % 60;
+        const totalHours = Math.floor(diffMin / 60);
+        if (diffMin < 24 * 60) {
+          return mins > 0 ? `${totalHours}h ${mins}m` : `${totalHours}h`;
+        }
+        const days = Math.floor(totalHours / 24);
+        const remHours = totalHours % 24;
+        return remHours > 0 ? `${days}d ${remHours}h` : `${days}d`;
+      } catch (err) {
+        return "";
+      }
+    };
+
+    // For return stop: compare return trip arrival vs return stop departure
+    const newReturnWait = computeWait(formData.return_stop1_departureDateTime, formData.returnArrivalDateTime);
+    if (newReturnWait !== formData.returnStopTime1) {
+      setFormData((prev) => ({ ...prev, returnStopTime1: newReturnWait }));
+    }
+  }, [formData.return_stop1_departureDateTime, formData.returnArrivalDateTime, formData.returnFlightType, formData.tripType]);
 
   // State for airlines and cities data
   const [airlines, setAirlines] = useState([]);
@@ -1668,7 +1748,13 @@ const FlightBookingForm = () => {
 
                           <div className="col-md-3 mt-2">
                             <label htmlFor="" className="Control-label">
-                              Departure City (Stop)
+                              Stop over City (Stop)
+                            </label>
+                            {renderCityOptions("stop1_arrival", formData.stop1_arrival)}
+                          </div>
+                          <div className="col-md-3 mt-2">
+                            <label htmlFor="" className="Control-label">
+                              Arrival  City (Stop)
                             </label>
                             {loading.cities ? (
                               <ShimmerLoader />
@@ -1697,13 +1783,6 @@ const FlightBookingForm = () => {
                               </select>
                             )}
                           </div>
-
-                          <div className="col-md-3 mt-2">
-                            <label htmlFor="" className="Control-label">
-                              Arrival City (Stop)
-                            </label>
-                            {renderCityOptions("stop1_arrival", formData.stop1_arrival)}
-                          </div>
                           <div className="col-md-3 mt-2">
                             <label htmlFor="" className="Control-label">
                               Wait Time
@@ -1716,6 +1795,7 @@ const FlightBookingForm = () => {
                               placeholder="30 Minutes"
                             />
                           </div>
+                          
                         </div>
                       )}
 
