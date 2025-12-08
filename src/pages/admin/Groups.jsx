@@ -8,7 +8,7 @@ import { NavLink } from "react-router-dom";
 import axios from "axios";
 
 const Groups = () => {
-  const API_URL = "https://api.saer.pk/api/groups/";
+  const API_URL = "http://127.0.0.1:8000/api/groups/";
   const [groups, setGroups] = useState([]);
   const [filteredGroups, setFilteredGroups] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -32,7 +32,7 @@ const Groups = () => {
 
   // Create Axios instance with common configuration
   const api = axios.create({
-    baseURL: "https://api.saer.pk",
+    baseURL: "http://127.0.0.1:8000",
     headers: {
       "Content-Type": "application/json",
     },

@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>HR — Employee Profile (Wireframe)</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="topbar">
+        <div class="container">
+          <h1 class="app-title">Employee Profile</h1>
+          <div class="actions">
+            <button class="btn primary">Save</button>
+            <button class="btn ghost">More</button>
+          </div>
+        </div>
+      </header>
+
+      <main class="container layout">
+        <!-- Left column: summary -->
+        <aside class="card summary">
+          <div class="avatar">AK</div>
+          <h2 class="name">Aisha Khan</h2>
+          <p class="muted">Role: <strong>Sales</strong></p>
+          <p class="muted">Joined: <strong>2025-11-01</strong></p>
+          <div class="meta-row">
+            <div>
+              <div class="meta-label">Salary</div>
+              <div class="meta-value">PKR 50,000</div>
+            </div>
+            <div>
+              <div class="meta-label">Status</div>
+              <div class="badge success">Active</div>
+            </div>
+          </div>
+
+          <div class="card-section">
+            <h3>Quick Actions</h3>
+            <button class="btn full">Check In</button>
+            <button class="btn full outline">Start Movement</button>
+            <button class="btn full ghost">Add Commission</button>
+          </div>
+
+          <div class="card-section small">
+            <h3>Contact</h3>
+            <p>Email: aisha@example.com</p>
+            <p>Phone: +92 300 0000000</p>
+          </div>
+        </aside>
+
+        <!-- Right column: tabs & content -->
+        <section class="content">
+          <div class="tabs">
+            <button class="tab active" data-tab="info">Info</button>
+            <button class="tab" data-tab="salary">Salary</button>
+            <button class="tab" data-tab="commissions">Commissions</button>
+            <button class="tab" data-tab="attendance">Attendance</button>
+            <button class="tab" data-tab="movements">Movements</button>
+            <button class="tab" data-tab="punctuality">Punctuality</button>
+          </div>
+
+          <div class="tab-content">
+            <div id="info" class="pane active">
+              <h3>Basic Info</h3>
+              <div class="grid-2">
+                <label>First name<input value="Aisha" /></label>
+                <label>Last name<input value="Khan" /></label>
+                <label>Role<select><option>Sales</option><option>Manager</option></select></label>
+                <label>Joining date<input type="date" value="2025-11-01" /></label>
+              </div>
+              <div class="card-section">
+                <h4>Linked User</h4>
+                <p>Username: <strong>aisha.k</strong> &nbsp; <button class="btn tiny">Unlink</button></p>
+              </div>
+            </div>
+
+            <div id="salary" class="pane">
+              <h3>Salary & History</h3>
+              <div class="card-section">
+                <p>Current salary: <strong>PKR 50,000</strong></p>
+                <button class="btn">Change Salary</button>
+              </div>
+              <table class="table">
+                <thead><tr><th>Date</th><th>Previous</th><th>New</th><th>Reason</th></tr></thead>
+                <tbody>
+                  <tr><td>2025-10-01</td><td>45,000</td><td>50,000</td><td>Annual raise</td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div id="commissions" class="pane">
+              <h3>Commissions</h3>
+              <div class="filters">
+                <input id="commission-booking" placeholder="Booking ID" />
+                <select id="commission-filter"><option>All</option><option>Unpaid</option><option>Paid</option></select>
+                <button class="btn small" id="commission-filter-btn">Filter</button>
+                <button class="btn small outline ms-2" id="add-commission-btn">Add Commission</button>
+              </div>
+              <table class="table" id="commissions-table">
+                <thead><tr><th>ID</th><th>Booking</th><th>Amount</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody>
+                  <tr><td>1</td><td>B123</td><td>100.00</td><td><span class="badge warn">Unpaid</span></td><td><button class="btn tiny handle-mark-paid">Mark Paid</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div id="attendance" class="pane">
+              <h3>Attendance</h3>
+              <div class="card-section small">
+                <label>Date <input id="attendance-date" type="date" value="2025-11-25" /></label>
+                <button class="btn small" id="load-attendance-btn">Load</button>
+                <button class="btn small outline ms-2" id="add-attendance-btn">Add Row</button>
+              </div>
+              <table class="table" id="attendance-table">
+                <thead><tr><th>Date</th><th>Check-in</th><th>Check-out</th><th>Working Hours</th><th>Status</th><th>Actions</th></tr></thead>
+                <tbody>
+                  <tr><td>2025-11-25</td><td>09:05</td><td>18:00</td><td>8h55m</td><td><span class="badge success">Present</span></td><td><button class="btn tiny handle-edit-att">Edit</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div id="movements" class="pane">
+              <h3>Movements</h3>
+              <button class="btn" id="start-movement-btn">Start Movement</button>
+              <table class="table" id="movements-table">
+                <thead><tr><th>ID</th><th>Start</th><th>End</th><th>Duration</th><th>Reason</th><th>Actions</th></tr></thead>
+                <tbody>
+                  <tr><td>12</td><td>14:00</td><td>16:30</td><td>2h30m</td><td>Client meeting</td><td><button class="btn tiny handle-view-mov">View</button></td></tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div id="punctuality" class="pane">
+              <h3>Punctuality</h3>
+              <div style="display:flex;gap:8;margin-bottom:8px;align-items:center">
+                <button class="btn small" id="add-punctuality-btn">Add Record</button>
+                <input id="punctuality-date" type="date" style="max-width:160px" />
+              </div>
+              <table class="table" id="punctuality-table">
+                <thead><tr><th>Date</th><th>Type</th><th>Minutes</th><th>Notes</th></tr></thead>
+                <tbody>
+                  <tr><td>2025-11-10</td><td>Late</td><td>15</td><td>Traffic</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <div class="container muted">HR Wireframe — static demo • Open `/hr/wireframe/employee_profile.html` in browser</div>
+      </footer>
+    </div>
+    </div>
+
+    <script>
+      // small tab switcher
+      document.querySelectorAll('.tabs .tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+          btn.classList.add('active');
+          const id = btn.getAttribute('data-tab');
+          document.querySelectorAll('.pane').forEach(p => p.classList.remove('active'));
+          document.getElementById(id).classList.add('active');
+        });
+      });
+
+      // Modal helper for wireframe
+      function showModal(title, bodyHtml){
+        document.getElementById('wf-modal-body').innerHTML = '<h3>'+title+'</h3>'+bodyHtml;
+        document.getElementById('wf-modal').style.display = 'block';
+        document.getElementById('wf-modal').setAttribute('aria-hidden','false');
+      }
+      function closeModal(){
+        document.getElementById('wf-modal').style.display = 'none';
+        document.getElementById('wf-modal').setAttribute('aria-hidden','true');
+      }
+      document.querySelectorAll('[data-wf-close]').forEach(el=>el.addEventListener('click', closeModal));
+
+      // Commissions: add stub behavior
+      document.getElementById('add-commission-btn').addEventListener('click', ()=>{
+        showModal('Add Commission', '<label>Booking ID<br/><input id="wf-booking" /></label><br/><label>Amount<br/><input id="wf-amount" /></label><br/><button class="btn" id="wf-save-commission">Save</button>');
+        setTimeout(()=>{
+          document.getElementById('wf-save-commission').addEventListener('click', ()=>{
+            const booking = document.getElementById('wf-booking').value || 'B-NEW';
+            const amount = document.getElementById('wf-amount').value || '0.00';
+            const tbody = document.querySelector('#commissions-table tbody');
+            const id = Math.floor(Math.random()*1000);
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${id}</td><td>${booking}</td><td>${amount}</td><td><span class="badge warn">Unpaid</span></td><td><button class="btn tiny handle-mark-paid">Mark Paid</button></td>`;
+            tbody.prepend(tr);
+            closeModal();
+          });
+        },100);
+      });
+      document.querySelector('#commissions-table').addEventListener('click', (e)=>{
+        if (e.target.classList.contains('handle-mark-paid')){
+          const row = e.target.closest('tr');
+          row.querySelector('td:nth-child(4)').innerHTML = '<span class="badge success">Paid</span>';
+          e.target.remove();
+        }
+      });
+
+      // Attendance: load and add row
+      document.getElementById('load-attendance-btn').addEventListener('click', ()=>{
+        const d = document.getElementById('attendance-date').value;
+        // wireframe: pretend we loaded rows, highlight the date in table
+        document.querySelectorAll('#attendance-table tbody tr').forEach(tr=>tr.remove());
+        const tbody = document.querySelector('#attendance-table tbody');
+        for(let i=1;i<=5;i++){
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${d}</td><td>09:0${i}</td><td>17:5${i}</td><td>8h${i}m</td><td><span class="badge success">Present</span></td><td><button class="btn tiny handle-edit-att">Edit</button></td>`;
+          tbody.appendChild(tr);
+        }
+      });
+      document.getElementById('add-attendance-btn').addEventListener('click', ()=>{
+        const d = document.getElementById('attendance-date').value;
+        const tbody = document.querySelector('#attendance-table tbody');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${d}</td><td>-</td><td>-</td><td>-</td><td><span class="badge muted">Pending</span></td><td><button class="btn tiny handle-edit-att">Edit</button></td>`;
+        tbody.prepend(tr);
+      });
+
+      // Movements: start movement modal
+      document.getElementById('start-movement-btn').addEventListener('click', ()=>{
+        showModal('Start Movement', '<label>Reason<br/><input id="wf-mov-reason" /></label><br/><button class="btn" id="wf-save-mov">Start</button>');
+        setTimeout(()=>{
+          document.getElementById('wf-save-mov').addEventListener('click', ()=>{
+            const reason = document.getElementById('wf-mov-reason').value || 'Out';
+            const tbody = document.querySelector('#movements-table tbody');
+            const id = Math.floor(Math.random()*1000);
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${id}</td><td>${new Date().toLocaleTimeString()}</td><td>-</td><td>-</td><td>${reason}</td><td><button class="btn tiny handle-view-mov">View</button></td>`;
+            tbody.prepend(tr);
+            closeModal();
+          });
+        },100);
+      });
+
+      // Punctuality: add record
+      document.getElementById('add-punctuality-btn').addEventListener('click', ()=>{
+        showModal('Add Punctuality', '<label>Date<br/><input id="wf-punc-date" type="date" value="'+(new Date().toISOString().slice(0,10))+'"/></label><br/><label>Type<br/><select id="wf-punc-type"><option>Late</option><option>Early</option></select></label><br/><label>Minutes<br/><input id="wf-punc-mins" type="number"/></label><br/><label>Notes<br/><input id="wf-punc-notes"/></label><br/><button class="btn" id="wf-save-punc">Save</button>');
+        setTimeout(()=>{
+          document.getElementById('wf-save-punc').addEventListener('click', ()=>{
+            const d = document.getElementById('wf-punc-date').value;
+            const type = document.getElementById('wf-punc-type').value;
+            const mins = document.getElementById('wf-punc-mins').value||0;
+            const notes = document.getElementById('wf-punc-notes').value||'';
+            const tbody = document.querySelector('#punctuality-table tbody');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td>${d}</td><td>${type}</td><td>${mins}</td><td>${notes}</td>`;
+            tbody.prepend(tr);
+            closeModal();
+          });
+        },100);
+      });
+    </script>
+
+    <!-- modal placeholder and prototype script -->
+    <div id="wf-modal" class="wf-modal" aria-hidden="true">
+      <div class="wf-modal-backdrop" data-wf-close></div>
+      <div class="wf-modal-content">
+        <button class="wf-close" data-wf-close>×</button>
+        <div id="wf-modal-body" class="wf-modal-body"></div>
+      </div>
+    </div>
+    <script src="wireframe.js"></script>
+  </body>
+</html>

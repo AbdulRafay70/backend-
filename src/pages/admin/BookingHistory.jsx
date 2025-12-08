@@ -217,14 +217,14 @@ const BookingHistory = () => {
       const token = localStorage.getItem("accessToken");
 
       setLoading(true);
-      const response = await axios.get(`https://api.saer.pk/api/bookings/`, {
+      const response = await axios.get(`http://127.0.0.1:8000/api/bookings/`, {
         params: { organization: organizationId },
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
-      // const response = await axios.get(`https://api.saer.pk/api/bookings/?organization=${k}`);
+      // const response = await axios.get(`http://127.0.0.1:8000/api/bookings/?organization=${k}`);
       setBookings(response.data);
       setFilteredBookings(response.data);
     } catch (err) {

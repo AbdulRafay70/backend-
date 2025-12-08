@@ -5,7 +5,7 @@ import Header from "../../components/Header";
 import { Search } from "lucide-react";
 import { Gear } from "react-bootstrap-icons";
 import { Button } from "react-bootstrap";
-import axios from 'axios';
+import api from '../../utils/Api';
 import { jwtDecode } from 'jwt-decode';
 
 const BankAccountsScreen = () => {
@@ -90,14 +90,31 @@ const BankAccountsScreen = () => {
     try {
   const organization_id = getOrgId();
   console.debug('fetchBankAccounts - organization_id:', organization_id);
-  const branch_id = (() => { try { const s = JSON.parse(localStorage.getItem('selectedOrganization')) || {}; return s?.branch_id || s?.branch || localStorage.getItem('selectedBranchId') || 0; } catch (_) { return localStorage.getItem('selectedBranchId') || 0; } })();
-      const token = localStorage.getItem('accessToken');
-      const resp = await axios.get('https://api.saer.pk/api/bank-accounts/', {
-        params: { organization: organization_id, organization_id, branch_id, _ts: Date.now() },
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      });
+    const branch_id = (() => { try { const s = JSON.parse(localStorage.getItem('selectedOrganization')) || {}; return s?.branch_id || s?.branch || localStorage.getItem('selectedBranchId') || 0; } catch (_) { return localStorage.getItem('selectedBranchId') || 0; } })();
+      const params = { organization: organization_id, organization_id, _ts: Date.now() };
+      if (branch_id && Number(branch_id) > 0) params.branch_id = Number(branch_id);
+      const resp = await api.get('/bank-accounts/', { params });
       const data = Array.isArray(resp.data) ? resp.data : (resp.data.results || []);
-      setBankAccounts(data);
+
+      // Only include accounts that directly belong to the selected organization.
+      // This ignores branch/agency membership and shows all accounts under the org.
+      const orgIdNum = Number(organization_id) || 0;
+      const filtered = data.filter((account) => {
+        try {
+          // Possible shapes: account.organization is an object with id, or a numeric id, or account.organization_id
+          const accOrg = account && (
+            (account.organization && (account.organization.id || account.organization.organization_id)) ||
+            account.organization_id ||
+            account.organization
+          );
+          return !!accOrg && Number(accOrg) === orgIdNum;
+        } catch (e) {
+          return false;
+        }
+      });
+
+      if (filtered.length !== data.length) console.debug(`BankAccounts: filtered ${filtered.length}/${data.length} accounts for org ${orgIdNum}`);
+      setBankAccounts(filtered);
     } catch (err) {
       console.error('Failed to fetch bank accounts', err);
       setFetchError('Failed to load bank accounts');
@@ -177,11 +194,7 @@ const BankAccountsScreen = () => {
   const fetchAgencies = async (organization_id) => {
     try {
       setLoadingAgencies(true);
-      const token = localStorage.getItem('accessToken');
-      const resp = await axios.get('https://api.saer.pk/api/agencies/', {
-        params: { organization: organization_id },
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      });
+      const resp = await api.get('/agencies/', { params: { organization: organization_id } });
       const data = Array.isArray(resp.data) ? resp.data : (resp.data.results || []);
       setAgencies(data);
       if (data.length > 0) {
@@ -291,7 +304,7 @@ const BankAccountsScreen = () => {
       if (!agency_id || Number(agency_id) === 0) {
         try {
           const tokenHeader = rawToken ? { Authorization: `Bearer ${rawToken}` } : {};
-          const agencyResp = await axios.get(`https://api.saer.pk/api/agencies/?organization=${organization_id}`, { headers: tokenHeader });
+            const agencyResp = await api.get('/agencies/', { params: { organization: organization_id } });
           const agencies = Array.isArray(agencyResp.data) ? agencyResp.data : (agencyResp.data.results || []);
           if (agencies.length > 0) {
             const first = agencies[0];
@@ -320,10 +333,7 @@ const BankAccountsScreen = () => {
           // attempt to resolve branch_code or name to numeric id via branches API
           try {
             const tokenHeader = rawToken ? { Authorization: `Bearer ${rawToken}` } : {};
-            const branchesResp = await axios.get('https://api.saer.pk/api/branches/', {
-              params: { organization_id: organization_id },
-              headers: tokenHeader
-            });
+            const branchesResp = await api.get('/branches/', { params: { organization_id: organization_id } });
             const branchItems = Array.isArray(branchesResp.data) ? branchesResp.data : (branchesResp.data.results || []);
             const match = branchItems.find(b => b.branch_code === String(branch_id) || b.name === String(branch_id) || String(b.id) === String(branch_id));
             if (match) numericBranchId = match.id;
@@ -359,13 +369,9 @@ const BankAccountsScreen = () => {
       let resp;
       if (editingAccount && (editingAccount.id || editingAccount.pk)) {
         const id = editingAccount.id || editingAccount.pk;
-        resp = await axios.put(`https://api.saer.pk/api/bank-accounts/${id}/`, payload, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
-        });
+            resp = await api.put(`/bank-accounts/${id}/`, payload);
       } else {
-        resp = await axios.post('https://api.saer.pk/api/bank-accounts/', payload, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
-        });
+        resp = await api.post('/bank-accounts/', payload);
       }
       console.debug('saved bank account', resp.data);
       // refresh list
@@ -414,9 +420,7 @@ const BankAccountsScreen = () => {
     try {
       const token = localStorage.getItem('accessToken');
       const id = account.id || account.pk || account.account_number;
-      await axios.delete(`https://api.saer.pk/api/bank-accounts/${id}/`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      });
+      await api.delete(`/bank-accounts/${id}/`);
       await fetchBankAccounts();
       window.alert('Bank account deleted');
     } catch (err) {
@@ -723,7 +727,7 @@ const BankAccountsScreen = () => {
                               required
                               placeholder=" Pk3202293203782936"
                             />
-                            <div className="form-check mt-3">
+                            {/* <div className="form-check mt-3">
                               <input
                                 className="form-check-input"
                                 type="checkbox"
@@ -736,7 +740,7 @@ const BankAccountsScreen = () => {
                               <label className="form-check-label" htmlFor="isCompanyAccount">
                                 Is Company Account (determined by tab)
                               </label>
-                            </div>
+                            </div> */}
 
                             <div className="mt-3">
                               <label className="form-label">Status</label>

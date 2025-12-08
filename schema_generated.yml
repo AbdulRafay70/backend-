@@ -5762,6 +5762,1059 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/hr/attendance/:
+    get:
+      operationId: api_hr_attendance_list
+      description: 'Attendance endpoints: check-in, check-out and queries'
+      tags:
+      - HR
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Attendance'
+          description: ''
+    post:
+      operationId: api_hr_attendance_create
+      description: 'Attendance endpoints: check-in, check-out and queries'
+      tags:
+      - HR
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Attendance'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Attendance'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Attendance'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attendance'
+          description: ''
+  /api/hr/attendance/{id}/:
+    get:
+      operationId: api_hr_attendance_retrieve
+      description: 'Attendance endpoints: check-in, check-out and queries'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this attendance.
+        required: true
+      tags:
+      - HR
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attendance'
+          description: ''
+    put:
+      operationId: api_hr_attendance_update
+      description: 'Attendance endpoints: check-in, check-out and queries'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this attendance.
+        required: true
+      tags:
+      - HR
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Attendance'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Attendance'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Attendance'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attendance'
+          description: ''
+    patch:
+      operationId: api_hr_attendance_partial_update
+      description: 'Attendance endpoints: check-in, check-out and queries'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this attendance.
+        required: true
+      tags:
+      - HR
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAttendance'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedAttendance'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedAttendance'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attendance'
+          description: ''
+    delete:
+      operationId: api_hr_attendance_destroy
+      description: 'Attendance endpoints: check-in, check-out and queries'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this attendance.
+        required: true
+      tags:
+      - HR
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/hr/attendance/check_in/:
+    post:
+      operationId: api_hr_attendance_check_in_create
+      description: 'Attendance endpoints: check-in, check-out and queries'
+      tags:
+      - HR
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Attendance'
+            examples:
+              CheckInExample:
+                value:
+                  employee: 1
+                  time: '2025-11-25T09:00:00Z'
+                summary: Employee check-in
+                description: Minimal payload to check-in an employee (time optional).
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attendance'
+              examples:
+                CheckInExample:
+                  value:
+                    employee: 1
+                    time: '2025-11-25T09:00:00Z'
+                  summary: Employee check-in
+                  description: Minimal payload to check-in an employee (time optional).
+          description: ''
+  /api/hr/attendance/check_out/:
+    post:
+      operationId: api_hr_attendance_check_out_create
+      description: 'Attendance endpoints: check-in, check-out and queries'
+      tags:
+      - HR
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Attendance'
+            examples:
+              CheckOutExample:
+                value:
+                  employee: 1
+                  time: '2025-11-25T18:00:00Z'
+                summary: Employee check-out
+                description: Minimal payload to check-out an employee (time optional).
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Attendance'
+              examples:
+                CheckOutExample:
+                  value:
+                    employee: 1
+                    time: '2025-11-25T18:00:00Z'
+                  summary: Employee check-out
+                  description: Minimal payload to check-out an employee (time optional).
+          description: ''
+  /api/hr/commissions/:
+    get:
+      operationId: api_hr_commissions_list
+      description: Commission records and helpers
+      tags:
+      - HR
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Commission'
+          description: ''
+    post:
+      operationId: api_hr_commissions_create
+      description: Commission records and helpers
+      tags:
+      - HR
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Commission'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Commission'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Commission'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Commission'
+          description: ''
+  /api/hr/commissions/{id}/:
+    get:
+      operationId: api_hr_commissions_retrieve
+      description: Commission records and helpers
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this commission.
+        required: true
+      tags:
+      - HR
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Commission'
+          description: ''
+    put:
+      operationId: api_hr_commissions_update
+      description: Commission records and helpers
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this commission.
+        required: true
+      tags:
+      - HR
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Commission'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Commission'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Commission'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Commission'
+          description: ''
+    patch:
+      operationId: api_hr_commissions_partial_update
+      description: Commission records and helpers
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this commission.
+        required: true
+      tags:
+      - HR
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCommission'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCommission'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCommission'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Commission'
+          description: ''
+    delete:
+      operationId: api_hr_commissions_destroy
+      description: Commission records and helpers
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this commission.
+        required: true
+      tags:
+      - HR
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/hr/commissions/unpaid-by-employee/:
+    get:
+      operationId: api_hr_commissions_unpaid_by_employee_list
+      description: Commission records and helpers
+      tags:
+      - HR
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Commission'
+              examples:
+                UnpaidCommissions:
+                  value:
+                  - - id: 1
+                      employee: 1
+                      booking_id: B123
+                      amount: '100.00'
+                      status: unpaid
+                  summary: Unpaid commissions for an employee
+                  description: Returns unpaid commissions for the given employee id
+          description: ''
+  /api/hr/employees/:
+    get:
+      operationId: api_hr_employees_list
+      description: CRUD operations for employees
+      parameters:
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - HR
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Employee'
+          description: ''
+    post:
+      operationId: api_hr_employees_create
+      description: CRUD operations for employees
+      tags:
+      - HR
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Employee'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Employee'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Employee'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: ''
+  /api/hr/employees/{id}/:
+    get:
+      operationId: api_hr_employees_retrieve
+      description: CRUD operations for employees
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this employee.
+        required: true
+      tags:
+      - HR
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: ''
+    put:
+      operationId: api_hr_employees_update
+      description: CRUD operations for employees
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this employee.
+        required: true
+      tags:
+      - HR
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Employee'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Employee'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Employee'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: ''
+    patch:
+      operationId: api_hr_employees_partial_update
+      description: CRUD operations for employees
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this employee.
+        required: true
+      tags:
+      - HR
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployee'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployee'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEmployee'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Employee'
+          description: ''
+    delete:
+      operationId: api_hr_employees_destroy
+      description: CRUD operations for employees
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this employee.
+        required: true
+      tags:
+      - HR
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/hr/movements/:
+    get:
+      operationId: api_hr_movements_list
+      description: 'Movement logs: start and end movements'
+      tags:
+      - HR
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MovementLog'
+          description: ''
+    post:
+      operationId: api_hr_movements_create
+      description: 'Movement logs: start and end movements'
+      tags:
+      - HR
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovementLog'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MovementLog'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MovementLog'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovementLog'
+          description: ''
+  /api/hr/movements/{id}/:
+    get:
+      operationId: api_hr_movements_retrieve
+      description: 'Movement logs: start and end movements'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this movement log.
+        required: true
+      tags:
+      - HR
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovementLog'
+          description: ''
+    put:
+      operationId: api_hr_movements_update
+      description: 'Movement logs: start and end movements'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this movement log.
+        required: true
+      tags:
+      - HR
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovementLog'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MovementLog'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MovementLog'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovementLog'
+          description: ''
+    patch:
+      operationId: api_hr_movements_partial_update
+      description: 'Movement logs: start and end movements'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this movement log.
+        required: true
+      tags:
+      - HR
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedMovementLog'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedMovementLog'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedMovementLog'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovementLog'
+          description: ''
+    delete:
+      operationId: api_hr_movements_destroy
+      description: 'Movement logs: start and end movements'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this movement log.
+        required: true
+      tags:
+      - HR
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/hr/movements/{id}/end/:
+    post:
+      operationId: api_hr_movements_end_create
+      description: 'Movement logs: start and end movements'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this movement log.
+        required: true
+      tags:
+      - HR
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovementLog'
+            examples:
+              MovementEnd:
+                value:
+                  end_time: '2025-11-25T16:30:00Z'
+                summary: End movement
+                description: Close a movement log by providing end_time (optional).
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovementLog'
+              examples:
+                MovementEnd:
+                  value:
+                    end_time: '2025-11-25T16:30:00Z'
+                  summary: End movement
+                  description: Close a movement log by providing end_time (optional).
+          description: ''
+  /api/hr/movements/start/:
+    post:
+      operationId: api_hr_movements_start_create
+      description: 'Movement logs: start and end movements'
+      tags:
+      - HR
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MovementLog'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/MovementLog'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/MovementLog'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MovementLog'
+          description: ''
+  /api/hr/punctuality/:
+    get:
+      operationId: api_hr_punctuality_list
+      description: Punctuality records (late, early leave, absence)
+      tags:
+      - HR
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Punctuality'
+          description: ''
+    post:
+      operationId: api_hr_punctuality_create
+      description: Punctuality records (late, early leave, absence)
+      tags:
+      - HR
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Punctuality'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Punctuality'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Punctuality'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Punctuality'
+          description: ''
+  /api/hr/punctuality/{id}/:
+    get:
+      operationId: api_hr_punctuality_retrieve
+      description: Punctuality records (late, early leave, absence)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this punctuality record.
+        required: true
+      tags:
+      - HR
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Punctuality'
+          description: ''
+    put:
+      operationId: api_hr_punctuality_update
+      description: Punctuality records (late, early leave, absence)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this punctuality record.
+        required: true
+      tags:
+      - HR
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Punctuality'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Punctuality'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Punctuality'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Punctuality'
+          description: ''
+    patch:
+      operationId: api_hr_punctuality_partial_update
+      description: Punctuality records (late, early leave, absence)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this punctuality record.
+        required: true
+      tags:
+      - HR
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPunctuality'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedPunctuality'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedPunctuality'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Punctuality'
+          description: ''
+    delete:
+      operationId: api_hr_punctuality_destroy
+      description: Punctuality records (late, early leave, absence)
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this punctuality record.
+        required: true
+      tags:
+      - HR
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/hr/salary-history/:
+    get:
+      operationId: api_hr_salary_history_list
+      description: Salary history records for employees
+      tags:
+      - HR
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SalaryHistory'
+          description: ''
+    post:
+      operationId: api_hr_salary_history_create
+      description: Salary history records for employees
+      tags:
+      - HR
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SalaryHistory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SalaryHistory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SalaryHistory'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalaryHistory'
+          description: ''
+  /api/hr/salary-history/{id}/:
+    get:
+      operationId: api_hr_salary_history_retrieve
+      description: Salary history records for employees
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this salary history.
+        required: true
+      tags:
+      - HR
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalaryHistory'
+          description: ''
+    put:
+      operationId: api_hr_salary_history_update
+      description: Salary history records for employees
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this salary history.
+        required: true
+      tags:
+      - HR
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SalaryHistory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SalaryHistory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SalaryHistory'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalaryHistory'
+          description: ''
+    patch:
+      operationId: api_hr_salary_history_partial_update
+      description: Salary history records for employees
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this salary history.
+        required: true
+      tags:
+      - HR
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSalaryHistory'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSalaryHistory'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSalaryHistory'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SalaryHistory'
+          description: ''
+    delete:
+      operationId: api_hr_salary_history_destroy
+      description: Salary history records for employees
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this salary history.
+        required: true
+      tags:
+      - HR
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/internal-notes/:
     get:
       operationId: api_internal_notes_list
@@ -7297,6 +8350,10 @@ paths:
   /api/only-visa-prices/:
     get:
       operationId: api_only_visa_prices_list
+      description: |-
+        Extend list to optionally compute totals when query includes pax counts and
+        `include_totals=true`. Returns the serialized objects and, when requested,
+        attaches a `totals` object per entry with adult/child/infant and grand totals.
       tags:
       - api
       security:
@@ -13317,147 +14374,6 @@ paths:
                 type: object
                 additionalProperties: {}
           description: ''
-  /api/sectors/:
-    get:
-      operationId: api_sectors_list
-      tags:
-      - api
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Sector'
-          description: ''
-    post:
-      operationId: api_sectors_create
-      tags:
-      - api
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Sector'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Sector'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Sector'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Sector'
-          description: ''
-  /api/sectors/{id}/:
-    get:
-      operationId: api_sectors_retrieve
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this sector.
-        required: true
-      tags:
-      - api
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Sector'
-          description: ''
-    put:
-      operationId: api_sectors_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this sector.
-        required: true
-      tags:
-      - api
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Sector'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/Sector'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/Sector'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Sector'
-          description: ''
-    patch:
-      operationId: api_sectors_partial_update
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this sector.
-        required: true
-      tags:
-      - api
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PatchedSector'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/PatchedSector'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/PatchedSector'
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Sector'
-          description: ''
-    delete:
-      operationId: api_sectors_destroy
-      parameters:
-      - in: path
-        name: id
-        schema:
-          type: integer
-        description: A unique integer value identifying this sector.
-        required: true
-      tags:
-      - api
-      security:
-      - jwtAuth: []
-      responses:
-        '204':
-          description: No response body
   /api/set-visa-type/:
     get:
       operationId: api_set_visa_type_list
@@ -13732,12 +14648,158 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/small-sectors/:
+    get:
+      operationId: api_small_sectors_list
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Sector'
+          description: ''
+    post:
+      operationId: api_small_sectors_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Sector'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Sector'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Sector'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sector'
+          description: ''
+  /api/small-sectors/{id}/:
+    get:
+      operationId: api_small_sectors_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this sector.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sector'
+          description: ''
+    put:
+      operationId: api_small_sectors_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this sector.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Sector'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Sector'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Sector'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sector'
+          description: ''
+    patch:
+      operationId: api_small_sectors_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this sector.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSector'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedSector'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedSector'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sector'
+          description: ''
+    delete:
+      operationId: api_small_sectors_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this sector.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/tickets/:
     get:
       operationId: api_tickets_list
       description: List all available tickets. Superusers see all tickets, other users
         need to provide organization parameter.
       parameters:
+      - in: query
+        name: include_past
+        schema:
+          type: string
+        description: Set to '1' or 'true' to include past/expired tickets in the list
       - in: query
         name: organization
         schema:
@@ -13786,11 +14848,17 @@ paths:
                   - airline:
                       id: 200
                       name: StopAir
-                    stopover_duration: string
-                    trip_type: string
+                    flight_number: '202'
+                    departure_date_time: '2025-12-11T19:21:00Z'
+                    arrival_date_time: '2025-12-11T19:21:00Z'
+                    arrival_city:
+                      id: 6
+                      name: Lahore
+                    stopover_duration: 6d
+                    trip_type: Departure
                     stopover_city:
-                      id: 0
-                      name: Stopover City
+                      id: 5
+                      name: karachi
                   adult_fare: 0
                   child_fare: 0
                   infant_fare: 0
@@ -13987,6 +15055,147 @@ paths:
               schema:
                 $ref: '#/components/schemas/TokenRefresh'
           description: ''
+  /api/transport-prices/:
+    get:
+      operationId: api_transport_prices_list
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/VehicleType'
+          description: ''
+    post:
+      operationId: api_transport_prices_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleType'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VehicleType'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VehicleType'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleType'
+          description: ''
+  /api/transport-prices/{id}/:
+    get:
+      operationId: api_transport_prices_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this vehicle type.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleType'
+          description: ''
+    put:
+      operationId: api_transport_prices_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this vehicle type.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleType'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/VehicleType'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VehicleType'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleType'
+          description: ''
+    patch:
+      operationId: api_transport_prices_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this vehicle type.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedVehicleType'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedVehicleType'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedVehicleType'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VehicleType'
+          description: ''
+    delete:
+      operationId: api_transport_prices_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this vehicle type.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/transport-sector-prices/:
     get:
       operationId: api_transport_sector_prices_list
@@ -16548,6 +17757,47 @@ components:
       - hotel_id
       - pax_id
       - room_id
+    Attendance:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        date:
+          type: string
+          format: date
+        check_in:
+          type: string
+          format: date-time
+          nullable: true
+        check_out:
+          type: string
+          format: date-time
+          nullable: true
+        working_hours:
+          type: string
+          nullable: true
+        status:
+          enum:
+          - present
+          - absent
+          - half_day
+          - late
+          type: string
+          description: |-
+            * `present` - Present
+            * `absent` - Absent
+            * `half_day` - Half Day
+            * `late` - Late
+          x-spec-enum-id: 788e44852a0c94e3
+        notes:
+          type: string
+        employee:
+          type: integer
+      required:
+      - date
+      - employee
+      - id
     BankAccount:
       type: object
       properties:
@@ -17896,6 +19146,45 @@ components:
       - id
       - name
       - organization
+    Commission:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        booking_id:
+          type: string
+          maxLength: 128
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        date:
+          type: string
+          format: date
+          nullable: true
+        status:
+          enum:
+          - unpaid
+          - paid
+          - reversed
+          type: string
+          description: |-
+            * `unpaid` - Unpaid
+            * `paid` - Paid
+            * `reversed` - Reversed
+          x-spec-enum-id: a59a4c0636ca3a88
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        employee:
+          type: integer
+      required:
+      - amount
+      - created_at
+      - employee
+      - id
     CommissionEarning:
       type: object
       properties:
@@ -18283,6 +19572,47 @@ components:
           maxLength: 512
       required:
       - submission_data
+    Employee:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 254
+        phone:
+          type: string
+          nullable: true
+          maxLength: 32
+        role:
+          type: string
+          maxLength: 100
+        joining_date:
+          type: string
+          format: date
+          nullable: true
+        salary:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        currency:
+          type: string
+          maxLength: 10
+        is_active:
+          type: boolean
+      required:
+      - first_name
+      - id
     FollowUp:
       type: object
       properties:
@@ -18627,6 +19957,24 @@ components:
           type: number
           format: double
         purchase_price:
+          type: number
+          format: double
+        adult_selling_price:
+          type: number
+          format: double
+        adult_purchase_price:
+          type: number
+          format: double
+        child_selling_price:
+          type: number
+          format: double
+        child_purchase_price:
+          type: number
+          format: double
+        infant_selling_price:
+          type: number
+          format: double
+        infant_purchase_price:
           type: number
           format: double
         organization:
@@ -19877,6 +21225,32 @@ components:
       - id
       - name
       - updated_at
+    MovementLog:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        employee:
+          type: integer
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+          nullable: true
+        reason:
+          type: string
+          maxLength: 255
+        duration:
+          type: string
+          readOnly: true
+      required:
+      - duration
+      - employee
+      - id
+      - start_time
     OnlyVisaPrice:
       type: object
       properties:
@@ -19888,19 +21262,34 @@ components:
         adault_price:
           type: number
           format: double
+          writeOnly: true
         child_price:
           type: number
           format: double
+          writeOnly: true
         infant_price:
           type: number
           format: double
+          writeOnly: true
+        adult_selling_price:
+          type: number
+          format: double
+        adult_purchase_price:
+          type: number
+          format: double
+        child_selling_price:
+          type: number
+          format: double
+        child_purchase_price:
+          type: number
+          format: double
+        infant_selling_price:
+          type: number
+          format: double
+        infant_purchase_price:
+          type: number
+          format: double
         type:
-          type: string
-          maxLength: 50
-        min_days:
-          type: string
-          maxLength: 50
-        max_days:
           type: string
           maxLength: 50
         city:
@@ -19910,6 +21299,7 @@ components:
         city_id:
           type: integer
           writeOnly: true
+          nullable: true
         status:
           enum:
           - active
@@ -19922,12 +21312,37 @@ components:
             * `inactive` - Inactive
           x-spec-enum-id: a3e272c4b9d7822a
           nullable: true
+        title:
+          type: string
+          nullable: true
+          maxLength: 255
+        is_transport:
+          type: boolean
+        sectors:
+          type: array
+          items:
+            type: integer
+        visa_option:
+          type: string
+          nullable: true
+        validity_days:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          description: Optional validity/duration in days for long term visas
+        multi_entry:
+          type: boolean
+          description: Whether this visa supports multiple entry (long-term)
+        long_term_discount_pct:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          nullable: true
+          description: Optional discount percentage for long-term visas
       required:
       - city
-      - city_id
       - id
-      - max_days
-      - min_days
       - organization
       - type
     Organization:
@@ -20552,6 +21967,43 @@ components:
           type: string
           format: date-time
           readOnly: true
+    PatchedAttendance:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        date:
+          type: string
+          format: date
+        check_in:
+          type: string
+          format: date-time
+          nullable: true
+        check_out:
+          type: string
+          format: date-time
+          nullable: true
+        working_hours:
+          type: string
+          nullable: true
+        status:
+          enum:
+          - present
+          - absent
+          - half_day
+          - late
+          type: string
+          description: |-
+            * `present` - Present
+            * `absent` - Absent
+            * `half_day` - Half Day
+            * `late` - Late
+          x-spec-enum-id: 788e44852a0c94e3
+        notes:
+          type: string
+        employee:
+          type: integer
     PatchedBankAccount:
       type: object
       properties:
@@ -21160,6 +22612,40 @@ components:
           maxLength: 10
         organization:
           type: integer
+    PatchedCommission:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        booking_id:
+          type: string
+          maxLength: 128
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        date:
+          type: string
+          format: date
+          nullable: true
+        status:
+          enum:
+          - unpaid
+          - paid
+          - reversed
+          type: string
+          description: |-
+            * `unpaid` - Unpaid
+            * `paid` - Paid
+            * `reversed` - Reversed
+          x-spec-enum-id: a59a4c0636ca3a88
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        employee:
+          type: integer
     PatchedCommissionEarning:
       type: object
       properties:
@@ -21424,6 +22910,44 @@ components:
           type: string
           format: date-time
           readOnly: true
+    PatchedEmployee:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        first_name:
+          type: string
+          maxLength: 150
+        last_name:
+          type: string
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 254
+        phone:
+          type: string
+          nullable: true
+          maxLength: 32
+        role:
+          type: string
+          maxLength: 100
+        joining_date:
+          type: string
+          format: date
+          nullable: true
+        salary:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          nullable: true
+        currency:
+          type: string
+          maxLength: 10
+        is_active:
+          type: boolean
     PatchedFollowUp:
       type: object
       properties:
@@ -21667,6 +23191,24 @@ components:
           type: number
           format: double
         purchase_price:
+          type: number
+          format: double
+        adult_selling_price:
+          type: number
+          format: double
+        adult_purchase_price:
+          type: number
+          format: double
+        child_selling_price:
+          type: number
+          format: double
+        child_purchase_price:
+          type: number
+          format: double
+        infant_selling_price:
+          type: number
+          format: double
+        infant_purchase_price:
           type: number
           format: double
         organization:
@@ -22470,6 +24012,27 @@ components:
           type: string
           format: date-time
           readOnly: true
+    PatchedMovementLog:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        employee:
+          type: integer
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+          nullable: true
+        reason:
+          type: string
+          maxLength: 255
+        duration:
+          type: string
+          readOnly: true
     PatchedOnlyVisaPrice:
       type: object
       properties:
@@ -22481,19 +24044,34 @@ components:
         adault_price:
           type: number
           format: double
+          writeOnly: true
         child_price:
           type: number
           format: double
+          writeOnly: true
         infant_price:
           type: number
           format: double
+          writeOnly: true
+        adult_selling_price:
+          type: number
+          format: double
+        adult_purchase_price:
+          type: number
+          format: double
+        child_selling_price:
+          type: number
+          format: double
+        child_purchase_price:
+          type: number
+          format: double
+        infant_selling_price:
+          type: number
+          format: double
+        infant_purchase_price:
+          type: number
+          format: double
         type:
-          type: string
-          maxLength: 50
-        min_days:
-          type: string
-          maxLength: 50
-        max_days:
           type: string
           maxLength: 50
         city:
@@ -22503,6 +24081,7 @@ components:
         city_id:
           type: integer
           writeOnly: true
+          nullable: true
         status:
           enum:
           - active
@@ -22515,6 +24094,34 @@ components:
             * `inactive` - Inactive
           x-spec-enum-id: a3e272c4b9d7822a
           nullable: true
+        title:
+          type: string
+          nullable: true
+          maxLength: 255
+        is_transport:
+          type: boolean
+        sectors:
+          type: array
+          items:
+            type: integer
+        visa_option:
+          type: string
+          nullable: true
+        validity_days:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+          description: Optional validity/duration in days for long term visas
+        multi_entry:
+          type: boolean
+          description: Whether this visa supports multiple entry (long-term)
+        long_term_discount_pct:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,2})?$
+          nullable: true
+          description: Optional discount percentage for long-term visas
     PatchedOrganization:
       type: object
       properties:
@@ -23098,6 +24705,39 @@ components:
         status_timeline:
           type: string
           readOnly: true
+    PatchedPunctuality:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        date:
+          type: string
+          format: date
+        record_type:
+          enum:
+          - late
+          - early_leave
+          - absence
+          type: string
+          description: |-
+            * `late` - Late
+            * `early_leave` - Early Leave
+            * `absence` - Absence
+          x-spec-enum-id: dc2d18a7eb5d4dd2
+        minutes:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        notes:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        employee:
+          type: integer
     PatchedRegistrationRule:
       type: object
       properties:
@@ -23261,6 +24901,29 @@ components:
         created_by:
           type: integer
           nullable: true
+    PatchedSalaryHistory:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        previous_salary:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        new_salary:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        changed_on:
+          type: string
+          format: date-time
+          readOnly: true
+        reason:
+          type: string
+          maxLength: 255
+        employee:
+          type: integer
     PatchedSector:
       type: object
       properties:
@@ -23273,14 +24936,33 @@ components:
         contact_number:
           type: string
           maxLength: 20
-        departure_city:
-          type: integer
+        sector_type:
+          type: string
           nullable: true
-        arrival_city:
-          type: integer
-          nullable: true
+        is_airport_pickup:
+          type: boolean
+        is_airport_drop:
+          type: boolean
+        is_hotel_to_hotel:
+          type: boolean
         organization:
           type: integer
+        departure_city:
+          type: string
+          readOnly: true
+          nullable: true
+        arrival_city:
+          type: string
+          readOnly: true
+          nullable: true
+        departure_city_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+        arrival_city_id:
+          type: integer
+          writeOnly: true
+          nullable: true
     PatchedSetVisaType:
       type: object
       properties:
@@ -23785,6 +25467,24 @@ components:
           type: boolean
         only_transport_charge:
           type: boolean
+        adult_selling_price:
+          type: number
+          format: double
+        adult_purchase_price:
+          type: number
+          format: double
+        child_selling_price:
+          type: number
+          format: double
+        child_purchase_price:
+          type: number
+          format: double
+        infant_selling_price:
+          type: number
+          format: double
+        infant_purchase_price:
+          type: number
+          format: double
         organization:
           type: integer
     PatchedUmrahPackage:
@@ -24072,10 +25772,6 @@ components:
         id:
           type: integer
           readOnly: true
-        hotel_details:
-          type: array
-          items:
-            $ref: '#/components/schemas/UmrahVisaPriceTwoHotel'
         vehicle_types:
           type: array
           items:
@@ -24084,6 +25780,18 @@ components:
           allOf:
           - $ref: '#/components/schemas/Organization'
           readOnly: true
+        adault_price:
+          type: number
+          format: double
+          writeOnly: true
+        child_price:
+          type: number
+          format: double
+          writeOnly: true
+        infant_price:
+          type: number
+          format: double
+          writeOnly: true
         title:
           type: string
           maxLength: 100
@@ -24095,13 +25803,22 @@ components:
           type: integer
           maximum: 2147483647
           minimum: -2147483648
-        adault_price:
+        adult_selling_price:
           type: number
           format: double
-        child_price:
+        adult_purchase_price:
           type: number
           format: double
-        infant_price:
+        child_selling_price:
+          type: number
+          format: double
+        child_purchase_price:
+          type: number
+          format: double
+        infant_selling_price:
+          type: number
+          format: double
+        infant_purchase_price:
           type: number
           format: double
         is_transport:
@@ -24312,6 +26029,25 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        adult_selling_price:
+          type: number
+          format: double
+        adult_purchase_price:
+          type: number
+          format: double
+        child_selling_price:
+          type: number
+          format: double
+        child_purchase_price:
+          type: number
+          format: double
+        infant_selling_price:
+          type: number
+          format: double
+        infant_purchase_price:
+          type: number
+          format: double
         note:
           type: string
           nullable: true
@@ -24523,6 +26259,24 @@ components:
           type: number
           format: double
         purchase_price:
+          type: number
+          format: double
+        adult_selling_price:
+          type: number
+          format: double
+        adult_purchase_price:
+          type: number
+          format: double
+        child_selling_price:
+          type: number
+          format: double
+        child_purchase_price:
+          type: number
+          format: double
+        infant_selling_price:
+          type: number
+          format: double
+        infant_purchase_price:
           type: number
           format: double
         organization:
@@ -25584,6 +27338,45 @@ components:
           type: string
           nullable: true
           maxLength: 100
+    Punctuality:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        date:
+          type: string
+          format: date
+        record_type:
+          enum:
+          - late
+          - early_leave
+          - absence
+          type: string
+          description: |-
+            * `late` - Late
+            * `early_leave` - Early Leave
+            * `absence` - Absence
+          x-spec-enum-id: dc2d18a7eb5d4dd2
+        minutes:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        notes:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        employee:
+          type: integer
+      required:
+      - created_at
+      - date
+      - employee
+      - id
+      - record_type
     RegistrationRule:
       type: object
       properties:
@@ -25833,6 +27626,35 @@ components:
       - hotel_name
       - id
       - room_no
+    SalaryHistory:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        previous_salary:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        new_salary:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+        changed_on:
+          type: string
+          format: date-time
+          readOnly: true
+        reason:
+          type: string
+          maxLength: 255
+        employee:
+          type: integer
+      required:
+      - changed_on
+      - employee
+      - id
+      - new_salary
+      - previous_salary
     Sector:
       type: object
       properties:
@@ -25845,17 +27667,38 @@ components:
         contact_number:
           type: string
           maxLength: 20
-        departure_city:
-          type: integer
+        sector_type:
+          type: string
           nullable: true
-        arrival_city:
-          type: integer
-          nullable: true
+        is_airport_pickup:
+          type: boolean
+        is_airport_drop:
+          type: boolean
+        is_hotel_to_hotel:
+          type: boolean
         organization:
           type: integer
+        departure_city:
+          type: string
+          readOnly: true
+          nullable: true
+        arrival_city:
+          type: string
+          readOnly: true
+          nullable: true
+        departure_city_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+        arrival_city_id:
+          type: integer
+          writeOnly: true
+          nullable: true
       required:
+      - arrival_city
       - contact_name
       - contact_number
+      - departure_city
       - id
       - organization
     SetVisaType:
@@ -26847,6 +28690,24 @@ components:
           type: boolean
         only_transport_charge:
           type: boolean
+        adult_selling_price:
+          type: number
+          format: double
+        adult_purchase_price:
+          type: number
+          format: double
+        child_selling_price:
+          type: number
+          format: double
+        child_purchase_price:
+          type: number
+          format: double
+        infant_selling_price:
+          type: number
+          format: double
+        infant_purchase_price:
+          type: number
+          format: double
         organization:
           type: integer
       required:
@@ -27322,10 +29183,6 @@ components:
         id:
           type: integer
           readOnly: true
-        hotel_details:
-          type: array
-          items:
-            $ref: '#/components/schemas/UmrahVisaPriceTwoHotel'
         vehicle_types:
           type: array
           items:
@@ -27334,6 +29191,18 @@ components:
           allOf:
           - $ref: '#/components/schemas/Organization'
           readOnly: true
+        adault_price:
+          type: number
+          format: double
+          writeOnly: true
+        child_price:
+          type: number
+          format: double
+          writeOnly: true
+        infant_price:
+          type: number
+          format: double
+          writeOnly: true
         title:
           type: string
           maxLength: 100
@@ -27345,13 +29214,22 @@ components:
           type: integer
           maximum: 2147483647
           minimum: -2147483648
-        adault_price:
+        adult_selling_price:
           type: number
           format: double
-        child_price:
+        adult_purchase_price:
           type: number
           format: double
-        infant_price:
+        child_selling_price:
+          type: number
+          format: double
+        child_purchase_price:
+          type: number
+          format: double
+        infant_selling_price:
+          type: number
+          format: double
+        infant_purchase_price:
           type: number
           format: double
         is_transport:
@@ -27360,21 +29238,6 @@ components:
       - id
       - organization
       - title
-    UmrahVisaPriceTwoHotel:
-      type: object
-      properties:
-        id:
-          type: integer
-          readOnly: true
-        hotel_name:
-          type: string
-          readOnly: true
-        hotel:
-          type: integer
-      required:
-      - hotel
-      - hotel_name
-      - id
     UniversalRegistration:
       type: object
       properties:
@@ -27612,6 +29475,25 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+        adult_selling_price:
+          type: number
+          format: double
+        adult_purchase_price:
+          type: number
+          format: double
+        child_selling_price:
+          type: number
+          format: double
+        child_purchase_price:
+          type: number
+          format: double
+        infant_selling_price:
+          type: number
+          format: double
+        infant_purchase_price:
+          type: number
+          format: double
         note:
           type: string
           nullable: true
@@ -27649,7 +29531,6 @@ components:
       - big_sector
       - id
       - organization
-      - price
       - small_sector
       - vehicle_name
       - vehicle_type
@@ -27844,6 +29725,24 @@ components:
           type: number
           format: double
         purchase_price:
+          type: number
+          format: double
+        adult_selling_price:
+          type: number
+          format: double
+        adult_purchase_price:
+          type: number
+          format: double
+        child_selling_price:
+          type: number
+          format: double
+        child_purchase_price:
+          type: number
+          format: double
+        infant_selling_price:
+          type: number
+          format: double
+        infant_purchase_price:
           type: number
           format: double
         organization:

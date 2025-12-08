@@ -130,7 +130,7 @@ const UmrahPackage = () => {
             const decoded = jwtDecode(token);
             const userId = decoded.user_id || decoded.id;
 
-            const userRes = await axios.get(`https://api.saer.pk/api/users/${userId}/`, {
+            const userRes = await axios.get(`http://127.0.0.1:8000/api/users/${userId}/`, {
               headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
@@ -155,28 +155,28 @@ const UmrahPackage = () => {
 
         const [packageRes, hotelsRes, ticketsRes, airlinesRes] =
           await Promise.all([
-            axios.get("https://api.saer.pk/api/umrah-packages/", {
+            axios.get("http://127.0.0.1:8000/api/umrah-packages/", {
               params: { organization: orgId, include_past: filters.includePast ? true : undefined },
               headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
               },
             }),
-            axios.get("https://api.saer.pk/api/hotels/", {
+            axios.get("http://127.0.0.1:8000/api/hotels/", {
               params: { organization: orgId },
               headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
               },
             }),
-            axios.get("https://api.saer.pk/api/tickets/", {
+            axios.get("http://127.0.0.1:8000/api/tickets/", {
               params: { organization: orgId },
               headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
               },
             }),
-            axios.get("https://api.saer.pk/api/airlines/", {
+            axios.get("http://127.0.0.1:8000/api/airlines/", {
               params: { organization: orgId },
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -197,8 +197,28 @@ const UmrahPackage = () => {
         setTickets(ticketsRes.data);
         setAirlines(airlinesRes.data);
       } catch (err) {
-        console.error("API Error", err);
-        toast.error("Failed to load data");
+        // Provide more helpful error messages for debugging backend 500s
+        try {
+          const status = err?.response?.status;
+          const data = err?.response?.data;
+          // Log full response body for developer troubleshooting
+          console.error("API Error", { status, data, err });
+
+          let message = "Failed to load data";
+          if (status) message = `Server returned ${status}`;
+          // Prefer explicit server error messages when available
+          if (data) {
+            const serverMsg = data.detail || data.message || (typeof data === 'string' ? data : JSON.stringify(data));
+            if (serverMsg) message = `${message}: ${serverMsg}`;
+          } else if (err.message) {
+            message = `${message}: ${err.message}`;
+          }
+
+          toast.error(message, { autoClose: 8000 });
+        } catch (e) {
+          console.error('Failed while handling API error', e);
+          toast.error('Failed to load data');
+        }
       } finally {
         setLoading(false);
       }
@@ -252,32 +272,69 @@ const UmrahPackage = () => {
   };
 
   // Compute package price totals using backend selling-price fields with fallbacks
-  const computePackageTotals = (pkg, hotelsList, airlinesList) => {
+  const computePackageTotals = (pkg, hotelsList, airlinesList, ticketsList = []) => {
+    // generic picker helper used throughout this function
+    const pick = (obj, keys) => {
+      if (!obj) return undefined;
+      for (const k of keys) {
+        if (typeof obj[k] !== 'undefined' && obj[k] !== null) return obj[k];
+      }
+      return undefined;
+    };
     // build hotelDetails with resilient price lookups
     const hotelDetails = (pkg?.hotel_details || []).map((hotelEntry) => {
-      const hotelInfo = hotelsList.find((h) => h.id === hotelEntry.hotel_info?.id) || {};
+      const hotelInfo = hotelsList.find(( h) => h.id === hotelEntry.hotel_info?.id) || {};
       const nights = hotelEntry?.number_of_nights || 0;
+      // priceSources: prefer explicit entry values, then first prices entry, then hotelInfo root
+      const priceSources = [hotelEntry || {}, hotelInfo?.prices?.[0] || {}, hotelInfo || {}];
 
-      // possible field names for bed prices, from package hotel entry first then hotel master data
-      const pick = (obj, keys) => {
-        for (const k of keys) {
-          if (obj && typeof obj[k] !== 'undefined' && obj[k] !== null) return obj[k];
+      // helper: try the usual keys and also include '*_bed_selling_price' variants
+      const priceCandidates = (keys, altKeys = []) => {
+        const candidates = [...keys, ...altKeys];
+        for (const src of priceSources) {
+          const v = pick(src, candidates);
+          if (typeof v !== 'undefined' && v !== null) return v;
         }
-        return 0;
+        return undefined;
       };
 
-      const priceSources = [hotelEntry, hotelInfo?.prices?.[0] || {}, hotelInfo || {}];
+      // try to read price from hotelInfo.prices[] matching a room_type
+      const findPriceInPricesArray = (roomTypeNames = []) => {
+        const pricesArr = hotelInfo?.prices || [];
+        for (const p of pricesArr) {
+          if (!p) continue;
+          const rt = (p.room_type || '').toString().toLowerCase();
+          if (roomTypeNames.some(rn => rt.includes(rn))) {
+            return p.price || p.selling_price || p.purchase_price || undefined;
+          }
+        }
+        return undefined;
+      };
 
-      const sharing = pick(priceSources[0], ['sharing_bed_price','sharing_selling_price','sharing_price']) ||
-                      pick(priceSources[1], ['sharing_bed_price','sharing_selling_price','sharing_price']);
-      const quaint = pick(priceSources[0], ['quaint_bed_price','quaint_selling_price','quaint_price']) ||
-                    pick(priceSources[1], ['quaint_bed_price','quaint_selling_price','quaint_price']);
-      const quad = pick(priceSources[0], ['quad_bed_price','quad_selling_price','quad_price']) ||
-                   pick(priceSources[1], ['quad_bed_price','quad_selling_price','quad_price']);
-      const triple = pick(priceSources[0], ['triple_bed_price','triple_selling_price','triple_price']) ||
-                     pick(priceSources[1], ['triple_bed_price','triple_selling_price','triple_price']);
-      const doubleBed = pick(priceSources[0], ['double_bed_price','double_selling_price','double_price']) ||
-                        pick(priceSources[1], ['double_bed_price','double_selling_price','double_price']);
+      const sharing = priceCandidates(
+        ['sharing_bed_selling_price','sharing_bed_price','sharing_selling_price','sharing_price','sharing'],
+        ['sharing_bed_purchase_price']
+      ) || findPriceInPricesArray(['sharing','shared']);
+
+      const quaint = priceCandidates(
+        ['quaint_bed_selling_price','quaint_bed_price','quaint_selling_price','quaint_price','quaint'],
+        ['quaint_bed_purchase_price']
+      ) || findPriceInPricesArray(['quaint','quint','quintet']);
+
+      const quad = priceCandidates(
+        ['quad_bed_selling_price','quad_bed_price','quad_selling_price','quad_price','quad'],
+        ['quad_bed_purchase_price']
+      ) || findPriceInPricesArray(['quad']);
+
+      const triple = priceCandidates(
+        ['triple_bed_selling_price','triple_bed_price','triple_selling_price','triple_price','triple'],
+        ['triple_bed_purchase_price']
+      ) || findPriceInPricesArray(['triple']);
+
+      const doubleBed = priceCandidates(
+        ['double_bed_selling_price','double_bed_price','double_selling_price','double_price','double'],
+        ['double_bed_purchase_price']
+      ) || findPriceInPricesArray(['double']);
 
       return {
         ...hotelEntry,
@@ -310,7 +367,26 @@ const UmrahPackage = () => {
     const visaAdult = pkgPick(['adault_visa_selling_price','adault_visa_price']);
 
     const ticketInfo = pkg?.ticket_details?.[0]?.ticket_info || {};
-    const ticketAdult = Number(ticketInfo?.adult_price || ticketInfo?.adult_selling_price || 0) || 0;
+
+    // Extract adult and child ticket selling prices with common field-name fallbacks.
+    let adultTicketRaw = pick(ticketInfo, ['adult_selling_price', 'adult_price', 'adult_fare', 'adult_ticket_price']);
+    let childTicketRaw = pick(ticketInfo, ['child_selling_price', 'child_price', 'child_fare', 'child_ticket_price']);
+
+    // If no ticket info on package or values are zero, try to find a fallback in global tickets list
+    if ((typeof adultTicketRaw === 'undefined' || adultTicketRaw === null || Number(adultTicketRaw) === 0) && Array.isArray(ticketsList) && ticketsList.length > 0) {
+      const pkgOrg = pkg.organization || pkg.organization_id || pkg.inventory_owner_organization_id || null;
+      const fallback = ticketsList.find((t) => {
+        const ownerOrg = t.owner_organization_id || t.organization || t.inventory_owner_organization_id || null;
+        return (t.is_umrah_seat === true || t.is_umrah_seat === 'true') && pkgOrg && String(ownerOrg) === String(pkgOrg);
+      });
+      if (fallback) {
+        adultTicketRaw = pick(fallback, ['adult_price','adult_selling_price','adult_fare','adult_ticket_price']);
+        childTicketRaw = pick(fallback, ['child_price','child_selling_price','child_fare','child_ticket_price']);
+      }
+    }
+
+    let ticketAdult = Number(adultTicketRaw) || 0;
+    let ticketChild = Number(childTicketRaw) || 0;
 
     const adultCost = food + makkah + madinah + transport + visaAdult + ticketAdult;
 
@@ -327,11 +403,36 @@ const UmrahPackage = () => {
     const totalTriple = adultCost + tripleHotelTotal;
     const totalDouble = adultCost + doubleHotelTotal;
 
-    const infantTicket = Number(ticketInfo?.infant_price || ticketInfo?.infant_selling_price || 0) || 0;
-    const infantVisa = pkgPick(['infant_visa_selling_price','infant_visa_price']);
-    const totalInfant = infantTicket + infantVisa;
+    // Infant price should be ticket selling price + infant visa selling price.
+    // Accept multiple possible field names from different backend versions.
+    let infantTicketRaw = pick(ticketInfo, ['infant_selling_price', 'infant_price', 'infant_ticket_selling_price', 'infant_ticket_price', 'infantTicketPrice','infant_fare']);
+    // If package has no ticket_details, try to find a matching ticket from global tickets list
+    if ((typeof infantTicketRaw === 'undefined' || infantTicketRaw === null || Number(infantTicketRaw) === 0) && Array.isArray(ticketsList) && ticketsList.length > 0) {
+      const pkgOrg = pkg.organization || pkg.organization_id || pkg.inventory_owner_organization_id || null;
+      const fallback = ticketsList.find((t) => {
+        const ownerOrg = t.owner_organization_id || t.organization || t.inventory_owner_organization_id || null;
+        return (t.is_umrah_seat === true || t.is_umrah_seat === 'true') && pkgOrg && String(ownerOrg) === String(pkgOrg);
+      });
+      if (fallback) {
+        infantTicketRaw = pick(fallback, ['infant_price','infant_selling_price','infant_fare','infant_ticket_price']);
+      }
+    }
+    let infantTicket = Number(infantTicketRaw) || 0;
+    const infantVisa = pkgPick(['infant_visa_selling_price', 'infant_visa_price', 'infant_visa_cost']);
 
-    const ticketChild = Number(ticketInfo?.child_price || ticketInfo?.child_selling_price || 0) || 0;
+    // Fallbacks: if ticket prices are not available in ticket_info, use package-level fields
+    if (!ticketAdult || Number(ticketAdult) === 0) {
+      ticketAdult = Number(pkg?.adult_price || pkg?.adult_selling_price || pkg?.adult_ticket_price || 0) || 0;
+    }
+    if (!ticketChild || Number(ticketChild) === 0) {
+      ticketChild = Number(pkg?.child_price || pkg?.child_selling_price || pkg?.child_ticket_price || 0) || 0;
+    }
+    if (!infantTicket || Number(infantTicket) === 0) {
+      infantTicket = Number(pkg?.infant_price || pkg?.infant_ticket_price || 0) || 0;
+    }
+
+    const totalInfant = Number(infantTicket) + Number(infantVisa || 0);
+
     const childDiscount = Math.max(0, ticketAdult - ticketChild);
 
     const tripDetails = ticketInfo?.trip_details || [];
@@ -339,6 +440,36 @@ const UmrahPackage = () => {
     const flightTo = tripDetails[1];
 
     const airline = airlinesList.find((a) => a.id === ticketInfo?.airline) || {};
+
+    // Dev debug: print breakdown of computed values to help diagnose incorrect totals
+    try {
+      console.debug("computePackageTotals breakdown", {
+        pkgId: pkg?.id,
+        food,
+        makkah,
+        madinah,
+        transport,
+        visaAdult,
+        ticketAdult,
+        adultCost,
+        sharingHotelTotal,
+        quaintHotelTotal,
+        quadHotelTotal,
+        tripleHotelTotal,
+        doubleHotelTotal,
+        totalSharing,
+        totalQuint,
+        totalQuad,
+        totalTriple,
+        totalDouble,
+        infantTicket,
+        infantVisa,
+        totalInfant,
+        ticketChild,
+        childDiscount,
+        hotelDetails,
+      });
+    } catch (e) {}
 
     return {
       hotelDetails,
@@ -370,7 +501,7 @@ const UmrahPackage = () => {
 
     try {
       await axios.delete(
-        `https://api.saer.pk/api/umrah-packages/${packageId}/`,
+        `http://127.0.0.1:8000/api/umrah-packages/${packageId}/`,
         {
           params: { organization: organizationId },
           headers: {
@@ -688,7 +819,6 @@ const UmrahPackage = () => {
                             filteredPackages.map((pkg, index) => {
                               const {
                                 hotelDetails,
-                                adultCost,
                                 totalSharing,
                                 totalQuint,
                                 totalQuad,
@@ -700,7 +830,7 @@ const UmrahPackage = () => {
                                 flightFrom,
                                 flightTo,
                                 airline,
-                              } = computePackageTotals(pkg, hotels, airlines);
+                              } = computePackageTotals(pkg, hotels, airlines, tickets);
 
                               const matchedAirline = airlines.find(
                                 (a) => a.code?.toLowerCase() === airline?.code?.toLowerCase()

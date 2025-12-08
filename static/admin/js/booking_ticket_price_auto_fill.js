@@ -1,4 +1,4 @@
-/**
+**
  * Dynamic Ticket Price Update for Booking Passenger Details
  * Automatically updates ticket_price when ticket is selected
  */

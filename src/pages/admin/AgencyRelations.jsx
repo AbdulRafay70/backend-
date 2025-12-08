@@ -4,7 +4,7 @@ import { Gear } from "react-bootstrap-icons";
 import { Funnel, Search } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
-import { NavLink, Link } from "react-router-dom";
+import { NavLink, Link, useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import AdminFooter from "../../components/AdminFooter";
 
@@ -116,14 +116,14 @@ const AgencyRelations = () => {
     try {
       // First get the agency details to find the associated user
       const agencyResponse = await axios.get(
-        `https://api.saer.pk/api/agencies/${agencyId}/`,
+        `http://127.0.0.1:8000/api/agencies/${agencyId}/`,
         axiosConfig
       );
 
       // Then get the user details if available
       if (agencyResponse.data.user) {
         const userResponse = await axios.get(
-          `https://api.saer.pk/api/users/${agencyResponse.data.user}/`,
+          `http://127.0.0.1:8000/api/users/${agencyResponse.data.user}/`,
           axiosConfig
         );
 
@@ -212,12 +212,12 @@ const AgencyRelations = () => {
 
       if (editingId) {
         await axios.put(
-          `https://api.saer.pk/api/agencies/${editingId}/`,
+          `http://127.0.0.1:8000/api/agencies/${editingId}/`,
           formData,
           config
         );
       } else {
-        await axios.post("https://api.saer.pk/api/agencies/", formData, config);
+        await axios.post("http://127.0.0.1:8000/api/agencies/", formData, config);
       }
 
       localStorage.removeItem(AGENCIES_CACHE_KEY);
@@ -247,7 +247,7 @@ const AgencyRelations = () => {
         setAgencies(JSON.parse(cachedData));
       } else {
         const response = await axios.get(
-          "https://api.saer.pk/api/agencies/",
+          "http://127.0.0.1:8000/api/agencies/",
           axiosConfig
         );
         const data = response.data || [];
@@ -271,7 +271,7 @@ const AgencyRelations = () => {
   const fetchAgencyDetails = async (id) => {
     try {
       const response = await axios.get(
-        `https://api.saer.pk/api/agencies/${id}/`,
+        `http://127.0.0.1:8000/api/agencies/${id}/`,
         axiosConfig
       );
       if (response.data.contacts) {
@@ -437,7 +437,7 @@ const AgencyRelations = () => {
     setIsSubmitting(true);
     try {
       await axios.patch(
-        `https://api.saer.pk/api/agencies/${currentAgencyId}/`,
+        `http://127.0.0.1:8000/api/agencies/${currentAgencyId}/`,
         { contacts: contentForm.contacts },
         axiosConfig
       );
@@ -465,7 +465,7 @@ const AgencyRelations = () => {
       setIsLoading(true);
       try {
         await axios.delete(
-          `https://api.saer.pk/api/agencies/${id}/`,
+          `http://127.0.0.1:8000/api/agencies/${id}/`,
           axiosConfig
         );
 
@@ -485,6 +485,35 @@ const AgencyRelations = () => {
   useEffect(() => {
     fetchAgencies();
   }, [refreshTrigger]);
+
+  // If navigated here with a selected agency (from BranchesDetails), open the appropriate view/edit
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const agencyId = location?.state?.agencyId;
+    const action = location?.state?.action || 'view';
+    if (!agencyId) return;
+
+    // Try to find the agency in the loaded list
+    const found = agencies.find((a) => Number(a.id) === Number(agencyId));
+    if (found) {
+      if (action === 'edit') {
+        handleShowEdit(found);
+      } else {
+        setCurrentAgencyId(found.id);
+        fetchAgencyDetails(found.id);
+        setShowContentModal(true);
+      }
+
+      // Clear navigation state so this only runs once
+      try {
+        navigate(location.pathname, { replace: true, state: null });
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, [agencies, location]);
 
   // Navigation tabs
   const tabs = [
@@ -876,6 +905,7 @@ const AgencyRelations = () => {
                       alt="Current logo"
                       style={{ maxWidth: "100px", maxHeight: "100px" }}
                     />
+                    <a href={agencyForm.logo} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-outline-primary ms-2">View</a>
                   </div>
                 )}
               </div>

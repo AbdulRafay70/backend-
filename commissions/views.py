@@ -27,6 +27,18 @@ class CommissionRuleListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
 
 
+class CommissionRuleDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Retrieve, update, or delete a commission rule.
+    GET /api/commissions/rules/{id}/ - Get single rule
+    PATCH /api/commissions/rules/{id}/ - Update rule
+    DELETE /api/commissions/rules/{id}/ - Delete rule
+    """
+    queryset = CommissionRule.objects.all()
+    serializer_class = CommissionRuleSerializer
+    permission_classes = [IsAuthenticated]
+
+
 class CommissionEarningAutoCreateView(APIView):
     """
     Accepts a minimal payload describing a booking/payment and creates

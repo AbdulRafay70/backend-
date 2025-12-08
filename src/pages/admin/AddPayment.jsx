@@ -4,6 +4,7 @@ import Header from "../../components/Header";
 import { Link, NavLink } from "react-router-dom";
 import { Search } from "lucide-react";
 import axios from "axios";
+import RulesWidget from "../../components/RulesWidget";
 
 const AddDepositForm = () => {
   const tabs = [
@@ -42,6 +43,7 @@ const AddDepositForm = () => {
   const [selectedSearchAgency, setSelectedSearchAgency] = useState(null);
   const [agencyAccounts, setAgencyAccounts] = useState([]);
   const [slipFile, setSlipFile] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [actionLoading, setActionLoading] = useState({});
   const [loadingBanks, setLoadingBanks] = useState(false);
@@ -130,26 +132,19 @@ const AddDepositForm = () => {
     },
     {
       date: "12-June-2024",
-      transType: "SPKCS0",
-      beneficiaryAc: "Mr. Ahsan Raza",
-      agentAccount: "see",
-      amount: "02-JUNE-2024",
+      transType: "SPKCS1",
+      beneficiaryAc: "Ms. Sara Khan",
+      agentAccount: "agent-123",
+      amount: "1500",
       status: "Active",
       slip: "see",
-    }, {
+    },
+    {
       date: "12-June-2024",
-      transType: "SPKCS0",
-      beneficiaryAc: "Mr. Ahsan Raza",
-      agentAccount: "see",
-      amount: "02-JUNE-2024",
-      status: "Approved",
-      slip: "see",
-    }, {
-      date: "12-June-2024",
-      transType: "SPKCS0",
-      beneficiaryAc: "Mr. Ahsan Raza",
-      agentAccount: "see",
-      amount: "02-JUNE-2024",
+      transType: "SPKCS2",
+      beneficiaryAc: "Mr. Ali Ahmad",
+      agentAccount: "agent-456",
+      amount: "2500",
       status: "Inactive",
       slip: "see",
     },
@@ -167,9 +162,47 @@ const AddDepositForm = () => {
   const applyPaymentFilters = (list) => {
     try {
       return (list || []).filter(p => {
+        // exact filters first
         if (paymentFilters.agency && String(p.agency || p.agency_id || '') !== String(paymentFilters.agency)) return false;
         if (paymentFilters.bank && String(p.bank || '') !== String(paymentFilters.bank)) return false;
         if (paymentFilters.status && String((p.status || p.state || '').toLowerCase()) !== String(paymentFilters.status).toLowerCase()) return false;
+
+        // global searchTerm: match against many common fields in the payment record
+        const q = (searchTerm || "").toString().toLowerCase().trim();
+        if (q) {
+          const candidates = [];
+          try {
+            candidates.push((p.transaction_number || p.transaction || p.transType || p.transaction_type || '') + '');
+            candidates.push((p.method || p.transaction_type || p.transType || '') + '');
+            candidates.push((p.beneficiaryAc || p.beneficiary_ac || p.beneficiary || p.beneficiaryAccount || '') + '');
+            candidates.push((p.agentAccount || p.agent_account || p.agent || '') + '');
+            // organization / beneficiary account fields
+            if (p.organization_bank_account) {
+              if (typeof p.organization_bank_account === 'string') candidates.push(p.organization_bank_account);
+              else if (p.organization_bank_account.account_title) candidates.push(p.organization_bank_account.account_title);
+              else if (p.organization_bank_account.bank_name) candidates.push(p.organization_bank_account.bank_name);
+              else candidates.push(JSON.stringify(p.organization_bank_account));
+            }
+            if (p.agent_bank_account) {
+              if (typeof p.agent_bank_account === 'string') candidates.push(p.agent_bank_account);
+              else if (p.agent_bank_account.account_title) candidates.push(p.agent_bank_account.account_title);
+              else if (p.agent_bank_account.bank_name) candidates.push(p.agent_bank_account.bank_name || '');
+              else candidates.push(JSON.stringify(p.agent_bank_account));
+            }
+            candidates.push((p.amount || p.total || '') + '');
+            candidates.push((p.status || p.state || '') + '');
+            candidates.push((p.notes || p.remarks || '') + '');
+            candidates.push((p.slip || p.image || '') + '');
+            candidates.push((p.agency || p.agency_id || p.agency_name || '') + '');
+            // fallback: stringify the whole payment object once
+            candidates.push(JSON.stringify(p));
+          } catch (e) {
+            try { candidates.push(String(p)); } catch (_) {}
+          }
+          const hay = candidates.join(' ').toLowerCase();
+          if (hay.indexOf(q) === -1) return false;
+        }
+
         return true;
       });
     } catch (e) {
@@ -239,6 +272,43 @@ const AddDepositForm = () => {
     }
   };
 
+  // Fetch current user details using token and persist to localStorage
+  const fetchCurrentUser = async () => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) return null;
+      const decoded = decodeJwt(token || '');
+      const userId = decoded?.user_id || decoded?.user || decoded?.id;
+      if (!userId) return null;
+
+      const resp = await axios.get(`http://127.0.0.1:8000/api/users/${userId}/`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const user = resp.data || null;
+      if (user) {
+        setCurrentUser(user);
+        try { localStorage.setItem('currentUser', JSON.stringify(user)); } catch (e) {}
+
+        // If no selectedOrganization is set, try to infer from user payload
+        const existingSel = localStorage.getItem('selectedOrganization');
+        if (!existingSel) {
+          let orgId = 0;
+          if (user.organization) orgId = user.organization;
+          else if (Array.isArray(user.organizations) && user.organizations.length) orgId = user.organizations[0];
+          else if (Array.isArray(user.organization_details) && user.organization_details.length) orgId = (user.organization_details[0].id || user.organization_details[0]);
+
+          if (orgId && Number(orgId) > 0) {
+            try { localStorage.setItem('selectedOrganization', JSON.stringify({ id: Number(orgId) })); } catch (e) {}
+          }
+        }
+      }
+      return user;
+    } catch (e) {
+      console.error('fetchCurrentUser error', e);
+      return null;
+    }
+  };
+
   const showNotification = (type, message, duration = 4500) => {
     try {
       const id = Date.now() + Math.random();
@@ -291,7 +361,7 @@ const AddDepositForm = () => {
     try {
       const orgId = getOrgId();
       const token = localStorage.getItem('accessToken');
-      const resp = await axios.get(`https://api.saer.pk/api/bank-accounts/?organization=${orgId}`, {
+      const resp = await axios.get(`http://127.0.0.1:8000/api/bank-accounts/?organization=${orgId}`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       const items = Array.isArray(resp.data) ? resp.data : (resp.data.results || []);
@@ -333,7 +403,7 @@ const AddDepositForm = () => {
       const token = localStorage.getItem('accessToken');
       const params = new URLSearchParams();
       if (orgId) params.append('organization', orgId);
-      const baseUrl = `https://api.saer.pk/api/payments/?${params.toString()}`;
+      const baseUrl = `http://127.0.0.1:8000/api/payments/?${params.toString()}`;
       const items = await fetchAllPages(baseUrl, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
       setPayments(items);
       setCurrentPage(1);
@@ -351,7 +421,7 @@ const AddDepositForm = () => {
     try {
       if (!agencyId) { setPayments([]); setLoadingPayments(false); return; }
       const token = localStorage.getItem('accessToken');
-      const url = `https://api.saer.pk/api/payments/by-agency/${agencyId}/payments/`;
+      const url = `http://127.0.0.1:8000/api/payments/by-agency/${agencyId}/payments/`;
       const items = await fetchAllPages(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
       setPayments(items);
       setCurrentPage(1);
@@ -392,7 +462,7 @@ const AddDepositForm = () => {
       console.debug('fetchAgencies - orgId:', orgId);
       const token = localStorage.getItem('accessToken');
       if (!orgId) { setAgencies([]); return; }
-      const resp = await axios.get(`https://api.saer.pk/api/agencies/?organization=${orgId}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+      const resp = await axios.get(`http://127.0.0.1:8000/api/agencies/?organization=${orgId}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
       const items = Array.isArray(resp.data) ? resp.data : (resp.data.results || []);
       setAgencies(items);
     } catch (err) {
@@ -401,19 +471,18 @@ const AddDepositForm = () => {
     }
   };
 
-  // Fetch agencies that have bank accounts using the special endpoint
+  // Fetch all agencies, regardless of bank accounts
   const searchAgenciesWithAccounts = async (query = '') => {
     try {
       const orgId = getOrgId();
-      if (!orgId) { setAgencySearchResults([]); return; }
       const token = localStorage.getItem('accessToken');
-      const url = `https://api.saer.pk/api/bank-accounts/by-organization/${orgId}/agency-accounts/`;
-      const resp = await axios.get(url, { params: { search: query }, headers: token ? { Authorization: `Bearer ${token}` } : {} });
+      // Always fetch all agencies for search
+      const resp = await axios.get(`http://127.0.0.1:8000/api/agencies/`, { params: { search: query, organization: orgId }, headers: token ? { Authorization: `Bearer ${token}` } : {} });
       const items = Array.isArray(resp.data) ? resp.data : (resp.data.results || []);
       setAgencySearchResults(items);
       setShowAgencySearchDropdown(true);
     } catch (e) {
-      console.error('Failed to search agencies with accounts', e);
+      console.error('Failed to search agencies', e);
       setAgencySearchResults([]);
     }
   };
@@ -423,7 +492,7 @@ const AddDepositForm = () => {
     try {
       if (!agencyId) { setAgencyAccounts([]); return; }
       const token = localStorage.getItem('accessToken');
-      const url = `https://api.saer.pk/api/bank-accounts/by-agency/${agencyId}/`;
+      const url = `http://127.0.0.1:8000/api/bank-accounts/by-agency/${agencyId}/`;
       const resp = await axios.get(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
       const items = Array.isArray(resp.data) ? resp.data : (resp.data.results || []);
       setAgencyAccounts(items);
@@ -544,7 +613,7 @@ const AddDepositForm = () => {
           formPayload.append('image', slipFile);
         }
 
-        const resp = await axios.post('https://api.saer.pk/api/payments/', formPayload, {
+        const resp = await axios.post('http://127.0.0.1:8000/api/payments/', formPayload, {
           headers: {
             Authorization: token ? `Bearer ${token}` : undefined,
             // Let the browser set Content-Type with boundary for multipart
@@ -572,8 +641,17 @@ const AddDepositForm = () => {
   };
 
   useEffect(() => {
-    fetchBankAccounts();
-    fetchAgencies();
+    // Ensure we have the signed-in user's details before fetching org-scoped data
+    (async () => {
+      try {
+        await fetchCurrentUser();
+      } catch (e) {
+        console.error('fetchCurrentUser failed on mount', e);
+      }
+      fetchBankAccounts();
+      fetchAgencies();
+    })();
+
     // Do not auto-fetch payments until user searches or clicks 'Show all'
     const onBranch = () => { /* no-op: payments are fetched only after search or Show all */ };
     window.addEventListener('branchChanged', onBranch);
@@ -593,7 +671,7 @@ const AddDepositForm = () => {
         const headers = token ? { Authorization: `Bearer ${token}` } : {};
         let res = null;
         if (enableApi) {
-          res = await axios.get('https://api.saer.pk/api/admin/payment-rules/', { headers });
+          res = await axios.get('http://127.0.0.1:8000/api/admin/payment-rules/', { headers });
         }
         const rules = res ? (Array.isArray(res.data) ? res.data : (res.data.results || [])) : [];
         if (!mounted) return;
@@ -665,7 +743,7 @@ const AddDepositForm = () => {
     try {
       setRowLoading(paymentId, true);
       const token = localStorage.getItem('accessToken');
-      const url = `https://api.saer.pk/api/admin/payments/${paymentId}/approve/`;
+      const url = `http://127.0.0.1:8000/api/admin/payments/${paymentId}/approve/`;
       await axios.post(url, {}, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
       await fetchPayments();
   showNotification('success', 'Payment approved');
@@ -685,7 +763,7 @@ const AddDepositForm = () => {
     try {
       setRowLoading(paymentId, true);
       const token = localStorage.getItem('accessToken');
-      const url = `https://api.saer.pk/api/payments/${paymentId}/`;
+      const url = `http://127.0.0.1:8000/api/payments/${paymentId}/`;
       await axios.patch(url, { status: 'Rejected' }, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
       await fetchPayments();
   showNotification('success', 'Payment rejected');
@@ -743,7 +821,7 @@ const AddDepositForm = () => {
                       className="form-control"
                       placeholder="Search name, address, job, etc"
                       value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                     />
                   </div>
                 </div>
@@ -802,6 +880,20 @@ const AddDepositForm = () => {
 
                   <form onSubmit={handleSubmit}>
                     <div className="row g-2">
+                      <div className="col-md-2">
+                        <label htmlFor="" className="form-label">Mode of Payment</label>
+                        <select
+                          className="form-select shadow-none"
+                          name="modeOfPayment"
+                          value={formData.modeOfPayment}
+                          onChange={handleInputChange}
+                        >
+                          <option value="Bank Transfer">Bank Transfer</option>
+                          <option value="Cash">Cash</option>
+                          <option value="Cheque">Cheque</option>
+                          <option value="Online">Online</option>
+                        </select>
+                      </div>
 
                       <div className="col-md-3">
                         <label htmlFor="" className="form-label">
@@ -823,52 +915,44 @@ const AddDepositForm = () => {
                         </select>
                       </div>
 
-                      <div className="col-md-2">
-                        <label htmlFor="" className="form-label">Mode of Payment</label>
-                        <select
-                          className="form-select shadow-none"
-                          name="modeOfPayment"
-                          value={formData.modeOfPayment}
-                          onChange={handleInputChange}
-                        >
-                          <option value="Bank Transfer">Bank Transfer</option>
-                          <option value="Cash">Cash</option>
-                          <option value="Cheque">Cheque</option>
-                          <option value="Online">Online</option>
-                        </select>
-                      </div>
 
-                      <div className="col-md-3">
+                      <div className={formData.modeOfPayment === 'Cash' ? 'col-12' : 'col-md-3'}>
                         {formData.modeOfPayment === 'Cash' ? (
-                          <>
-                            <label htmlFor="" className="form-label">Bank Name</label>
-                            <input
-                              type="text"
-                              className="form-control shadow-none mb-2"
-                              name="bankName"
-                              value={formData.bankName}
-                              onChange={handleInputChange}
-                              placeholder="Enter bank name"
-                            />
-                            <label htmlFor="" className="form-label">Depositor Name</label>
-                            <input
-                              type="text"
-                              className="form-control shadow-none mb-2"
-                              name="cashDepositorName"
-                              value={formData.cashDepositorName}
-                              onChange={handleInputChange}
-                              placeholder="Enter depositor full name"
-                            />
-                            <label htmlFor="" className="form-label">Depositor CNIC</label>
-                            <input
-                              type="text"
-                              className="form-control shadow-none"
-                              name="cashDepositorCnic"
-                              value={formData.cashDepositorCnic}
-                              onChange={handleInputChange}
-                              placeholder="e.g. 12345-1234567-1"
-                            />
-                          </>
+                          <div className="row g-2">
+                            <div className="col-12 col-md-4">
+                              <label htmlFor="" className="form-label">Bank Name</label>
+                              <input
+                                type="text"
+                                className="form-control shadow-none"
+                                name="bankName"
+                                value={formData.bankName}
+                                onChange={handleInputChange}
+                                placeholder="Enter bank name"
+                              />
+                            </div>
+                            <div className="col-12 col-md-4">
+                              <label htmlFor="" className="form-label">Depositor Name</label>
+                              <input
+                                type="text"
+                                className="form-control shadow-none"
+                                name="cashDepositorName"
+                                value={formData.cashDepositorName}
+                                onChange={handleInputChange}
+                                placeholder="Enter depositor full name"
+                              />
+                            </div>
+                            <div className="col-12 col-md-4">
+                              <label htmlFor="" className="form-label">Depositor CNIC</label>
+                              <input
+                                type="text"
+                                className="form-control shadow-none"
+                                name="cashDepositorCnic"
+                                value={formData.cashDepositorCnic}
+                                onChange={handleInputChange}
+                                placeholder="e.g. 12345-1234567-1"
+                              />
+                            </div>
+                          </div>
                         ) : (
                           <>
                             <label htmlFor="" className="form-label">Agent Account</label>
@@ -881,16 +965,19 @@ const AddDepositForm = () => {
                             >
                               {!selectedSearchAgency ? (
                                 <option value="">Select an agency first</option>
-                              ) : (
+                              ) : loadingBanks ? (
+                                <option>Loading...</option>
+                              ) : (agencyAccounts && agencyAccounts.length > 0) ? (
                                 <>
                                   <option value="">Select your agent account</option>
-                                  {loadingBanks ? <option>Loading...</option> : null}
-                                  {(agencyAccounts || []).map((b) => (
+                                  {agencyAccounts.map((b) => (
                                     <option key={b.id} value={b.id}>
                                       {(b.bankName || b.bank_name || b.accountTitle || b.account_title || '')} — {(b.accountTitle || b.account_title || '')} ({(b.accountNumber || b.account_number || '')})
                                     </option>
                                   ))}
                                 </>
+                              ) : (
+                                <option value="">No bank account found</option>
                               )}
                             </select>
                           </>
@@ -962,20 +1049,9 @@ const AddDepositForm = () => {
                     </div>
                   </form>
 
-                  {/* Rules Section */}
+                  {/* Rules Section (uses reusable RulesWidget) */}
                   <div className="mt-4">
-                    <h5 className="mb-2">Payment Rules</h5>
-                    {rulesLoading ? (
-                      <div>Loading rules…</div>
-                    ) : (selectedRules && selectedRules.length > 0) ? (
-                      <ol className="list-unstyled">
-                        {selectedRules.map((r, idx) => (
-                          <li key={r.id ?? idx}>{r.text || r.title || r.name || r.rule || String(r)}</li>
-                        ))}
-                      </ol>
-                    ) : (
-                      <div className="text-muted">No payment rules configured.</div>
-                    )}
+                    <RulesWidget page="payment_page" max={5} />
                   </div>
                   {/* (Duplicate agency panel removed; agency selection is at the top of the form) */}
                 </div>
@@ -997,6 +1073,15 @@ const AddDepositForm = () => {
                           {bankAccounts.map(b => <option key={b.id} value={b.id}>{b.bank_name || b.bankName || b.account_title || `Bank ${b.id}`}</option>)}
                         </select>
                       </div> */}
+                      <div className="col-auto">
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="Search payments..."
+                          value={searchTerm}
+                          onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+                        />
+                      </div>
                       <div className="col-auto">
                         <select className="form-select" name="status" value={paymentFilters.status} onChange={handlePaymentFilterChange}>
                           <option value="">All statuses</option>

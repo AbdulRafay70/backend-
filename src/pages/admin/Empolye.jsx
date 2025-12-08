@@ -7,7 +7,7 @@ import Header from "../../components/Header";
 import { Link, NavLink } from "react-router-dom";
 import PartnersTabs from "../../components/PartnersTabs";
 import document from "../../assets/document.jpg";
-import axios from "axios";
+import api from "../../utils/Api";
 
 const PartnerEmpolye = () => {
   const [statusFilter, setStatusFilter] = useState("");
@@ -30,7 +30,7 @@ const PartnerEmpolye = () => {
   useEffect(() => {
     const fetchBranches = async () => {
       try {
-        const response = await axios.get("https://api.saer.pk/api/branches/");
+        const response = await api.get('/branches/');
         setBranches(response.data);
         setLoading(false);
       } catch (error) {
@@ -172,7 +172,7 @@ const PartnerEmpolye = () => {
         <div className="col-lg-2 mb-3">
           <Sidebar />
         </div>
-        <div className="col-lg-10" style={{ background: "#F2F3F4" }}>
+        <div className="col-lg-10" style={{ background: "#ffffff" }}>
           <Header />
 
           <div className="px-3 px-lg-4 my-3">

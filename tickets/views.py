@@ -9,7 +9,7 @@ from django.db.models import Q
 from drf_spectacular.utils import extend_schema, OpenApiParameter, extend_schema_view, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
 
-from .models import Ticket, Hotels, HotelRooms, HotelCategory
+from .models import Ticket, Hotels, HotelRooms, HotelCategory, BedType
 from booking.models import AllowedReseller
 from .serializers import (
     TicketSerializer,
@@ -17,6 +17,7 @@ from .serializers import (
     HotelsSerializer,
     HotelRoomsSerializer,
     HotelCategorySerializer,
+    BedTypeSerializer,
 )
 from django.utils import timezone
 from users.models import GroupExtension
@@ -76,9 +77,13 @@ from users.models import GroupExtension
                     "stopover_details": [
                         {
                             "airline": {"id": 200, "name": "StopAir"},
-                            "stopover_duration": "string",
-                            "trip_type": "string",
-                            "stopover_city": {"id": 0, "name": "Stopover City"}
+                            "flight_number": "202",
+                            "departure_date_time": "2025-12-11T19:21:00Z",
+                            "arrival_date_time": "2025-12-11T19:21:00Z",
+                            "arrival_city": {"id": 6, "name": "Lahore"},
+                            "stopover_duration": "6d",
+                            "trip_type": "Departure",
+                            "stopover_city": {"id": 5, "name": "karachi"}
                         }
                     ],
                     "adult_fare": 0,
@@ -546,6 +551,39 @@ class HotelCategoryViewSet(ModelViewSet):
     def perform_create(self, serializer):
         # allow creating org-scoped categories by passing ?owner_organization= on the request
         org = self.request.query_params.get('owner_organization')
+        from django.utils.text import slugify
+        data = serializer.validated_data if hasattr(serializer, 'validated_data') else {}
+        slug_val = data.get('slug') or None
+        if not slug_val and data.get('name'):
+            slug_val = slugify(data.get('name'))
+
+        if org:
+            try:
+                return serializer.save(organization_id=int(org), slug=slug_val)
+            except Exception:
+                pass
+        return serializer.save(slug=slug_val)
+
+
+class BedTypeViewSet(ModelViewSet):
+    """API to manage bed types (CRUD). Supports optional `organization` query param to scope bed types."""
+    serializer_class = BedTypeSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        qs = BedType.objects.all().order_by('name')
+        org = self.request.query_params.get('organization')
+        if org:
+            try:
+                # Return both organization-specific and global (null organization) bed types
+                qs = qs.filter(Q(organization_id=int(org)) | Q(organization__isnull=True))
+            except Exception:
+                pass
+        return qs
+
+    def perform_create(self, serializer):
+        # Allow creating org-scoped bed types by passing ?organization= on the request
+        org = self.request.query_params.get('organization')
         from django.utils.text import slugify
         data = serializer.validated_data if hasattr(serializer, 'validated_data') else {}
         slug_val = data.get('slug') or None

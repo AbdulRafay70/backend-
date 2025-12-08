@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import TicketViewSet, HotelsViewSet, HotelRoomsViewSet, HotelCategoryViewSet
+from .views import TicketViewSet, HotelsViewSet, HotelRoomsViewSet, HotelCategoryViewSet, BedTypeViewSet
 from .hotel_availability_api import HotelAvailabilityAPIView
 from .room_assignment_api import RoomAssignmentAPIView, RoomUnassignmentAPIView
 from .room_map_api import RoomMapManagementAPIView
@@ -10,6 +10,8 @@ router.register(r'tickets', TicketViewSet, basename='tickets')
 router.register(r'hotels', HotelsViewSet, basename='hotels')
 router.register(r'hotel-rooms', HotelRoomsViewSet, basename='hotelrooms')
 router.register(r'hotel-categories', HotelCategoryViewSet, basename='hotelcategory')
+router.register(r'bed-types', BedTypeViewSet, basename='bedtype')
+
 
 urlpatterns = [
     path('api/', include(router.urls)),  # ✅ your app's API is now under /api/

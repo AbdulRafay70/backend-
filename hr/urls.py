@@ -9,6 +9,10 @@ router.register(r'commissions', views.CommissionViewSet)
 router.register(r'attendance', views.AttendanceViewSet)
 router.register(r'movements', views.MovementLogViewSet)
 router.register(r'punctuality', views.PunctualityViewSet)
+router.register(r'commission-groups', views.CommissionGroupViewSet)
+router.register(r'leave-requests', views.LeaveRequestViewSet)
+router.register(r'fines', views.FineViewSet)
+router.register(r'salary-payments', views.SalaryPaymentViewSet)
 
 urlpatterns = [
     path('api/hr/', include(router.urls)),

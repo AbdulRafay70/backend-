@@ -1,0 +1,88 @@
+.hr-root { display: flex; min-height: 100vh; background: linear-gradient(180deg,#f6f9ff 0%, #ffffff 100%); }
+.hr-embedded { padding: 0; }
+
+:root{
+	--accent: #6c63ff;
+	--accent-2: #00c2a8;
+	--muted: #6b7280;
+	--surface: #ffffff;
+	--glass: rgba(255,255,255,0.6);
+	--card-radius: 12px;
+	--shadow-sm: 0 4px 12px rgba(17,24,39,0.06);
+}
+
+.hr-container{padding:24px}
+
+.hr-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.hr-topbar .title{font-size:20px;font-weight:700;color:#111827}
+.hr-topbar .subtitle{font-size:13px;color:var(--muted)}
+
+.hr-cards{display:flex;gap:16px;margin-bottom:20px}
+.hr-card{flex:1;background:linear-gradient(180deg,rgba(108,99,255,0.08), rgba(0,0,0,0));border-radius:var(--card-radius);padding:16px;box-shadow:var(--shadow-sm);border:1px solid rgba(108,99,255,0.08)}
+.hr-card h4{margin:0 0 6px 0;font-size:16px}
+.hr-card p{margin:0;color:var(--muted)}
+
+.hr-panel{background:var(--surface);border-radius:var(--card-radius);box-shadow:var(--shadow-sm);padding:16px;border:1px solid rgba(15,23,42,0.03)}
+
+.hr-actions{display:flex;gap:8px;align-items:center}
+.btn-ghost{background:transparent;border:1px solid rgba(15,23,42,0.06);padding:6px 12px;border-radius:8px;color:#111827}
+.btn-primary{background:var(--accent);border:none;color:white;padding:8px 14px;border-radius:10px}
+.btn-success{background:var(--accent-2);border:none;color:white;padding:8px 14px;border-radius:10px}
+
+.hr-filters{display:flex;gap:12px;flex-wrap:nowrap;align-items:center;margin-bottom:12px;overflow-x:auto}
+.hr-filters > *{flex:0 0 auto}
+.filter-input{min-width:160px}
+
+.hr-table{width:100%;border-collapse:collapse}
+.hr-table thead th{background:linear-gradient(90deg, rgba(108,99,255,0.06), rgba(0,194,168,0.03));text-align:left;padding:12px;font-weight:600;color:#0f172a;border-bottom:1px solid rgba(15,23,42,0.05)}
+.hr-table tbody td{padding:12px;border-bottom:1px solid rgba(15,23,42,0.04);vertical-align:middle}
+.avatar{width:40px;height:40px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--accent),#8b5cf6);color:white;font-weight:700}
+.small-muted{color:var(--muted);font-size:13px}
+
+.status-chip{padding:6px 10px;border-radius:999px;font-weight:600;font-size:13px}
+.status-in{background:rgba(0,194,168,0.12);color:var(--accent-2)}
+.status-out{background:rgba(255,84,84,0.10);color:#ef4444}
+.status-pending{background:rgba(108,99,255,0.08);color:var(--accent)}
+
+@media (max-width: 768px){
+	.hr-cards{flex-direction:column}
+	/* keep filters in a horizontal row but allow scrolling on small screens */
+	.hr-filters{flex-wrap:nowrap}
+}
+
+.hr-empty{padding:40px;text-align:center;color:var(--muted)}
+
+.hr-embedded .hr-container{padding:0}
+.hr-root .modal-sm { max-width: 520px; }
+.hr-root .modal-md { max-width: 680px; }
+.hr-root .value { font-weight: 700; }
+
+/* Dashboard cards and layout tweaks */
+.hr-root{min-height:100vh}
+.hr-card{border-left:4px solid rgba(27,120,206,.15)}
+.display-number{font-size:22px;font-weight:700}
+.hr-card h5{margin:0}
+.hr-root .card{border-radius:8px}
+.hr-root .table td,.hr-root .table th{vertical-align:middle}
+
+/* Small UI polish and animations */
+.hr-card, .hr-panel, .hr-topbar, .hr-table tr{transition: all 180ms ease-in-out}
+.hr-card:hover{transform:translateY(-6px);box-shadow:0 8px 18px rgba(17,24,39,0.08)}
+.hr-panel{transition: box-shadow 180ms ease-in-out}
+.hr-panel:hover{box-shadow:0 10px 24px rgba(17,24,39,0.06)}
+.hr-table tbody tr:hover{background:rgba(99,102,241,0.03)}
+.btn-primary:hover{filter:brightness(1.03);transform:translateY(-1px)}
+.btn-ghost:hover{background:rgba(15,23,42,0.03)}
+
+/* Modal header accent */
+.modal-header-accent{border-bottom:0;background:linear-gradient(90deg,var(--accent),#8b5cf6);color:white}
+.modal-header-accent .modal-title{color:white}
+
+/* Chart placeholder */
+.chart-placeholder{height:220px;border-radius:10px;background:linear-gradient(90deg,rgba(108,99,255,0.12),rgba(0,194,168,0.06));display:flex;align-items:center;justify-content:center;color:var(--muted);font-weight:700}
+
+/* Sub navigation (page tabs) */
+.hr-subnav{display:flex;gap:18px;padding:12px 0 18px;border-bottom:1px solid rgba(15,23,42,0.03)}
+.hr-subnav a{color:var(--accent);text-decoration:none;font-weight:600}
+.hr-subnav a.active{color:#0f172a;background:transparent}
+.hr-subnav a:hover{text-decoration:underline}

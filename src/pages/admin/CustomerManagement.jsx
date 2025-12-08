@@ -4,9 +4,11 @@ import { User, Users, Database, GitBranch, BookOpen, Phone, Mail, MapPin, Search
 import Sidebar from '../../components/Sidebar';
 import Header from '../../components/Header';
 import CRMTabs from '../../components/CRMTabs';
+import LeadManagement from './LeadManagement';
 
 const CustomerManagement = () => {
   // State management
+  const [crmActive, setCrmActive] = useState('Customers');
   const [activeMainTab, setActiveMainTab] = useState('walk-in');
   const [activeSubTab, setActiveSubTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
@@ -268,7 +270,13 @@ const CustomerManagement = () => {
             <Header />
 
             <div className="px-3 px-lg-4 my-3">
-              <CRMTabs />
+              <CRMTabs activeName={crmActive} onSelect={(name) => setCrmActive(name)} />
+              {crmActive === 'Follow Ups' && (
+                <div className="mb-4">
+                  <LeadManagement embedded={true} />
+                </div>
+              )}
+              <div style={{ display: crmActive === 'Follow Ups' ? 'none' : 'block' }}>
               {/* Page Header */}
               <div className="row mb-4">
                 <div className="col-12">
@@ -925,6 +933,7 @@ const CustomerManagement = () => {
             </div>
           </div>
         </div>
+      </div>
       </div>
 
       {/* Booking Split Modal */}

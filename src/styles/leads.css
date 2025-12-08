@@ -1,0 +1,170 @@
+/* Lead Management - Refined Theme */
+:root{
+  --bg: #0f1724; /* not used but reserved */
+  --page-bg: #f6f8fb;
+  --card-bg: #ffffff;
+  --muted: #6b7280;
+  --text: #0f1724;
+  --accent: #0d6efd; /* primary */
+  --accent-600: #0b5ed7;
+  --success: #16a34a;
+  --danger: #dc3545;
+  --radius: 10px;
+  --transition: 180ms cubic-bezier(.2,.9,.3,1);
+}
+
+/* Page container baseline */
+body,
+.min-vh-100 {
+  background: var(--page-bg);
+  color: var(--text);
+  -webkit-font-smoothing:antialiased;
+  -moz-osx-font-smoothing:grayscale;
+  font-family: "Poppins", Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+/* Cards & Stat tiles */
+.stat-card{
+  background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(248,249,250,1) 100%);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  transition: transform var(--transition), box-shadow var(--transition);
+  border: 0;
+}
+.stat-card:hover{ transform: translateY(-6px); box-shadow: 0 18px 40px rgba(12,24,64,0.09); }
+.stat-card h3{ margin:0; font-size:1.25rem; font-weight:700; color:var(--text); }
+.stat-card p{ margin:0; color:var(--muted); font-size:0.85rem; }
+
+/* Cards general */
+.card{ border-radius: var(--radius); border: 0; box-shadow: 0 6px 18px rgba(11,22,47,0.06); }
+.card-header{ background:transparent; border-bottom:0; padding:0.9rem 1rem; }
+
+/* Table styling - clean and airy */
+.table-responsive{ border-radius: var(--radius); overflow:hidden; }
+
+/* Dropdowns: ensure menus render above tables and are scrollable when long */
+/* Scoped to this page to avoid global side-effects */
+.page-inner .dropdown,
+.lead-actions .dropdown,
+.table-responsive .dropdown {
+  /* keep default positioning but allow menu to escape if possible */
+  position: relative;
+}
+
+.page-inner .dropdown-menu,
+.lead-actions .dropdown-menu,
+.table-responsive .dropdown-menu,
+.dropdown-menu {
+  z-index: 5000 !important; /* sit above most UI */
+  max-height: 60vh; /* prevent extremely tall menus */
+  overflow-y: auto; /* make menu scrollable when content is large */
+  -webkit-overflow-scrolling: touch;
+}
+
+/* If the table wrapper is clipping the dropdown due to overflow:hidden, allow visible overflow for dropdowns only */
+.table-responsive {
+  overflow: visible; /* allow dropdowns to overflow the scrolling container */
+}
+
+/* Prevent the toggle from overlapping the menu: keep toggle below the menu's stacking context */
+.page-inner .dropdown-toggle,
+.lead-actions .dropdown-toggle,
+.table-responsive .dropdown-toggle {
+  z-index: 1;
+}
+
+/* If additional stacking-context issues persist, consider rendering dropdown menus into body via Popper/portal. */
+.table{ background:var(--card-bg); border-radius:var(--radius); }
+.table thead th{ background: linear-gradient(90deg, #fbfdff, #f6f8fb); font-weight:600; font-size:0.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.6px; border-bottom:0; }
+.table thead th:first-child{ border-top-left-radius:var(--radius); }
+.table thead th:last-child{ border-top-right-radius:var(--radius); }
+.table tbody tr{ transition: background-color .12s ease, transform .12s ease; }
+.table tbody tr:hover{ background: #fbfdff; transform: translateY(-2px); }
+.table td{ padding: 0.85rem 0.9rem; vertical-align: middle; border-top:1px solid #f1f3f5; }
+.table td small{ color:var(--muted); }
+
+/* Avatar */
+.rounded-circle.bg-primary{ background: linear-gradient(180deg,var(--accent),var(--accent-600)); display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:50%; color:#fff; }
+
+/* Modal */
+.modal-header{ background: transparent; border-bottom: 1px solid #eef2f6; }
+.modal-title{ font-weight:600; color:var(--text); }
+.max-height-modal{ max-height:70vh; overflow:auto; }
+
+/* Form controls - compact */
+.form-label{ font-size:0.85rem; color:var(--muted); margin-bottom:6px; }
+.form-control, .form-select{ border-radius:8px; border:1px solid #e6eef8; padding:0.45rem 0.6rem; font-size:0.9rem; }
+.form-control:focus, .form-select:focus{ box-shadow: 0 6px 18px rgba(13,110,253,0.08); border-color:var(--accent-600); }
+
+/* invalid state styling */
+.form-control.is-invalid, .form-select.is-invalid {
+  border-color: #dc3545 !important;
+  box-shadow: none;
+}
+.form-control.is-invalid:focus, .form-select.is-invalid:focus {
+  box-shadow: 0 6px 18px rgba(220,53,69,0.06);
+}
+
+/* Inputs size small (explicitly support size prop) */
+input.form-control[aria-size='sm'], .form-control[aria-size='sm'] { padding: 0.35rem 0.5rem; font-size:0.86rem; }
+
+/* Buttons */
+.btn-sm{ padding:6px 10px; border-radius:8px; font-weight:600; font-size:0.85rem; transition: transform var(--transition), box-shadow var(--transition); }
+.btn-sm:hover{ transform: translateY(-3px); box-shadow: 0 10px 30px rgba(11,22,47,0.07); }
+.btn-primary{ background: linear-gradient(180deg,var(--accent),var(--accent-600)); border:0; }
+.btn-outline-primary{ border-color: rgba(13,110,253,0.15); }
+
+/* Badge */
+.badge{ border-radius: 999px; padding:6px 10px; font-size:0.78rem; font-weight:600; }
+
+/* Filters area */
+.bg-light{ background:#fbfdff !important; padding: 0.8rem; border-radius:8px; }
+
+/* Pagination */
+.pagination{ gap:6px; }
+.page-link{ border-radius:6px; border: 1px solid #eef2f6; color:var(--muted); }
+.page-link:hover:not(:disabled){ background:var(--accent); color:#fff; border-color:var(--accent); }
+.page-item.active .page-link{ background:var(--accent); border-color:var(--accent); color:#fff; }
+
+/* History / Chat sidebar */
+.history-entry{ padding:10px; border-radius:8px; background:#fbfdff; margin-bottom:8px; border:1px solid #eef4fb; }
+.history-entry .meta{ font-size:0.75rem; color:var(--muted); }
+.history-entry .text{ font-size:0.9rem; margin-top:6px; }
+
+/* Page wrapper & hero */
+.page-inner{ max-width:1180px; margin:0 auto; padding: 0 14px; }
+.page-hero{ display:flex; flex-direction:column; gap:6px; margin-bottom:18px; }
+.page-title{ font-size:1.6rem; margin:0; font-weight:700; background: linear-gradient(90deg,var(--accent),var(--accent-600)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.page-subtitle{ margin:0; color:var(--muted); font-size:0.95rem; }
+
+/* Reduce outer horizontal spacing on large screens */
+@media (min-width: 1200px){
+  .container-fluid{ padding-left: 8px !important; padding-right:8px !important; }
+  .page-inner{ max-width:1260px; }
+}
+
+/* Smooth row animation */
+.table tbody tr{ transform-origin: left center; transition: transform 220ms cubic-bezier(.2,.9,.3,1), box-shadow 220ms ease; }
+.table tbody tr:hover{ box-shadow: 0 14px 30px rgba(12,24,64,0.06); }
+
+/* Responsive tweaks */
+@media (max-width: 992px){
+  .stat-card h3{ font-size:1.05rem; }
+  .table td{ padding:0.6rem; }
+}
+@media (max-width: 576px){
+  .card-header{ padding:0.6rem; }
+  .btn-sm{ padding:5px 8px; font-size:0.78rem; }
+  .table thead th{ font-size:0.65rem; }
+}
+
+/* Utilities */
+.fw-500{ font-weight:500; }
+.text-nowrap{ white-space:nowrap; }
+.d-flex.gap-1{ gap:0.5rem; }
+.gap-2{ gap:1rem; }
+
+/* subtle animation for alerts */
+@keyframes slideIn{ from{ opacity:0; transform: translateY(8px);} to{ opacity:1; transform: translateY(0);} }
+.alert{ animation: slideIn .28s ease; }
+

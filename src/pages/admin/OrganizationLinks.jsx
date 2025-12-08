@@ -650,6 +650,8 @@
 
     const [resellForm, setResellForm] = useState({ main_org: "", link_org: "", item_type: ["hotel"], reseller: false, items: "" });
     const [resellPrefilled, setResellPrefilled] = useState(false);
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [cancelTargetId, setCancelTargetId] = useState(null);
 
     const handleCreateResell = async (e) => {
       e.preventDefault();
@@ -842,6 +844,32 @@
                       </Button>
                     </div>
                   </div>
+                  {/* Cancel Resell Confirmation Modal */}
+                  <Modal show={showCancelModal} onHide={() => { if (resellActionLoading) return; setShowCancelModal(false); setCancelTargetId(null); }} centered>
+                    <Modal.Header closeButton>
+                      <Modal.Title>Cancel Resell Request</Modal.Title>
+                    </Modal.Header>
+                    <Modal.Body>
+                      <p className="mb-2">Are you sure you want to cancel this resell request? This action cannot be undone and other organizations will no longer see the request.</p>
+                      <p className="small text-muted mb-0">If you need to re-open reselling later, you'll need to create a new request.</p>
+                    </Modal.Body>
+                    <Modal.Footer>
+                      <Button variant="secondary" onClick={() => { if (resellActionLoading) return; setShowCancelModal(false); setCancelTargetId(null); }}>Close</Button>
+                      <Button variant="danger" onClick={async () => {
+                        if (!cancelTargetId) return;
+                        try {
+                          setResellActionLoading(`${cancelTargetId}`);
+                          await handleCancelResell(cancelTargetId);
+                        } finally {
+                          setResellActionLoading(null);
+                          setShowCancelModal(false);
+                          setCancelTargetId(null);
+                        }
+                      }} disabled={resellActionLoading === `${cancelTargetId}`}>
+                        {resellActionLoading === `${cancelTargetId}` ? <Spinner size="sm" animation="border" /> : 'Confirm Cancel'}
+                      </Button>
+                    </Modal.Footer>
+                  </Modal>
 
                   {error && (
                     <div className="alert alert-danger">{JSON.stringify(error)}</div>
@@ -996,17 +1024,16 @@
 
                                 {/* Cancel button: both main and link organizations may cancel their resell requests */}
                                 {(isLinkMember || isMainMember) && (
-                                  <Button
-                                    size="sm"
-                                    variant="outline-secondary"
-                                    onClick={() => {
-                                      if (!window.confirm('Cancel this resell request?')) return;
-                                      handleCancelResell(id);
-                                    }}
-                                    disabled={resellActionLoading === `${id}`}
-                                  >
-                                    {resellActionLoading === `${id}` ? <Spinner size="sm" animation="border" /> : 'Cancel'}
-                                  </Button>
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      variant="outline-secondary"
+                                      onClick={() => { setCancelTargetId(id); setShowCancelModal(true); }}
+                                      disabled={resellActionLoading === `${id}`}
+                                    >
+                                      {resellActionLoading === `${id}` ? <Spinner size="sm" animation="border" /> : 'Cancel'}
+                                    </Button>
+                                  </>
                                 )}
                               </div>
                             </td>

@@ -127,6 +127,11 @@ const Organization = () => {
 
   useEffect(() => {
     fetchOrganizations();
+    // debug: log when Organization mounts so we can verify routing
+    try {
+      // eslint-disable-next-line no-console
+      console.debug("Organization mounted", window.location.pathname);
+    } catch (e) {}
   }, []);
 
   // Handle search

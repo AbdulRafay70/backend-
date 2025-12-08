@@ -80,7 +80,7 @@ const RoleAndPermissions = () => {
   const CACHE_EXPIRY_TIME = 5 * 60 * 1000;
 
   const axiosInstance = axios.create({
-    baseURL: "https://api.saer.pk/api/",
+    baseURL: "http://127.0.0.1:8000/api/",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${getAccessToken()}`,

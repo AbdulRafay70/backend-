@@ -1,4 +1,5 @@
 from django.db import models
+from django.core import validators
 from organization.models import Organization
 from packages.models import Airlines, City
 from django.contrib.auth.models import User
@@ -292,6 +293,47 @@ class HotelCategory(models.Model):
         ordering = ["name"]
 
 
+class BedType(models.Model):
+    """
+    Dynamic bed types so admins can add/edit/delete bed types
+    without needing to change model choice constants.
+    """
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(max_length=120, blank=True)
+    capacity = models.IntegerField(
+        default=1, 
+        help_text="Default capacity for this bed type (max 10)",
+        validators=[
+            validators.MinValueValidator(1, message="Capacity must be at least 1"),
+            validators.MaxValueValidator(10, message="Capacity cannot exceed 10 beds")
+        ]
+    )
+    organization = models.ForeignKey(
+        Organization, on_delete=models.CASCADE, related_name="bed_types", null=True, blank=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def clean(self):
+        """Validate bed type before saving"""
+        from django.core.exceptions import ValidationError
+        
+        # Validate capacity
+        if self.capacity and self.capacity > 10:
+            raise ValidationError({'capacity': 'Maximum capacity is 10 beds'})
+        if self.capacity and self.capacity < 1:
+            raise ValidationError({'capacity': 'Capacity must be at least 1'})
+
+    def __str__(self):
+        return self.name
+
+    class Meta:
+        verbose_name = "Bed Type"
+        verbose_name_plural = "Bed Types"
+        ordering = ["name"]
+        unique_together = [['slug', 'organization']]
+
+
+
 class HotelPrices(models.Model):
     """
     Model to store the prices of a Hotel.
@@ -305,6 +347,11 @@ class HotelPrices(models.Model):
         ('triple', 'Triple'),
         ('quad', 'Quad'),
         ('quint', 'Quint'),
+        ('6-bed', '6 Bed'),
+        ('7-bed', '7 Bed'),
+        ('8-bed', '8 Bed'),
+        ('9-bed', '9 Bed'),
+        ('10-bed', '10 Bed'),
         ('suite', 'Suite'),
         ('deluxe', 'Deluxe'),
         ('executive', 'Executive'),

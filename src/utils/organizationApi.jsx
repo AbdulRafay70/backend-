@@ -28,10 +28,6 @@ const organizationApi = {
     console.log('rejectLink constructed URL:', url);
     return api.post(url);
   },
-  deleteLink: (linkId) => {
-    if (!linkId) throw new Error('linkId is required for deleteLink');
-    return api.delete(`/organization-links/${linkId}/`);
-  },
   // Resell requests
   listResellRequests: () => api.get("/resell-requests/"),
 
@@ -57,10 +53,8 @@ const organizationApi = {
   },
 
   approveResellRequest: (requestId) => api.post(`/resell-requests/${requestId}/approve/`),
+
   rejectResellRequest: (requestId) => api.post(`/resell-requests/${requestId}/reject/`),
-  deleteResellRequest: (requestId) => api.delete(`/resell-requests/${requestId}/`),
-  // Patch/update a resell request (partial update)
-  updateResellRequest: (requestId, payload) => api.patch(`/resell-requests/${requestId}/`, payload),
 };
 
 export default organizationApi;

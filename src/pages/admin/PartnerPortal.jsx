@@ -5,6 +5,7 @@ import { ArrowBigLeft, Funnel, Search, UploadCloudIcon } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
 import Header from "../../components/Header";
 import PartnersTabs from "../../components/PartnersTabs";
+import RulesWidget from "../../components/RulesWidget";
 import Partners from "./Partners";
 import document from "../../assets/document.jpg";
 
@@ -35,11 +36,14 @@ const PartnerPortal = () => {
         <div className="col-lg-2 mb-3">
           <Sidebar />
         </div>
-        <div className="col-lg-10" style={{ background: "#F2F3F4" }}>
+        <div className="col-lg-10" style={{ background: "#ffffff" }}>
           <Header />
 
           <div className="px-3 px-lg-4 my-3">
             <PartnersTabs />
+            <div className="mt-3">
+              <RulesWidget page="agent_portal" max={5} />
+            </div>
           </div>
 
           <div className="row my-3 w-100">

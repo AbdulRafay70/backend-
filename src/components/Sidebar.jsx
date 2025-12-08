@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Offcanvas, Nav } from "react-bootstrap";
-import { NavLink } from "react-router-dom";
 import axios from "axios";
 import api from '../utils/Api';
+import { NavLink, useLocation, Link } from "react-router-dom";
 import {
   Check,
   FileAxis3DIcon,
@@ -21,6 +21,9 @@ import {
   BookOpen,
   Layers,
   DollarSign,
+  Bell,
+  Search,
+  Settings,
 } from "lucide-react";
 import { Bag, Cash } from "react-bootstrap-icons";
 import { useAuth } from "../context/AuthContext";
@@ -29,6 +32,8 @@ const Sidebar = () => {
   const { logout } = useAuth();
   const [show, setShow] = useState(false);
   const [organization, setOrganization] = useState({});
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef(null);
 
   const handleClose = () => setShow(false);
   const handleShow = () => setShow(true);
@@ -81,7 +86,7 @@ const Sidebar = () => {
       <div className="custom-sidebar-position">
         {/* Mobile toggle button */}
         <button
-          className="d-lg-none btn btn-dark top-0 end-0 my-2 mx-4"
+          className="d-lg-none hamburg btn btn-dark top-0 end-0 my-2 mx-4"
           onClick={handleShow}
         >
           <Menu size={20} />
@@ -113,6 +118,82 @@ const Sidebar = () => {
           </Offcanvas.Header>
           <Offcanvas.Body>
             <div className="d-flex flex-column h-100">
+              {<div className="d-flex flex-column flex-md-row align-items-center gap-3 w-100 justify-content-md-end header-bottom ">
+            <div className="w-100 flex-md-grow-0" style={{ maxWidth: "350px" }}>
+              <div className="input-group">
+                <span className="input-group-text bg-light">
+                  <Search size={18} />
+                </span>
+                <input
+                  type="text"
+                  className="form-control border-start-0 bg-light"
+                  placeholder="Search anything"
+                  style={{ boxShadow: "none" }}
+                />
+              </div>
+            </div>
+
+            <div className="d-flex align-items-center gap-2">
+              <button className="btn btn-light position-relative p-2 rounded-circle">
+                <Bell size={18} />
+                <span
+                  className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
+                  style={{ fontSize: "10px" }}
+                >
+                  .
+                </span>
+              </button>
+
+              <div className="dropdown" ref={dropdownRef}>
+                <button
+                  className="btn d-flex align-items-center gap-2 dropdown-toggle p-0"
+                  onClick={() => setShowDropdown(!showDropdown)}
+                >
+                  <div
+                    className="rounded-circle bg-info d-flex align-items-center justify-content-center text-white fw-bold"
+                    style={{ width: "32px", height: "32px", fontSize: "14px" }}
+                  >
+                    MB
+                  </div>
+                  <div className="text-start">
+                    <div
+                      className="fw-semibold text-dark"
+                      style={{ fontSize: "14px" }}
+                    >
+                      Mubeen Bhullar
+                    </div>
+                    <div className="text-muted" style={{ fontSize: "12px" }}>
+                      Admin
+                    </div>
+                  </div>
+                </button>
+
+                {showDropdown && (
+                  <div
+                    className="dropdown-menu dropdown-menu-end show mt-2 p-2"
+                    style={{ minWidth: "200px" }}
+                  >
+                    <Link
+                      to="/profile"
+                      className="dropdown-item rounded py-2"
+                    >
+                      <User size={16} className="me-2" /> Profile
+                    </Link>
+                    <a className="dropdown-item rounded py-2" href="#">
+                      <Settings size={16} className="me-2" /> Settings
+                    </a>
+                    <hr className="dropdown-divider" />
+                    <button
+                      onClick={logout}
+                      className="nav-link d-flex align-items-center gap-2 border-0 bg-transparent"
+                    >
+                      <LogOut size={20} /> <span className="fs-6">Logout</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>}
               <Nav className="flex-column flex-grow-1">
                 {/* Nav Links */}
                 <Nav.Item className="mb-3">
@@ -153,6 +234,11 @@ const Sidebar = () => {
                 <Nav.Item className="mb-3">
                   <NavLink to="/customer-management" className={getNavLinkClass}>
                     <Users size={20} /> <span className="fs-6">CRM</span>
+                  </NavLink>
+                </Nav.Item>
+                <Nav.Item className="mb-3">
+                  <NavLink to="/hr" className={getNavLinkClass}>
+                    <User size={20} /> <span className="fs-6">Employees</span>
                   </NavLink>
                 </Nav.Item>
                 <Nav.Item className="mb-3">
@@ -293,6 +379,11 @@ const Sidebar = () => {
               <Nav.Item className="mb-3">
                 <NavLink to="/customer-management" style={{ color: "black" }} className={getNavLinkClass}>
                   <Users size={20} /> <span className="fs-6">CRM</span>
+                </NavLink>
+              </Nav.Item>
+              <Nav.Item className="mb-3">
+                <NavLink to="/hr" style={{ color: "black" }} className={getNavLinkClass}>
+                  <User size={20} /> <span className="fs-6">Employees</span>
                 </NavLink>
               </Nav.Item>
               <Nav.Item className="mb-3">

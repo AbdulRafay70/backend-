@@ -68,7 +68,7 @@ const ProfilePage = () => {
         const userId = decoded.user_id || decoded.id;
 
         const response = await axios.get(
-          `https://api.saer.pk/api/users/${userId}/`,
+          `http://127.0.0.1:8000/api/users/${userId}/`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -109,7 +109,7 @@ const ProfilePage = () => {
       }
       try {
         const token = localStorage.getItem("accessToken");
-        const response = await axios.get(`https://api.saer.pk/api/branches/`, {
+        const response = await axios.get(`http://127.0.0.1:8000/api/branches/`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const branchData = response.data.filter(
@@ -147,7 +147,7 @@ const ProfilePage = () => {
       }
       try {
         const token = localStorage.getItem("accessToken");
-        const response = await axios.get(`https://api.saer.pk/api/groups/`, {
+        const response = await axios.get(`http://127.0.0.1:8000/api/groups/`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const allGroups = response.data;

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Demo</title>
+</head>
+
+<body>
+    <h1>API Demo (GET, POST, PUT, DELETE)</h1>
+
+    <button onclick="getUsers()">GET USERS</button>
+    <button onclick="createUser()">POST USER</button>
+    <button onclick="updateUser()">UPDATE USER (PUT)</button>
+    <button onclick="deleteUser()">DELETE USER</button>
+
+    <pre id="output"></pre>
+
+    <script>
+        const API = "http://127.0.0.1:5000/users";
+
+        // GET
+        function getUsers() {
+            fetch(API)
+                .then(res => res.json())
+                .then(data => show(data));
+        }
+
+        // POST
+        function createUser() {
+            const payload = {
+                name: "New User",
+                email: "newuser@example.com"
+            };
+
+            fetch(API, {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => show(data));
+        }
+
+        // PUT
+        function updateUser() {
+            const payload = {
+                email: "updatedEmail@example.com"
+            };
+
+            fetch(API + "/1", {
+                method: "PUT",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => show(data));
+        }
+
+        // DELETE
+        function deleteUser() {
+            fetch(API + "/2", {
+                method: "DELETE",
+            })
+            .then(res => res.json())
+            .then(data => show(data));
+        }
+
+        function show(data) {
+            document.getElementById("output").textContent = JSON.stringify(data, null, 4);
+        }
+
+    </script>
+
+</body>
+</html>

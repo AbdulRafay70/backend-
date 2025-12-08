@@ -7,12 +7,10 @@ const tabs = [
   { name: 'Overview', path: '' },
   { name: 'Organization', path: 'organization' },
   { name: 'Role Permissions', path: 'role-permissions' },
-  { name: 'Request', path: 'request' },
   { name: 'Discounts', path: 'discounts' },
   { name: 'Organization Links', path: 'organization-links' },
   { name: 'Branches', path: 'branche' },
   // Portal is a partners tab (navigates to /partners/portal)
-  { name: 'Portal', path: 'portal' },
   { name: 'Employees', path: 'empolye' },
 ];
 

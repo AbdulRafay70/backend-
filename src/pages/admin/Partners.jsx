@@ -37,6 +37,7 @@ const Partners = ({ embed = false }) => {
   const PARTNERS_CACHE_KEY = "partners_cache";
   const AGENCIES_CACHE_KEY = "agencies_cache";
   const GROUPS_CACHE_KEY = "groups_cache";
+  const BRANCHES_CACHE_KEY = "branches_cache";
   const CACHE_EXPIRY_TIME = 30 * 60 * 1000;
 
   // State declarations
@@ -53,6 +54,9 @@ const Partners = ({ embed = false }) => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [agencies, setAgencies] = useState([]);
   const [groups, setGroups] = useState([]);
+  const [branches, setBranches] = useState([]);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [selectedGroupId, setSelectedGroupId] = useState(null);
   const [isAgentType, setIsAgentType] = useState(false);
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState("");
@@ -64,6 +68,7 @@ const Partners = ({ embed = false }) => {
     password: "",
     is_active: true,
     groups: [],
+    branches: [],
     profile: {
       type: "",
     },
@@ -106,10 +111,9 @@ const Partners = ({ embed = false }) => {
           Math.ceil(JSON.parse(cachedData).length / PAGE_SIZE) || 1
         );
       } else {
-        const response = await axios.get(
-          `https://api.saer.pk/api/users/?organization=${getSelectedOrganization()}`,
-          axiosConfig
-        );
+            const orgId = getCurrentOrgId();
+            const usersUrl = orgId ? `http://127.0.0.1:8000/api/users/?organization=${orgId}` : `http://127.0.0.1:8000/api/users/`;
+            const response = await axios.get(usersUrl, axiosConfig);
         const data = response.data || [];
         setPartners(data);
         setTotalPages(Math.ceil(data.length / PAGE_SIZE) || 1);
@@ -143,10 +147,11 @@ const Partners = ({ embed = false }) => {
       ) {
         setAgencies(JSON.parse(cachedData));
       } else {
-        const response = await axios.get(
-          `https://api.saer.pk/api/agencies/?organization=${getSelectedOrganization()}`,
-          axiosConfig
-        );
+        const orgId = getCurrentOrgId();
+        const agenciesUrl = orgId
+          ? `http://127.0.0.1:8000/api/agencies/?organization=${orgId}`
+          : `http://127.0.0.1:8000/api/agencies/`;
+        const response = await axios.get(agenciesUrl, axiosConfig);
         const data = response.data || [];
         setAgencies(data);
 
@@ -177,22 +182,53 @@ const Partners = ({ embed = false }) => {
       ) {
         setGroups(JSON.parse(cachedData));
       } else {
+        // Always fetch all groups (global + org-scoped) and let client-side
+        // filtering determine which groups to show for the current org.
+        console.debug("fetchGroups: calling /api/groups/");
         const response = await axios.get(
-          `https://api.saer.pk/api/groups/?organization=${getSelectedOrganization()}`,
+          `http://127.0.0.1:8000/api/groups/`,
           axiosConfig
         );
-        const data = response.data || [];
+        // Support both direct array responses and paginated { results: [] } responses
+        let data = response.data || [];
+        if (data && typeof data === "object" && Array.isArray(data.results)) {
+          data = data.results;
+        }
+        console.debug("fetchGroups: received", data);
         setGroups(data);
 
         localStorage.setItem(GROUPS_CACHE_KEY, JSON.stringify(data));
-        localStorage.setItem(
-          `${GROUPS_CACHE_KEY}_timestamp`,
-          Date.now().toString()
-        );
+        localStorage.setItem(`${GROUPS_CACHE_KEY}_timestamp`, Date.now().toString());
       }
     } catch (error) {
       console.error("Error fetching groups:", error);
       setGroups([]);
+    }
+  };
+
+  // Fetch branches for selected organization (used in partner modal)
+  const fetchBranches = async () => {
+    try {
+      const cachedData = localStorage.getItem(BRANCHES_CACHE_KEY);
+      const cacheTimestamp = localStorage.getItem(`${BRANCHES_CACHE_KEY}_timestamp`);
+
+      if (cachedData && cacheTimestamp && Date.now() - parseInt(cacheTimestamp) < CACHE_EXPIRY_TIME) {
+        setBranches(JSON.parse(cachedData));
+      } else {
+        const orgId = getCurrentOrgId();
+        const branchesUrl = orgId
+          ? `http://127.0.0.1:8000/api/branches/?organization=${orgId}`
+          : `http://127.0.0.1:8000/api/branches/`;
+        const response = await axios.get(branchesUrl, axiosConfig);
+        const data = response.data || [];
+        setBranches(data);
+
+        localStorage.setItem(BRANCHES_CACHE_KEY, JSON.stringify(data));
+        localStorage.setItem(`${BRANCHES_CACHE_KEY}_timestamp`, Date.now().toString());
+      }
+    } catch (error) {
+      console.error("Error fetching branches:", error);
+      setBranches([]);
     }
   };
 
@@ -220,15 +256,13 @@ const Partners = ({ embed = false }) => {
       branches: "subagent",
     };
 
-    const selectedOrg = getSelectedOrganization();
-    const selectedOrgId = selectedOrg?.id;
+    const orgId = getCurrentOrgId();
 
     return partners.filter((partner) => {
-      // Filter by organization if one is selected
-      const matchesOrganization =
-        !selectedOrgId || // Show all if no org selected
-        partner.organization_details?.some((org) => org.id === selectedOrgId) || // Check org details
-        partner.organizations?.includes(selectedOrgId); // Check direct org IDs
+      // Filter by current organization (logged-in user's org) if available
+      const matchesOrganization = orgId
+        ? (partner.organization_details?.some((org) => org.id === orgId) || partner.organizations?.includes(orgId))
+        : true;
 
       const matchesStatus =
         statusFilter === "All" ||
@@ -253,15 +287,33 @@ const Partners = ({ embed = false }) => {
         phoneNumber.includes(searchTerm) ||
         address.toLowerCase().includes(searchTerm.toLowerCase());
 
-      const matchesType =
-        filter === "all" ||
-        (filter in typeMap && partner.profile?.type === typeMap[filter]);
+      let matchesType = true;
+      if (filter !== "all") {
+        if (filter === "agents") {
+          matchesType = partner.profile?.type === "agent" || partner.profile?.type === "area-agent";
+        } else if (filter === "employees") {
+          matchesType = partner.profile?.type === "employee";
+        } else if (filter === "branches") {
+          matchesType = partner.profile?.type === "subagent";
+        } else {
+          matchesType = true;
+        }
+      }
+
+      // Filter by selected group if provided
+      const partnerGroupIds = Array.isArray(partner.groups)
+        ? partner.groups.map((g) => (typeof g === "object" ? g.id : g))
+        : [];
+
+      const matchesGroup =
+        !selectedGroupId || partnerGroupIds.includes(selectedGroupId);
 
       return (
-        matchesOrganization && matchesStatus && matchesSearch && matchesType
+        matchesOrganization && matchesStatus && matchesSearch && matchesType && matchesGroup
       );
     });
-  }, [partners, statusFilter, searchTerm, filter, agencies]);
+  }, [partners, statusFilter, searchTerm, filter, agencies, selectedGroupId, groups, currentUser]);
+
 
   // Paginate partners
   const paginatedPartners = useMemo(() => {
@@ -287,11 +339,14 @@ const Partners = ({ embed = false }) => {
     setEditingId(null);
     setPartnerForm({
       first_name: "",
+      last_name: "",
       email: "",
       username: "",
       password: "",
       is_active: true,
       groups: [],
+      agencies: [],
+      branches: [],
       profile: {
         type: "",
       },
@@ -305,18 +360,21 @@ const Partners = ({ embed = false }) => {
 
     setPartnerForm({
       first_name: partner.first_name || "",
+      last_name: partner.last_name || "",
       email: partner.email || "",
       username: partner.username || "",
       password: "",
       is_active: partner.is_active,
       groups: partner.groups || [],
+      branches: partner.branches || [],
+      agencies: partner.agencies || [],
       profile: {
         type: partner.profile?.type || "",
       },
     });
 
-    // Set agent type if editing an agent
-    setIsAgentType(partner.profile?.type === "agent");
+    // Set agent type if editing an agent or area-agent
+    setIsAgentType(partner.profile?.type === "agent" || partner.profile?.type === "area-agent");
     setShowModal(true);
   };
 
@@ -332,7 +390,7 @@ const Partners = ({ embed = false }) => {
     const { name, value, type, checked } = e.target;
 
     if (name === "profile.type") {
-      const isAgent = value === "agent";
+      const isAgent = value === "agent" || value === "area-agent";
       setIsAgentType(isAgent);
     }
 
@@ -357,23 +415,28 @@ const Partners = ({ embed = false }) => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const selectedOrg = getSelectedOrganization();
-      const organizations = selectedOrg ? [selectedOrg.id] : [];
+      const orgId = getCurrentOrgId();
+      if (!orgId) {
+        alert('Unable to determine current organization.');
+        setIsSubmitting(false);
+        return;
+      }
+
       const selectedBranch = localStorage.getItem("selectedBranchId");
       const Branch = selectedBranch ? [selectedBranch] : [];
 
       const userPayload = {
-        first_name: partnerForm.first_name,
-        email: partnerForm.email,
         username: partnerForm.username,
-        is_active: partnerForm.is_active,
+        email: partnerForm.email,
+        password: partnerForm.password,
+        first_name: partnerForm.first_name,
+        last_name: partnerForm.last_name,
+        profile: { type: partnerForm.profile.type },
+        organizations: [orgId],
+        branches: (partnerForm.branches && partnerForm.branches.length > 0) ? partnerForm.branches : Branch,
+        agencies: partnerForm.agencies || [],
         groups: partnerForm.groups,
-        organizations: organizations,
-        branches: Branch,
-        agencies: partnerForm.agencies || [], // This stores the agency ID
-        profile: {
-          type: partnerForm.profile.type,
-        },
+        is_active: partnerForm.is_active,
       };
 
       if (partnerForm.password && !editingId) {
@@ -384,13 +447,13 @@ const Partners = ({ embed = false }) => {
       let response;
       if (editingId) {
         response = await axios.put(
-          `https://api.saer.pk/api/users/${editingId}/?organization=${getSelectedOrganization()}`,
+          `http://127.0.0.1:8000/api/users/${editingId}/?organization=${orgId}`,
           userPayload,
           axiosConfig
         );
       } else {
         response = await axios.post(
-          `https://api.saer.pk/api/users/?organization=${getSelectedOrganization()}`,
+          `http://127.0.0.1:8000/api/users/?organization=${orgId}`,
           userPayload,
           axiosConfig
         );
@@ -413,7 +476,7 @@ const Partners = ({ embed = false }) => {
     if (window.confirm("Are you sure you want to delete this partner?")) {
       setIsLoading(true);
       try {
-        await axios.delete(`https://api.saer.pk/api/users/${id}/?organization=${getSelectedOrganization()}`, axiosConfig);
+        await axios.delete(`http://127.0.0.1:8000/api/users/${id}/?organization=${getCurrentOrgId()}`, axiosConfig);
 
         // Clear the partners cache since we've made changes
         localStorage.removeItem(PARTNERS_CACHE_KEY);
@@ -434,7 +497,7 @@ const Partners = ({ embed = false }) => {
     setIsLoading(true);
     try {
       await axios.patch(
-        `https://api.saer.pk/api/users/${id}/?organization=${getSelectedOrganization()}`,
+        `http://127.0.0.1:8000/api/users/${id}/?organization=${getCurrentOrgId()}`,
         { is_active: newStatus === "Active" },
         axiosConfig
       );
@@ -452,7 +515,17 @@ const Partners = ({ embed = false }) => {
     }
   };
 
-  const [currentUser, setCurrentUser] = useState(null);
+  // Helper to resolve the current organization id (logged-in user's org preferred)
+  function getCurrentOrgId() {
+    if (currentUser) {
+      if (Array.isArray(currentUser.organizations) && currentUser.organizations.length > 0) {
+        return currentUser.organizations[0];
+      }
+      if (currentUser.organization) return currentUser.organization;
+    }
+    const sel = getSelectedOrganization();
+    return sel && sel.id ? sel.id : null;
+  }
 
   // Fetch current user data
   useEffect(() => {
@@ -463,7 +536,7 @@ const Partners = ({ embed = false }) => {
         const userId = decoded.user_id || decoded.id;
 
         const response = await axios.get(
-          `https://api.saer.pk/api/users/${userId}/?organization=${getSelectedOrganization()}`,
+          `http://127.0.0.1:8000/api/users/${userId}/`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -481,16 +554,18 @@ const Partners = ({ embed = false }) => {
     fetchPartners();
     fetchAgencies();
     fetchGroups();
-  }, [refreshTrigger]);
+    fetchBranches();
+  }, [refreshTrigger, currentUser]);
 
   // Get groups for selected organization
   const getGroupsForOrganization = () => {
-    const selectedOrg = getSelectedOrganization();
-    if (!selectedOrg) return groups;
-
-    return groups.filter(
-      (group) => group.extended?.organization === selectedOrg.id
-    );
+    const orgId = getCurrentOrgId();
+    if (!orgId) return groups;
+    return groups.filter((group) => {
+      // include global/unscoped groups (extended==null) or groups scoped to current organization
+      if (!group.extended) return true;
+      return group.extended.organization === orgId;
+    });
   };
 
   // Add this function to your Partners component
@@ -521,8 +596,11 @@ const Partners = ({ embed = false }) => {
 
   const options = [
     { value: "agent", label: "Agent" },
+    { value: "area-agent", label: "Area Agent" },
     { value: "employee", label: "Employee" },
-    { value: "subagent", label: "Subagent" },
+    { value: "subagent", label: "Branch" },
+    { value: "admin", label: "Admin" },
+    { value: "superadmin", label: "Super Admin" },
   ];
 
   // Navigation is rendered by shared PartnersTabs
@@ -627,6 +705,25 @@ const Partners = ({ embed = false }) => {
                     >
                       Agents
                     </button>
+                      {/* Group select filter */}
+                      <div style={{ minWidth: 220 }}>
+                        <Select
+                          isClearable
+                          placeholder="Filter by group"
+                          options={getGroupsForOrganization().map((group) => ({
+                            value: group.id,
+                            label: group.name,
+                          }))}
+                          value={
+                            selectedGroupId
+                              ? { value: selectedGroupId, label: groups.find(g => g.id === selectedGroupId)?.name }
+                              : null
+                          }
+                          onChange={(opt) => setSelectedGroupId(opt ? opt.value : null)}
+                          className="basic-single"
+                          classNamePrefix="select"
+                        />
+                      </div>
                   </div>
                   <Dropdown>
                     <Dropdown.Toggle
@@ -864,7 +961,7 @@ const Partners = ({ embed = false }) => {
                   )}
                   onChange={(selected) =>
                     handleChange({
-                      target: { name: "profile.type", value: selected.value },
+                      target: { name: "profile.type", value: selected ? selected.value : "" },
                     })
                   }
                 />
@@ -880,6 +977,18 @@ const Partners = ({ embed = false }) => {
                   required
                   placeholder="Full Name"
                   value={partnerForm.first_name}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="mb-3">
+                <label htmlFor="" className="Control-label">Last Name</label>
+                <input
+                  type="text"
+                  name="last_name"
+                  className="form-control rounded shadow-none border px-1 py-2"
+                  placeholder="Last Name"
+                  value={partnerForm.last_name}
                   onChange={handleChange}
                 />
               </div>
@@ -989,6 +1098,24 @@ const Partners = ({ embed = false }) => {
                   </div>
                 </>
               )}
+              {/* Branch select (optional) */}
+              <div className="mb-3">
+                <label htmlFor="" className="form-label">
+                  Select Branch
+                </label>
+                <Select
+                  options={branches.map((b) => ({ value: b.id, label: b.name }))}
+                  value={
+                    partnerForm.branches && partnerForm.branches.length > 0
+                      ? { value: partnerForm.branches[0], label: branches.find(x => x.id === partnerForm.branches[0])?.name }
+                      : null
+                  }
+                  onChange={(selected) => setPartnerForm((prev) => ({
+                    ...prev,
+                    branches: selected ? [selected.value] : [],
+                  }))}
+                />
+              </div>
 
               <div className="row">
                 <div className="col-md-6 d-flex align-items-center mb-3">

@@ -183,6 +183,13 @@ class TransportSectorPriceSerializer(ModelSerializer):
     class Meta:
         model = TransportSectorPrice
         fields = "__all__"
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # Remove legacy single-price keys that older frontends may still expect
+        # These fields are redundant when explicit selling/purchase fields exist
+        for k in ("adault_price", "child_price", "infant_price"):
+            data.pop(k, None)
+        return data
 
 
 class AirlinesSerializer(ModelSerializer):
@@ -362,6 +369,29 @@ class UmrahPackageTransportDetailsSerializer(ModelSerializer):
         model = UmrahPackageTransportDetails
         exclude = ["package"]
 
+    def to_representation(self, instance):
+        """Hide legacy/irrelevant fields and expose explicit per-person prices.
+
+        Remove `vehicle_type` and legacy single-price fields from API output so
+        clients always use explicit selling/purchase fields.
+        """
+        data = super().to_representation(instance)
+        # Remove legacy or unwanted keys if present
+        for k in ("vehicle_type", "adault_price", "child_price", "infant_price"):
+            if k in data:
+                data.pop(k, None)
+
+        # Ensure explicit selling/purchase fields are present in the response
+        # (model may already contain these; fall back to None if absent)
+        data.setdefault("adult_selling_price", getattr(instance, "adult_selling_price", None))
+        data.setdefault("adult_purchase_price", getattr(instance, "adult_purchase_price", None))
+        data.setdefault("child_selling_price", getattr(instance, "child_selling_price", None))
+        data.setdefault("child_purchase_price", getattr(instance, "child_purchase_price", None))
+        data.setdefault("infant_selling_price", getattr(instance, "infant_selling_price", None))
+        data.setdefault("infant_purchase_price", getattr(instance, "infant_purchase_price", None))
+
+        return data
+
 
 class UmrahPackageTicketDetailsSerializer(ModelSerializer):
     ticket_info = TicketSerializer(source="ticket", read_only=True, required=False)
@@ -397,6 +427,7 @@ class UmrahPackageSerializer(ModelSerializer):
     
     # Display fields
     organization_name = serializers.CharField(source='organization.name', read_only=True)
+    owner_organization_id = serializers.IntegerField(source='organization_id', read_only=True)
     created_by_name = serializers.SerializerMethodField()
     package_type_display = serializers.CharField(source='get_package_type_display', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
@@ -453,6 +484,11 @@ class UmrahPackageSerializer(ModelSerializer):
         never returns these keys.
         """
         data = super().to_representation(instance)
+        # remove legacy top-level numeric organization FK if present and
+        # expose `owner_organization_id` for clarity in API responses
+        if 'organization' in data:
+            data.pop('organization', None)
+
         for k in (
             'transport_price', 'transport_selling_price', 'transport_purchase_price',
             'quint_room_price', 'quad_room_price', 'triple_room_price', 'double_room_price', 'sharing_bed_price',
@@ -724,6 +760,21 @@ class CustomUmrahPackageTransportDetailsSerializer(ModelSerializer):
     class Meta:
         model = CustomUmrahPackageTransportDetails
         exclude = ["package"]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        for k in ("vehicle_type", "adault_price", "child_price", "infant_price"):
+            if k in data:
+                data.pop(k, None)
+
+        data.setdefault("adult_selling_price", getattr(instance, "adult_selling_price", None))
+        data.setdefault("adult_purchase_price", getattr(instance, "adult_purchase_price", None))
+        data.setdefault("child_selling_price", getattr(instance, "child_selling_price", None))
+        data.setdefault("child_purchase_price", getattr(instance, "child_purchase_price", None))
+        data.setdefault("infant_selling_price", getattr(instance, "infant_selling_price", None))
+        data.setdefault("infant_purchase_price", getattr(instance, "infant_purchase_price", None))
+
+        return data
 
 
 class CustomUmrahPackageTicketDetailsSerializer(ModelSerializer):

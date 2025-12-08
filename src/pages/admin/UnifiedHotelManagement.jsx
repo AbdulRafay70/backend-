@@ -285,7 +285,7 @@ const UnifiedHotelManagement = () => {
                     {hotel.distance_from_haram && (
                       <>
                         <MapPin size={12} className="me-1" />
-                        {Number(hotel.distance_from_haram) ? `${Math.round(Number(hotel.distance_from_haram) * 1000)} m` : hotel.distance_from_haram}
+                        {hotel.distance_from_haram} km
                       </>
                     )}
                   </div>

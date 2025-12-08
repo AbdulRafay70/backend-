@@ -1,0 +1,731 @@
+/* ============================================================
+   Form System Styles
+   Covers FormBuilder, FormList, and FormPage components
+   ============================================================ */
+
+/* ============================================================
+   FORM CARD STYLING (General)
+   ============================================================ */
+
+.form-card {
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+  background: #ffffff;
+}
+
+.form-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.form-card .card-header {
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border-bottom: 2px solid #e9ecef;
+  padding: 1.25rem;
+}
+
+.form-card .card-header .card-title {
+  color: #2c3e50;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.form-card .card-body {
+  padding: 1.5rem;
+}
+
+/* ============================================================
+   FORM BUILDER STYLES
+   ============================================================ */
+
+.form-builder {
+  background: #f8f9fa;
+  min-height: calc(100vh - 80px);
+}
+
+.form-builder .form-preview {
+  padding: 1.5rem;
+  background: white;
+  border-radius: 8px;
+  border: 1px dashed #dee2e6;
+}
+
+.form-builder .form-preview h6 {
+  color: #2c3e50;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+}
+
+/* Field Items */
+.field-item {
+  padding: 1rem;
+  border-bottom: 1px solid #e9ecef;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: background-color 0.2s ease;
+}
+
+.field-item:hover {
+  background-color: #f8f9fa;
+}
+
+.field-item:last-child {
+  border-bottom: none;
+}
+
+.field-item strong {
+  color: #2c3e50;
+  font-size: 0.95rem;
+}
+
+.field-item small {
+  display: block;
+  margin-top: 0.25rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.action-buttons .btn {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.9rem;
+}
+
+/* Form Preview */
+.form-preview .form-group {
+  margin-bottom: 1rem;
+}
+
+.form-preview .form-label {
+  color: #2c3e50;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  display: block;
+}
+
+.form-preview .form-control,
+.form-preview .form-select {
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  font-size: 0.9rem;
+  padding: 0.6rem 0.75rem;
+}
+
+.form-preview .form-control:focus,
+.form-preview .form-select:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.1);
+}
+
+.form-preview .text-danger {
+  color: #dc3545;
+}
+
+/* Sticky Preview Sidebar */
+@media (min-width: 992px) {
+  .form-builder .sticky-top {
+    z-index: 10;
+  }
+}
+
+/* ============================================================
+   FORM LIST STYLES (Admin Management)
+   ============================================================ */
+
+.form-list-container {
+  background: #f8f9fa;
+  min-height: calc(100vh - 80px);
+  padding: 2rem;
+}
+
+/* Stats Cards */
+.form-stat-card {
+  border-radius: 8px;
+  border-left: 4px solid #0d6efd;
+  padding: 1.5rem;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: transform 0.3s ease;
+}
+
+.form-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.form-stat-card.stat-active {
+  border-left-color: #198754;
+}
+
+.form-stat-card.stat-submissions {
+  border-left-color: #0dcaf0;
+}
+
+.form-stat-card.stat-linked {
+  border-left-color: #ffc107;
+}
+
+.form-stat-card .stat-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #0d6efd;
+  margin-bottom: 0.5rem;
+}
+
+.form-stat-card.stat-active .stat-number {
+  color: #198754;
+}
+
+.form-stat-card.stat-submissions .stat-number {
+  color: #0dcaf0;
+}
+
+.form-stat-card.stat-linked .stat-number {
+  color: #ffc107;
+}
+
+.form-stat-card .stat-label {
+  font-size: 0.9rem;
+  color: #6c757d;
+  font-weight: 500;
+}
+
+/* Form Table */
+.form-table {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e9ecef;
+}
+
+.form-table thead {
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+.form-table thead th {
+  padding: 1rem 0.75rem;
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 0.9rem;
+  border-bottom: 2px solid #dee2e6;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.form-table tbody td {
+  padding: 1rem 0.75rem;
+  vertical-align: middle;
+  border-bottom: 1px solid #e9ecef;
+  color: #495057;
+  font-size: 0.95rem;
+}
+
+.form-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.form-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.form-table code {
+  background-color: #f8f9fa;
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+  font-size: 0.85rem;
+  color: #e83e8c;
+}
+
+.form-table .badge {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  border-radius: 4px;
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.form-actions .btn {
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+  border-radius: 4px;
+}
+
+/* Standalone Form Cards */
+.form-card-preview {
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  padding: 1.5rem;
+  background: white;
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+}
+
+.form-card-preview:hover {
+  border-color: #0d6efd;
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.15);
+}
+
+.form-card-preview h6 {
+  color: #2c3e50;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.form-card-preview .form-url {
+  background: #f8f9fa;
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  overflow-x: auto;
+}
+
+.form-card-preview .form-url code {
+  color: #0d6efd;
+  font-size: 0.85rem;
+}
+
+.form-card-preview .btn-group {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Filters */
+.form-filters {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  border: 1px solid #e9ecef;
+}
+
+.form-filters .filter-group {
+  margin-bottom: 1rem;
+}
+
+.form-filters .filter-group:last-child {
+  margin-bottom: 0;
+}
+
+.form-filters .form-label {
+  font-weight: 600;
+  color: #2c3e50;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.form-filters .form-control,
+.form-filters .form-select {
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+/* ============================================================
+   FORM PAGE STYLES (Public Form Pages)
+   ============================================================ */
+
+.form-page-wrapper {
+  background: #ffffff;
+}
+
+.form-page-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.form-page-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: white;
+}
+
+.form-page-description {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Form Fields */
+.form-field {
+  border-radius: 6px;
+  border: 1px solid #dee2e6;
+  padding: 0.75rem 0.875rem;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.form-field:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.1);
+  color: #212529;
+}
+
+.form-field.is-invalid {
+  border-color: #dc3545;
+}
+
+.form-field.is-invalid:focus {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.1);
+}
+
+/* Form Group Styling */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group .form-label {
+  color: #2c3e50;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+}
+
+.form-group .form-text {
+  color: #6c757d;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.form-group .invalid-feedback {
+  color: #dc3545;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+/* Submit Button */
+.form-card .btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.form-card .btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.form-card .btn-primary:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
+/* Alert Messages */
+.alert {
+  border-radius: 6px;
+  border-left: 4px solid #0d6efd;
+  padding: 1rem;
+}
+
+.alert-danger {
+  border-left-color: #dc3545;
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.alert-success {
+  border-left-color: #198754;
+  background-color: #d1e7dd;
+  color: #0f5132;
+}
+
+.alert-info {
+  border-left-color: #0dcaf0;
+  background-color: #cfe2ff;
+  color: #084298;
+}
+
+.alert-light {
+  border-left-color: #dee2e6;
+  background-color: #f8f9fa;
+  color: #6c757d;
+}
+
+/* Info Cards */
+.form-info-card {
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  background: white;
+}
+
+.form-info-card code {
+  background-color: #f8f9fa;
+  padding: 0.25rem 0.5rem;
+  border-radius: 3px;
+  font-size: 0.85rem;
+  color: #e83e8c;
+}
+
+.form-help-card {
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  background: white;
+}
+
+.form-help-card h6 {
+  color: #2c3e50;
+  font-weight: 600;
+}
+
+/* Success Message */
+.success-container {
+  text-align: center;
+  padding: 3rem 1.5rem;
+}
+
+.success-container .success-icon {
+  font-size: 4rem;
+  color: #198754;
+  margin-bottom: 1rem;
+}
+
+.success-container h5 {
+  color: #2c3e50;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.success-container p {
+  color: #6c757d;
+  margin-bottom: 1.5rem;
+}
+
+/* ============================================================
+   RESPONSIVE DESIGN
+   ============================================================ */
+
+/* Tablet (768px and up) */
+@media (max-width: 991.98px) {
+  .form-page-title {
+    font-size: 2rem;
+  }
+
+  .form-page-description {
+    font-size: 1rem;
+  }
+
+  .form-builder .sticky-top {
+    position: relative !important;
+    top: auto !important;
+  }
+
+  .form-filters {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .form-filters .filter-group:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Mobile (567px and below) */
+@media (max-width: 567.98px) {
+  .form-builder {
+    padding: 1rem !important;
+  }
+
+  .form-card,
+  .form-card .card-header,
+  .form-card .card-body {
+    border-radius: 6px;
+  }
+
+  .form-page-title {
+    font-size: 1.5rem;
+  }
+
+  .form-page-description {
+    font-size: 0.95rem;
+  }
+
+  .form-stat-card {
+    margin-bottom: 1rem;
+  }
+
+  .form-stat-card .stat-number {
+    font-size: 1.75rem;
+  }
+
+  .form-table thead th {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .form-table tbody td {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .form-actions {
+    flex-wrap: wrap;
+  }
+
+  .form-actions .btn {
+    flex: 1;
+    min-width: 80px;
+  }
+
+  .form-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .form-filters .filter-group:last-child {
+    grid-column: auto;
+  }
+
+  .form-card .btn-primary {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .field-item {
+    padding: 0.75rem;
+  }
+
+  .action-buttons {
+    gap: 0.25rem;
+  }
+
+  .action-buttons .btn {
+    padding: 0.3rem 0.5rem;
+  }
+}
+
+/* ============================================================
+   ANIMATION & TRANSITIONS
+   ============================================================ */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.form-card,
+.form-stat-card,
+.alert {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.field-item {
+  animation: slideInLeft 0.3s ease-out;
+}
+
+/* ============================================================
+   UTILITY CLASSES
+   ============================================================ */
+
+.fw-600 {
+  font-weight: 600;
+}
+
+.fw-500 {
+  font-weight: 500;
+}
+
+.text-truncate-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.gap-2 {
+  gap: 0.5rem;
+}
+
+.gap-3 {
+  gap: 1rem;
+}
+
+/* ============================================================
+   PRINT STYLES
+   ============================================================ */
+
+@media print {
+  .form-builder,
+  .form-list-container,
+  .form-page-header {
+    background: white;
+  }
+
+  .form-card,
+  .form-stat-card {
+    page-break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #999;
+  }
+
+  .btn,
+  .form-actions {
+    display: none;
+  }
+
+  .form-field {
+    border: 1px solid #999;
+  }
+}
+
+/* ============================================================
+   DARK MODE SUPPORT (Optional)
+   ============================================================ */
+
+@media (prefers-color-scheme: dark) {
+  /* Keep light backgrounds for form inputs and cards during dark mode */
+  .form-card,
+  .form-field,
+  .form-page-wrapper {
+    background: #ffffff;
+    color: #2c3e50;
+  }
+
+  .form-page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  }
+
+  .form-card .card-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  }
+
+  .form-filters,
+  .form-info-card,
+  .form-help-card {
+    background: #ffffff;
+  }
+}

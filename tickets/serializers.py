@@ -22,6 +22,7 @@ class TickerStopoverDetailsSerializer(serializers.ModelSerializer):
     arrival_date_time = serializers.DateTimeField(required=False)
     departure_city = serializers.JSONField(required=False)
     arrival_city = serializers.JSONField(required=False)
+    # (keep writable fields above so clients can POST these values)
 
     class Meta:
         model = TickerStopoverDetails
@@ -33,7 +34,71 @@ class TickerStopoverDetailsSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         # remove trip_type from API responses for stopovers
         data.pop('trip_type', None)
+
+        # Enrich stopover representation with related trip-detail fields when available.
+        # Many stopover-related fields (flight_number, departure/arrival datetimes, arrival_city)
+        # are stored on TicketTripDetails. Try to find a matching trip and include those
+        # values in the stopover representation so POST responses contain the richer schema
+        # consumers expect.
+        def _find_matching_trip(obj):
+            ticket = getattr(obj, 'ticket', None)
+            if not ticket:
+                return None
+            qs = ticket.trip_details.all()
+            if not qs.exists():
+                return None
+            # prefer trip where departure or arrival city equals the stopover city
+            m = qs.filter(departure_city_id=getattr(obj, 'stopover_city_id')).first()
+            if m:
+                return m
+            m = qs.filter(arrival_city_id=getattr(obj, 'stopover_city_id')).first()
+            if m:
+                return m
+            return qs.first()
+
+        try:
+            trip = _find_matching_trip(instance)
+            if trip:
+                # flight number (per-trip) if available
+                fn = getattr(trip, 'flight_number', None)
+                if fn:
+                    data['flight_number'] = fn
+
+                # departure/arrival datetimes as ISO strings for JSON responses
+                from django.utils import timezone
+                dd = getattr(trip, 'departure_date_time', None)
+                ad = getattr(trip, 'arrival_date_time', None)
+                if dd:
+                    try:
+                        # normalize to UTC Z format when possible
+                        dd_utc = dd.astimezone(timezone.utc) if getattr(dd, 'tzinfo', None) else dd
+                        data['departure_date_time'] = dd_utc.isoformat().replace('+00:00', 'Z')
+                    except Exception:
+                        data['departure_date_time'] = str(dd)
+                if ad:
+                    try:
+                        ad_utc = ad.astimezone(timezone.utc) if getattr(ad, 'tzinfo', None) else ad
+                        data['arrival_date_time'] = ad_utc.isoformat().replace('+00:00', 'Z')
+                    except Exception:
+                        data['arrival_date_time'] = str(ad)
+
+                # arrival city as object with id/name
+                try:
+                    data['arrival_city'] = {
+                        'id': getattr(trip, 'arrival_city_id', None),
+                        'name': getattr(trip.arrival_city, 'name', None),
+                    }
+                except Exception:
+                    data['arrival_city'] = None
+        except Exception:
+            # be tolerant: if enrichment fails, return basic stopover data
+            pass
+
         return data
+
+    # Note: we intentionally keep the writable fields (`flight_number`, `departure_date_time`,
+    # `arrival_date_time`, `arrival_city`) declared above so clients can send them in POST/PUT.
+    # The `to_representation` method enriches returned data from related trip entries when available.
 
 
 class TicketTripDetailsSerializer(serializers.ModelSerializer):
@@ -411,6 +476,34 @@ try:
 except Exception:
     # during migrations or import cycles HotelCategory may not be available yet
     pass
+
+
+class BedTypeSerializer(serializers.ModelSerializer):
+    """Serializer for BedType model"""
+    slug = serializers.CharField(required=False, allow_blank=True)
+    
+    class Meta:
+        model = None  # set below after import
+        fields = ['id', 'name', 'slug', 'capacity', 'organization', 'created_at']
+        read_only_fields = ['id', 'organization', 'created_at']
+    
+    def validate_capacity(self, value):
+        """Validate capacity is between 1 and 10"""
+        if value < 1:
+            raise serializers.ValidationError("Capacity must be at least 1")
+        if value > 10:
+            raise serializers.ValidationError("Maximum capacity is 10 beds")
+        return value
+
+
+# Resolve BedType model reference for serializer Meta to avoid import-time issues
+try:
+    from .models import BedType
+    BedTypeSerializer.Meta.model = BedType
+except Exception:
+    # during migrations or import cycles BedType may not be available yet
+    pass
+
 
 
 class HotelContactDetailsSerializer(serializers.ModelSerializer):
