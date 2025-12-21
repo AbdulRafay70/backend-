@@ -102,6 +102,9 @@ class TickerStopoverDetailsSerializer(serializers.ModelSerializer):
 
 
 class TicketTripDetailsSerializer(serializers.ModelSerializer):
+    departure_city_name = serializers.CharField(source='departure_city.name', read_only=True)
+    arrival_city_name = serializers.CharField(source='arrival_city.name', read_only=True)
+    
     class Meta:
         model = TicketTripDetails
         fields = "__all__"

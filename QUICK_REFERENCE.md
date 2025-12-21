@@ -125,7 +125,7 @@ GET /api/public/booking-status/SAER-BK-2024-001234/
   "status": "confirmed",
   "payment_status": "paid",
   "total_amount": 125000.00,
-  "qr_code_url": "https://api.saer.pk/media/qr-codes/SAER-BK-2024-001234.png"
+  "qr_code_url": "http://127.0.0.1:8000/media/qr-codes/SAER-BK-2024-001234.png"
 }
 ```
 
@@ -217,9 +217,9 @@ Authorization: Bearer YOUR_JWT_TOKEN
 
 ## Swagger Access
 
-**Swagger UI:** `https://api.saer.pk/swagger/`  
-**ReDoc:** `https://api.saer.pk/redoc/`  
-**OpenAPI Schema:** `https://api.saer.pk/api/schema/`
+**Swagger UI:** `http://127.0.0.1:8000/swagger/`  
+**ReDoc:** `http://127.0.0.1:8000/redoc/`  
+**OpenAPI Schema:** `http://127.0.0.1:8000/api/schema/`
 
 ### Swagger Tags
 
@@ -273,40 +273,40 @@ QUICK_REFERENCE.md (this file)
 
 ```bash
 # Create form
-curl -X POST https://api.saer.pk/api/forms/ \
+curl -X POST http://127.0.0.1:8000/api/forms/ \
   -H "Authorization: Bearer TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"form_title": "Test Form", "fields": [...], "status": "active"}'
 
 # Submit form (public)
-curl -X POST https://api.saer.pk/api/forms/test-form-abc123/submit/ \
+curl -X POST http://127.0.0.1:8000/api/forms/test-form-abc123/submit/ \
   -H "Content-Type: application/json" \
   -d '{"full_name": "Test User", "contact_number": "+923001234567"}'
 
 # List forms
-curl https://api.saer.pk/api/forms/ \
+curl http://127.0.0.1:8000/api/forms/ \
   -H "Authorization: Bearer TOKEN"
 ```
 
 ### Test Public Booking Status
 
 ```bash
-curl https://api.saer.pk/api/public/booking-status/SAER-BK-2024-001234/
+curl http://127.0.0.1:8000/api/public/booking-status/SAER-BK-2024-001234/
 ```
 
 ### Test Pax Movement
 
 ```bash
 # Summary
-curl https://api.saer.pk/api/pax-movements/summary/ \
+curl http://127.0.0.1:8000/api/pax-movements/summary/ \
   -H "Authorization: Bearer TOKEN"
 
 # Current status
-curl https://api.saer.pk/api/pax-movements/current-status/ \
+curl http://127.0.0.1:8000/api/pax-movements/current-status/ \
   -H "Authorization: Bearer TOKEN"
 
 # Timeline
-curl "https://api.saer.pk/api/pax-movements/timeline/?days=30" \
+curl "http://127.0.0.1:8000/api/pax-movements/timeline/?days=30" \
   -H "Authorization: Bearer TOKEN"
 ```
 
@@ -336,10 +336,10 @@ sudo systemctl restart gunicorn
 pm2 restart all
 
 # 4. Verify Swagger
-curl https://api.saer.pk/swagger/
+curl http://127.0.0.1:8000/swagger/
 
 # 5. Test public endpoints
-curl https://api.saer.pk/api/forms/by-url/?url=/forms/test
+curl http://127.0.0.1:8000/api/forms/by-url/?url=/forms/test
 ```
 
 ### Post-Deployment
@@ -505,7 +505,7 @@ DynamicForm.objects.filter(form_page_url__startswith='/forms/test-form')
 - Module Status: `MODULES_STATUS_REPORT.md`
 - Quick Reference: `QUICK_REFERENCE.md` (this file)
 
-**Swagger Access:** https://api.saer.pk/swagger/
+**Swagger Access:** http://127.0.0.1:8000/swagger/
 
 ---
 

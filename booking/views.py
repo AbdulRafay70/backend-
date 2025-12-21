@@ -317,6 +317,8 @@ class BookingViewSet(viewsets.ModelViewSet):
             .prefetch_related(
                 "hotel_details",
                 "transport_details",
+                "food_details",
+                "ziyarat_details",
                 Prefetch(
                     "ticket_details",
                     queryset=BookingTicketDetails.objects.prefetch_related(
@@ -401,8 +403,7 @@ class PublicBookingCreateAPIView(generics.CreateAPIView):
                 total_child=data.get('total_child', 0) or 0,
                 total_infant=data.get('total_infant', 0) or 0,
                 total_amount=float((pkg.price_per_person or 0) * total_pax),
-                status='unpaid',
-                payment_status='Pending',
+                status='Pending',
                 is_public_booking=True,
                 created_by_user_type='customer',
                 umrah_package=pkg,

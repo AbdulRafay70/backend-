@@ -115,7 +115,7 @@ All endpoints fully documented with:
 
 **Create a Form:**
 ```bash
-curl -X POST https://api.saer.pk/api/forms/ \
+curl -X POST http://127.0.0.1:8000/api/forms/ \
   -H "Authorization: Bearer TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -134,7 +134,7 @@ curl -X POST https://api.saer.pk/api/forms/ \
 
 **Submit Form (Public):**
 ```bash
-curl -X POST https://api.saer.pk/api/forms/umrah-interest-form-abc123/submit/ \
+curl -X POST http://127.0.0.1:8000/api/forms/umrah-interest-form-abc123/submit/ \
   -H "Content-Type: application/json" \
   -d '{
     "full_name": "Ahmed Ali",
@@ -202,7 +202,7 @@ GET /api/public/booking-status/{booking_number}/
   "payment_status": "paid",
   "total_amount": 125000.00,
   "paid_amount": 125000.00,
-  "qr_code_url": "https://api.saer.pk/media/qr-codes/SAER-BK-2024-001234.png"
+  "qr_code_url": "http://127.0.0.1:8000/media/qr-codes/SAER-BK-2024-001234.png"
 }
 ```
 
@@ -214,7 +214,7 @@ GET /api/public/booking-status/{booking_number}/
 
 ### Testing
 ```bash
-curl https://api.saer.pk/api/public/booking-status/SAER-BK-2024-001234/
+curl http://127.0.0.1:8000/api/public/booking-status/SAER-BK-2024-001234/
 ```
 
 ### Documentation
@@ -368,15 +368,15 @@ Comprehensive passenger (Pax) movement tracking system that provides real-time a
 ### Testing
 ```bash
 # Get summary
-curl https://api.saer.pk/api/pax-movements/summary/ \
+curl http://127.0.0.1:8000/api/pax-movements/summary/ \
   -H "Authorization: Bearer TOKEN"
 
 # Get timeline for last 30 days
-curl https://api.saer.pk/api/pax-movements/timeline/?days=30 \
+curl http://127.0.0.1:8000/api/pax-movements/timeline/?days=30 \
   -H "Authorization: Bearer TOKEN"
 
 # Get current status
-curl https://api.saer.pk/api/pax-movements/current-status/ \
+curl http://127.0.0.1:8000/api/pax-movements/current-status/ \
   -H "Authorization: Bearer TOKEN"
 ```
 
@@ -514,17 +514,17 @@ curl https://api.saer.pk/api/pax-movements/current-status/ \
 
 ### Swagger UI
 ```
-https://api.saer.pk/swagger/
+http://127.0.0.1:8000/swagger/
 ```
 
 ### ReDoc
 ```
-https://api.saer.pk/redoc/
+http://127.0.0.1:8000/redoc/
 ```
 
 ### OpenAPI Schema (JSON)
 ```
-https://api.saer.pk/api/schema/
+http://127.0.0.1:8000/api/schema/
 ```
 
 ### Module-Specific Tags

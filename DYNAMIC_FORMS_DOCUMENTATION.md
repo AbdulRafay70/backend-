@@ -619,7 +619,7 @@ GET /api/forms/by-url/?url=/forms/umrah-leads-form-a3f5d2
 ```python
 import requests
 
-url = "https://api.saer.pk/api/forms/"
+url = "http://127.0.0.1:8000/api/forms/"
 headers = {
     "Authorization": "Bearer YOUR_JWT_TOKEN",
     "Content-Type": "application/json"
@@ -666,7 +666,7 @@ print(response.json())
 ```javascript
 // Frontend JavaScript example
 async function submitForm(formUniqueId, formData) {
-  const url = `https://api.saer.pk/api/forms/${formUniqueId}/submit/`;
+  const url = `http://127.0.0.1:8000/api/forms/${formUniqueId}/submit/`;
   
   const response = await fetch(url, {
     method: 'POST',
@@ -702,7 +702,7 @@ submitForm("umrah-leads-form-a3f5d2", formData);
 ```javascript
 // Frontend router integration
 async function loadFormByURL(pageUrl) {
-  const url = `https://api.saer.pk/api/forms/by-url/?url=${encodeURIComponent(pageUrl)}`;
+  const url = `http://127.0.0.1:8000/api/forms/by-url/?url=${encodeURIComponent(pageUrl)}`;
   
   const response = await fetch(url);
   const formConfig = await response.json();
@@ -725,7 +725,7 @@ loadFormByURL('/forms/umrah-leads-form-a3f5d2');
 ```python
 import requests
 
-url = "https://api.saer.pk/api/forms/"
+url = "http://127.0.0.1:8000/api/forms/"
 headers = {
     "Authorization": "Bearer YOUR_JWT_TOKEN",
     "Content-Type": "application/json"
@@ -898,7 +898,7 @@ When a form is submitted:
 ### 1. Create a Test Form
 
 ```bash
-curl -X POST https://api.saer.pk/api/forms/ \
+curl -X POST http://127.0.0.1:8000/api/forms/ \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -929,7 +929,7 @@ curl -X POST https://api.saer.pk/api/forms/ \
 ### 2. Submit Test Data (Public)
 
 ```bash
-curl -X POST https://api.saer.pk/api/forms/test-lead-form-abc123/submit/ \
+curl -X POST http://127.0.0.1:8000/api/forms/test-lead-form-abc123/submit/ \
   -H "Content-Type: application/json" \
   -d '{
     "full_name": "Test User",
@@ -940,14 +940,14 @@ curl -X POST https://api.saer.pk/api/forms/test-lead-form-abc123/submit/ \
 ### 3. Verify Lead Created
 
 ```bash
-curl -X GET https://api.saer.pk/api/leads/ \
+curl -X GET http://127.0.0.1:8000/api/leads/ \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ### 4. Check Submissions
 
 ```bash
-curl -X GET https://api.saer.pk/api/forms/1/submissions/ \
+curl -X GET http://127.0.0.1:8000/api/forms/1/submissions/ \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
@@ -1026,7 +1026,7 @@ def get_form_by_url(url):
 
 **Solution:** Verify form exists and use exact unique ID:
 ```bash
-curl https://api.saer.pk/api/forms/ -H "Authorization: Bearer TOKEN"
+curl http://127.0.0.1:8000/api/forms/ -H "Authorization: Bearer TOKEN"
 ```
 
 ### Issue: Lead Not Created After Submission

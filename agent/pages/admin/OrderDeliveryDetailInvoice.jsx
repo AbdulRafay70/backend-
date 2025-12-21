@@ -31,7 +31,7 @@ const OrderDeliveryDetailInvoice = () => {
         const organizationId = orgData?.id;
         const token = localStorage.getItem("accessToken");
         // Fetch booking data
-        const bookingResponse = await axios.get(`https://api.saer.pk/api/bookings/?organization_id=${organizationId}&booking_number=${orderNo}`, {
+        const bookingResponse = await axios.get(`http://127.0.0.1:8000/api/bookings/?organization_id=${organizationId}&booking_number=${orderNo}`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -51,7 +51,7 @@ const OrderDeliveryDetailInvoice = () => {
 
         if (booking && booking.agency) {
           // Fetch agency data
-          const agencyResponse = await fetch(`https://api.saer.pk/api/agencies/?organization_id&id=${booking.agency}`);
+          const agencyResponse = await fetch(`http://127.0.0.1:8000/api/agencies/?organization_id&id=${booking.agency}`);
           if (!agencyResponse.ok) {
             throw new Error('Failed to fetch agency data');
           }

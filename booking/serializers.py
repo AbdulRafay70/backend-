@@ -8,7 +8,7 @@ from tickets.serializers import HotelsSerializer
 from users.serializers import UserSerializer
 from organization.models import Organization, Agency, Branch
 from users.models import UserProfile
-from tickets.models import Hotels
+from tickets.models import Hotels, Ticket
 from packages.models import City
 from datetime import datetime
 from decimal import Decimal
@@ -21,6 +21,8 @@ from .models import (
     BookingTicketStopoverDetails,
     BookingPersonZiyaratDetails,
     BookingPersonFoodDetails,
+    BookingFoodDetails,
+    BookingZiyaratDetails,
     BookingPersonDetail,
     BookingPersonContactDetails,
     Payment,
@@ -155,7 +157,6 @@ class PublicBookingSerializer(serializers.ModelSerializer):
             "hotel_details",
             "transport_details",
             "ticket_details",
-            "payment_status",
             "status",
             "total_paid",
             "remaining_balance",
@@ -346,6 +347,65 @@ class PublicPaymentCreateSerializer(serializers.Serializer):
 # --- Child serializers ---
 
 
+# Booking-level Food Details Serializer
+class BookingFoodDetailsSerializer(serializers.ModelSerializer):
+    """Serializer for booking-level food details with per-passenger-type pricing"""
+    
+    class Meta:
+        model = BookingFoodDetails
+        fields = [
+            'id',
+            'booking',
+            'food',
+            'adult_price',
+            'child_price',
+            'infant_price',
+            'total_adults',
+            'total_children',
+            'total_infants',
+            'is_price_pkr',
+            'riyal_rate',
+            'total_price_pkr',
+            'total_price_sar',
+            'contact_person_name',
+            'contact_number',
+            'food_voucher_number',
+            'food_brn',
+        ]
+        read_only_fields = ['id']
+
+
+# Booking-level Ziarat Details Serializer
+class BookingZiyaratDetailsSerializer(serializers.ModelSerializer):
+    """Serializer for booking-level ziarat details with per-passenger-type pricing"""
+    
+    class Meta:
+        model = BookingZiyaratDetails
+        fields = [
+            'id',
+            'booking',
+            'ziarat',
+            'city',
+            'adult_price',
+            'child_price',
+            'infant_price',
+            'total_adults',
+            'total_children',
+            'total_infants',
+            'is_price_pkr',
+            'riyal_rate',
+            'total_price_pkr',
+            'total_price_sar',
+            'date',
+            'contact_person_name',
+            'contact_number',
+            'ziyarat_voucher_number',
+            'ziyarat_brn',
+        ]
+        read_only_fields = ['id']
+
+
+
 class BookingTicketTripDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = BookingTicketTicketTripDetails
@@ -361,39 +421,100 @@ class BookingTicketStopoverDetailsSerializer(serializers.ModelSerializer):
 
 
 class BookingTicketDetailsSerializer(serializers.ModelSerializer):
+    ticket = NullablePKRelatedField(queryset=Ticket.objects.all(), required=False, allow_null=True)
     trip_details = BookingTicketTripDetailsSerializer(many=True, required=False)
     stopover_details = BookingTicketStopoverDetailsSerializer(many=True, required=False)
 
     class Meta:
         model = BookingTicketDetails
-        fields = "__all__"
+        fields = [
+            'id',
+            'booking',
+            'ticket',
+            'trip_details',
+            'stopover_details',
+            'pnr',
+            'trip_type',
+            'departure_stay_type',
+            'return_stay_type',
+            'seats',
+            'adult_price',
+            'child_price',
+            'infant_price',
+            'is_meal_included',
+            'is_refundable',
+            'weight',
+            'pieces',
+            'is_umrah_seat',
+        ]
         extra_kwargs = {"booking": {"read_only": True}}
 
     def create(self, validated_data):
         trip_data = validated_data.pop("trip_details", [])
         stopover_data = validated_data.pop("stopover_details", [])
-        ticket = BookingTicketDetails.objects.create(**validated_data)
+        
+        # Get the selected ticket
+        selected_ticket = validated_data.get('ticket')
+        
+        # Create the booking ticket detail
+        booking_ticket = BookingTicketDetails.objects.create(**validated_data)
 
-        if trip_data:
-                BookingTicketTicketTripDetails.objects.bulk_create(
-                    [
-                        BookingTicketTicketTripDetails(
-                            ticket=ticket,
-                            departure_city=td["departure_city"],
-                            arrival_city=td["arrival_city"],
-                            departure_date_time=td["departure_date_time"],
-                            arrival_date_time=td["arrival_date_time"],
-                            trip_type=td["trip_type"],
-                        )
-                        for td in trip_data
-                    ]
-                )
-      # Stopover Details
-        if stopover_data:
+        # If no trip_data provided, auto-copy from the selected ticket
+        if not trip_data and selected_ticket:
+            try:
+                from tickets.models import Ticket
+                ticket_obj = Ticket.objects.prefetch_related('trip_details').get(id=selected_ticket.id)
+                
+                # Copy trip details from ticket to booking
+                for trip in ticket_obj.trip_details.all():
+                    BookingTicketTicketTripDetails.objects.create(
+                        ticket=booking_ticket,
+                        departure_city=trip.departure_city,
+                        arrival_city=trip.arrival_city,
+                        departure_date_time=trip.departure_date_time,
+                        arrival_date_time=trip.arrival_date_time,
+                        trip_type=trip.trip_type,
+                    )
+            except Exception as e:
+                print(f"⚠️ Could not auto-copy trip details: {e}")
+        elif trip_data:
+            # Use provided trip_data
+            BookingTicketTicketTripDetails.objects.bulk_create(
+                [
+                    BookingTicketTicketTripDetails(
+                        ticket=booking_ticket,
+                        departure_city=td["departure_city"],
+                        arrival_city=td["arrival_city"],
+                        departure_date_time=td["departure_date_time"],
+                        arrival_date_time=td["arrival_date_time"],
+                        trip_type=td["trip_type"],
+                    )
+                    for td in trip_data
+                ]
+            )
+        
+        # If no stopover_data provided, auto-copy from the selected ticket
+        if not stopover_data and selected_ticket:
+            try:
+                from tickets.models import Ticket
+                ticket_obj = Ticket.objects.prefetch_related('stopover_details').get(id=selected_ticket.id)
+                
+                # Copy stopover details from ticket to booking
+                for stopover in ticket_obj.stopover_details.all():
+                    BookingTicketStopoverDetails.objects.create(
+                        ticket=booking_ticket,
+                        stopover_city=stopover.stopover_city,
+                        stopover_duration=stopover.stopover_duration,
+                        trip_type=stopover.trip_type,
+                    )
+            except Exception as e:
+                print(f"⚠️ Could not auto-copy stopover details: {e}")
+        elif stopover_data:
+            # Use provided stopover_data
             BookingTicketStopoverDetails.objects.bulk_create(
                 [
                     BookingTicketStopoverDetails(
-                        ticket=ticket,
+                        ticket=booking_ticket,
                         stopover_city=sd["stopover_city"],
                         stopover_duration=sd["stopover_duration"],
                         trip_type=sd["trip_type"],
@@ -402,7 +523,7 @@ class BookingTicketDetailsSerializer(serializers.ModelSerializer):
                 ]
             )
 
-        return ticket
+        return booking_ticket
 
     def update(self, instance, validated_data):
         trip_data = validated_data.pop("trip_details", [])
@@ -445,10 +566,23 @@ class BookingTicketDetailsSerializer(serializers.ModelSerializer):
 
 
 class BookingHotelDetailsSerializer(serializers.ModelSerializer):
+    hotel_name = serializers.SerializerMethodField()
+    room_type_name = serializers.SerializerMethodField()
+    
     class Meta:
         model = BookingHotelDetails
         fields = "__all__"
         extra_kwargs = {"booking": {"read_only": True}}
+    
+    def get_hotel_name(self, obj):
+        """Get hotel name from the hotel foreign key"""
+        if obj.hotel:
+            return obj.hotel.name if hasattr(obj.hotel, 'name') else str(obj.hotel)
+        return obj.self_hotel_name or "N/A"
+    
+    def get_room_type_name(self, obj):
+        """Get room type name"""
+        return obj.room_type if obj.room_type else "N/A"
 
 class BookingTransportSectorSerializer(serializers.ModelSerializer):
     class Meta:
@@ -465,15 +599,38 @@ class BookingTransportSectorSerializer(serializers.ModelSerializer):
 #         extra_kwargs = {"booking": {"read_only": True}}
 class BookingTransportDetailsSerializer(serializers.ModelSerializer):
     sector_details = BookingTransportSectorSerializer(many=True, required=False)
+    vehicle_type_display = serializers.SerializerMethodField()
 
     class Meta:
         model = BookingTransportDetails
         fields = "__all__"
         extra_kwargs = {"booking": {"read_only": True}}
+    
+    def get_vehicle_type_display(self, obj):
+        """Return vehicle name and type combined"""
+        if obj.vehicle_type:
+            return f"{obj.vehicle_type.vehicle_name} By {obj.vehicle_type.vehicle_type}"
+        return None
 
     def create(self, validated_data):
         # pop nested data
         sector_data = validated_data.pop("sector_details", [])
+        
+        # Handle backward compatibility: convert old 'price' and 'total_price' to new fields
+        old_price = validated_data.pop("price", None)
+        old_total_price = validated_data.pop("total_price", None)
+        is_price_pkr = validated_data.get("is_price_pkr", True)
+        riyal_rate = validated_data.get("riyal_rate", 50)
+        
+        # If old fields exist and new fields don't, convert them
+        if old_total_price is not None and not validated_data.get("price_in_pkr") and not validated_data.get("price_in_sar"):
+            if is_price_pkr:
+                validated_data["price_in_pkr"] = old_total_price
+                validated_data["price_in_sar"] = old_total_price / riyal_rate if riyal_rate else 0
+            else:
+                validated_data["price_in_sar"] = old_total_price
+                validated_data["price_in_pkr"] = old_total_price * riyal_rate
+        
         transport_detail = BookingTransportDetails.objects.create(**validated_data)
 
         # create nested sector records
@@ -518,27 +675,90 @@ class BookingPersonContactDetailsSerializer(serializers.ModelSerializer):
         extra_kwargs = {"person": {"read_only": True}}
 
 class BookingPersonDetailSerializer(serializers.ModelSerializer):
-    # contact_details = BookingPersonContactDetailsSerializer(many=True, required=False)
+    ticket = NullablePKRelatedField(queryset=Ticket.objects.all(), required=False, allow_null=True)
+    contact_details = BookingPersonContactDetailsSerializer(many=True, required=False)
+    
     class Meta:
         model = BookingPersonDetail
-        fields = "__all__"
+        fields = [
+            # Basic info
+            'id',
+            'booking',
+            # Personal details
+            'age_group',
+            'person_title',
+            'first_name',
+            'last_name',
+            'passport_number',
+            'date_of_birth',
+            'passpoet_issue_date',
+            'passport_expiry_date',
+            'passport_picture',
+            'country',
+            # Family info
+            'is_family_head',
+            'family_number',
+            # Visa section (grouped)
+            'is_visa_included',
+            'is_visa_price_pkr',
+            'visa_rate_in_sar',
+            'visa_rate_in_pkr',
+            'visa_riyal_rate',
+            'visa_price',
+            'visa_status',
+            'visa_group_number',
+            'visa_remarks',
+            # Ticket section (grouped)
+            'ticket_included',
+            'ticket',
+            'ticket_status',
+            'ticket_remarks',
+            'ticket_price',
+            'ticket_discount',
+            # Nested details
+            'contact_details',
+            # Other info
+            'contact_number',
+            'this_pex_remarks',
+            'shirka',
+        ]
         extra_kwargs = {"booking": {"read_only": True}}
     
     def create(self, validated_data):
         # nested lists
-        ziyarat_data = validated_data.pop("ziyarat_details", [])
-        food_data = validated_data.pop("food_details", [])
         contact_data = validated_data.pop("contact_details", [])
+        
+        # ALWAYS fetch and store the riyal rate from organization
+        booking = validated_data.get('booking')
+        if booking:
+            from packages.models import RiyalRate
+            try:
+                riyal_rate_obj = RiyalRate.objects.get(organization=booking.organization)
+                visa_riyal_rate = riyal_rate_obj.rate or 0
+                
+                # Store the riyal rate used at booking time
+                validated_data['visa_riyal_rate'] = visa_riyal_rate
+                
+                visa_price = validated_data.get('visa_price', 0) or 0
+                
+                # If visa is in PKR
+                if validated_data.get('is_visa_price_pkr', True):
+                    # Copy visa_price to visa_rate_in_pkr
+                    validated_data['visa_rate_in_pkr'] = visa_price
+                    validated_data['visa_rate_in_sar'] = 0
+                else:
+                    # If visa is in SAR
+                    # Copy visa_price to visa_rate_in_sar
+                    validated_data['visa_rate_in_sar'] = visa_price
+                    
+                    # Calculate PKR equivalent
+                    if visa_price and visa_riyal_rate:
+                        validated_data['visa_rate_in_pkr'] = visa_price * visa_riyal_rate
+            except RiyalRate.DoesNotExist:
+                pass  # No riyal rate configured
+        
         person = BookingPersonDetail.objects.create(**validated_data)
 
-        if ziyarat_data:
-            BookingPersonZiyaratDetails.objects.bulk_create(
-                [BookingPersonZiyaratDetails(person=person, **zd) for zd in ziyarat_data]
-            )
-        if food_data:
-            BookingPersonFoodDetails.objects.bulk_create(
-                [BookingPersonFoodDetails(person=person, **fd) for fd in food_data]
-            )
         if contact_data:
             BookingPersonContactDetails.objects.bulk_create(
                 [BookingPersonContactDetails(person=person, **cd) for cd in contact_data]
@@ -547,24 +767,12 @@ class BookingPersonDetailSerializer(serializers.ModelSerializer):
     
     def update(self, instance, validated_data):
         # nested lists (None if not provided on PATCH)
-        ziyarat_data = validated_data.pop("ziyarat_details", None)
-        food_data = validated_data.pop("food_details", None)
         contact_data = validated_data.pop("contact_details", [])
 
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
-        if ziyarat_data is not None:
-            # instance.ziyarat_details.all().delete()
-            BookingPersonZiyaratDetails.objects.bulk_create(
-                [BookingPersonZiyaratDetails(person=instance, **zd) for zd in ziyarat_data]
-            )
-        if food_data is not None:
-            instance.food_details.all().delete()
-            BookingPersonFoodDetails.objects.bulk_create(
-                [BookingPersonFoodDetails(person=instance, **fd) for fd in food_data]
-            )
         if contact_data is not None:
             instance.contact_details.all().delete()
             BookingPersonContactDetails.objects.bulk_create(
@@ -820,8 +1028,8 @@ class BookingSerializer(serializers.ModelSerializer):
         queryset=Branch.objects.all(), source="branch", write_only=True
     )
     umrah_package = UmrahPackageSerializer(read_only=True)
-    ziyarat_details = BookingPersonZiyaratDetailsSerializer(many=True, required=False)
-    food_details = BookingPersonFoodDetailsSerializer(many=True, required=False)
+    food_details = BookingFoodDetailsSerializer(many=True, required=False)
+    ziyarat_details = BookingZiyaratDetailsSerializer(many=True, required=False)
     agency_id = serializers.PrimaryKeyRelatedField(
         queryset=Agency.objects.all(), source="agency"
     )
@@ -840,31 +1048,220 @@ class BookingSerializer(serializers.ModelSerializer):
     transport_details = BookingTransportDetailsSerializer(many=True, required=False)
     ticket_details = BookingTicketDetailsSerializer(many=True, required=False)
     person_details = BookingPersonDetailSerializer(many=True, required=False)
-    payment_details = PaymentSerializer(many=True, required=False)
-    payments = serializers.ListField(child=serializers.DictField(), required=False)
     journal_items = serializers.ListField(child=serializers.DictField(), required=False)
-    remaining_amount = serializers.FloatField(read_only=True)
     booking_number = serializers.CharField(read_only=True)
     agency = AgencySerializer(read_only=True)
     user = UserSerializer(read_only=True)
     organization = OrganizationSerializer(read_only=True)
     branch = BranchSerializer(read_only=True)
-    confirmed_by = UserSerializer(read_only=True)
+    approved_by = UserSerializer(read_only=True, source='confirmed_by')
+
+
+
 
     class Meta:
         model = Booking
-        fields = "__all__"
+        fields = [
+            # Basic booking fields
+            'id',
+            'umrah_package',
+            'agency_id',
+            'user_id',
+            'organization_id',  # write_only
+            'branch_id',  # write_only
+            'internal_notes_id',  # write_only
+            
+            # Detail arrays (in order)
+            'person_details',
+            'transport_details',
+            'hotel_details',
+            'ticket_details',
+            'food_details',
+            'ziyarat_details',
+            
+            # User and organization info
+            'user',
+            'agency',
+            'organization',
+            'branch',
+            'approved_by',
+            
+            # Other booking fields
+            'booking_type',
+            'status',
+            'ledger_entry',
+            'created_by_user_type',
+            'created_at',
+            'booking_organization_id',
+            
+            # Passenger counts
+            'total_pax',
+            'total_adult',
+            'total_child',
+            'total_infant',
+            
+            # Amount fields (SAR and PKR specific)
+            'total_visa_amount_sar',
+            'total_visa_amount_pkr',
+            'total_ticket_amount_pkr',
+            'total_transport_amount_sar',
+            'total_transport_amount_pkr',
+            'total_hotel_amount_sar',
+            'total_hotel_amount_pkr',
+            'total_food_amount_pkr',
+            'total_food_amount_sar',
+            'total_ziyarat_amount_pkr',
+            'total_ziyarat_amount_sar',
+            'total_amount',
+            'total_in_pkr',
+            
+            # Payment fields
+            'total_discount',
+            'discount_notes',
+            
+            # Customer fields
+            'customer_name',
+            'customer_contact',
+            'customer_email',
+            'customer_address',
+            
+            # Other fields
+            'call_status',
+            'client_note',
+            'date',
+            'expiry_time',
+            'booking_number',
+            'is_partial_payment_allowed',
+            'is_ziyarat_included',
+            'is_food_included',
+            'is_full_package',
+            'is_public_booking',
+            'invoice_no',
+            'is_outsourced',
+            'payments',
+            'reseller_commission',
+            'markup_by_reseller',
+            'public_ref',
+            'rejected_employer',
+            'rejected_notes',
+            'rejected_at',
+            'action',
+            'internals',
+            'journal_items',
+        ]
+    
+    def to_internal_value(self, data):
+        # Make data mutable if it's a QueryDict (from multipart/form-data requests)
+        # This is necessary for file uploads with passport images
+        from django.http import QueryDict
+        if isinstance(data, QueryDict):
+            data = data.copy()  # Make it mutable
+            
+            # Parse FormData format for person_details with passport images
+            # FormData sends: person_details[0].first_name, person_details[0].passport_picture, etc.
+            person_details_dict = {}
+            keys_to_remove = []
+            
+            for key in list(data.keys()):
+                # Check if this is a person_details field
+                if key.startswith('person_details['):
+                    # Extract index and field name
+                    # Format: person_details[0].first_name
+                    import re
+                    match = re.match(r'person_details\[(\d+)\]\.(.+)', key)
+                    if match:
+                        index = int(match.group(1))
+                        field_name = match.group(2)
+                        
+                        # Initialize dict for this person if not exists
+                        if index not in person_details_dict:
+                            person_details_dict[index] = {}
+                        
+                        # Get the value (could be file or string)
+                        value = data.get(key)
+                        
+                        # Handle file objects (passport_picture)
+                        if hasattr(value, 'read'):  # It's a file
+                            person_details_dict[index][field_name] = value
+                        else:
+                            # Try to parse JSON strings back to objects
+                            try:
+                                import json
+                                person_details_dict[index][field_name] = json.loads(value) if value else value
+                            except (json.JSONDecodeError, TypeError):
+                                person_details_dict[index][field_name] = value
+                        
+                        keys_to_remove.append(key)
+            
+            # Remove the parsed keys from data
+            for key in keys_to_remove:
+                data.pop(key, None)
+            
+            # Convert person_details_dict to list and add to data
+            if person_details_dict:
+                person_details_list = []
+                for i in sorted(person_details_dict.keys()):
+                    person_details_list.append(person_details_dict[i])
+                data['person_details'] = person_details_list
+            
+            # Parse other JSON string fields from FormData
+            # Frontend sends these as JSON strings, we need to convert them back
+            import json
+            json_fields = ['hotel_details', 'ticket_details', 'food_details', 'ziyarat_details', 'transport_details']
+            for field in json_fields:
+                if field in data and isinstance(data[field], str):
+                    try:
+                        data[field] = json.loads(data[field])
+                    except (json.JSONDecodeError, TypeError):
+                        pass  # Keep as is if not valid JSON
+        
+        # Extract nested data BEFORE validation to handle manually
+        # Use None as default to distinguish between "not provided" vs "empty list"
+        self._ticket_details_data = data.pop('ticket_details', None)
+        self._person_details_data = data.pop('person_details', None)
+        self._food_details_data = data.pop('food_details', None)
+        self._ziyarat_details_data = data.pop('ziyarat_details', None)
+        
+        # Call parent to validate remaining fields
+        ret = super().to_internal_value(data)
+        
+        # Only add back if explicitly provided (not None)
+        # This prevents accidental deletion when updating other fields (e.g., status change)
+        if self._ticket_details_data is not None:
+            ret['ticket_details'] = self._ticket_details_data
+        if self._person_details_data is not None:
+            ret['person_details'] = self._person_details_data
+        if self._food_details_data is not None:
+            ret['food_details'] = self._food_details_data
+        if self._ziyarat_details_data is not None:
+            ret['ziyarat_details'] = self._ziyarat_details_data
+        
+        return ret
+    
     def to_representation(self, instance):
         data = super().to_representation(instance)
-
-        # ✅ Food array sirf tab show hoga jab flag true hai
-        if not instance.is_food_included:
-            data.pop("food_details", None)
-
-        # ✅ Ziyarat array sirf tab show hoga jab flag true hai
-        if not instance.is_ziyarat_included:
-            data.pop("ziyarat_details", None)
-
+        
+        # Clean up user object
+        user_data = data.get('user', {})
+        user_data.pop('agency_details', None)
+        user_data.pop('organization_details', None)
+        user_data.pop('branch_details', None)
+        user_data.pop('group_details', None)
+        
+        # Remove branches array from organization object
+        organization_data = data.get('organization', {})
+        if organization_data:
+            organization_data.pop('branches', None)
+        
+        # Customize booking_type display
+        booking_type_value = data.get('booking_type')
+        if booking_type_value == 'TICKET':
+            data['booking_type'] = 'Group Ticket'
+        elif booking_type_value == 'CUSTOM_PACKAGE':
+            data['booking_type'] = 'Custom Package'
+        elif booking_type_value == 'UMRAH' or booking_type_value == 'PACKAGE':
+            data['booking_type'] = 'Umrah Package'
+        
         return data
     @transaction.atomic
     def create(self, validated_data):
@@ -873,8 +1270,8 @@ class BookingSerializer(serializers.ModelSerializer):
         transport_data = validated_data.pop("transport_details", [])
         ticket_data = validated_data.pop("ticket_details", [])
         person_data = validated_data.pop("person_details", [])
-        payment_data = validated_data.pop("payment_details", [])
-        payments_data = validated_data.pop("payments", [])
+        food_data = validated_data.pop("food_details", [])
+        ziarat_data = validated_data.pop("ziyarat_details", [])
         journal_data = validated_data.pop("journal_items", [])
         
         # Pop ManyToMany field - can't be set during create()
@@ -892,9 +1289,7 @@ class BookingSerializer(serializers.ModelSerializer):
         if internals_data:
             booking.internals.set(internals_data)
 
-        # attach payments/journal if provided (stored as JSON on Booking)
-        if payments_data:
-            booking.payments = payments_data
+        # attach journal if provided (stored as JSON on Booking)
         if journal_data:
             booking.journal_items = journal_data
         booking.save()
@@ -920,8 +1315,10 @@ class BookingSerializer(serializers.ModelSerializer):
 
             price = hd.get("price", 0)
             quantity = hd.get("quantity", 1)
-
-            total_price = price * nights * quantity
+            
+            # Use total_price from frontend if provided, otherwise calculate
+            total_price = hd.get("total_price", price * nights * quantity)
+            
             hd["number_of_nights"] = nights
             hd["total_price"] = total_price
             if rate_obj and rate_obj.is_hotel_pkr is False:
@@ -988,6 +1385,10 @@ class BookingSerializer(serializers.ModelSerializer):
                 else:
                     td["price_in_pkr"] = price_value
 
+                # Remove old price fields that no longer exist in the model
+                td.pop("price", None)
+                td.pop("total_price", None)
+
                 # create transport detail
                 transport_detail = BookingTransportDetails.objects.create(
                     booking=booking, **td
@@ -1002,8 +1403,9 @@ class BookingSerializer(serializers.ModelSerializer):
     
         # --- Nested tickets (delegate to serializer) ---
         for td in ticket_data:
-            serializer = BookingTicketDetailsSerializer()
-            serializer.create({**td, "booking": booking})
+            serializer = BookingTicketDetailsSerializer(data=td)
+            serializer.is_valid(raise_exception=True)
+            serializer.save(booking=booking)
 
         # --- Nested persons (delegate to serializer) ---
         for pd in person_data:
@@ -1011,11 +1413,13 @@ class BookingSerializer(serializers.ModelSerializer):
             serializer.is_valid(raise_exception=True)
             serializer.save(booking=booking)
 
-        # --- Flat payments ---
-        if payment_data:
-            Payment.objects.bulk_create(
-                [Payment(booking=booking, **pay) for pay in payment_data]
-            )
+        # --- Booking-level Food Details ---
+        for fd in food_data:
+            BookingFoodDetails.objects.create(booking=booking, **fd)
+
+        # --- Booking-level Ziarat Details ---
+        for zd in ziarat_data:
+            BookingZiyaratDetails.objects.create(booking=booking, **zd)
 
         return booking
 
@@ -1028,7 +1432,8 @@ class BookingSerializer(serializers.ModelSerializer):
         transport_data = validated_data.pop("transport_details", None)
         ticket_data = validated_data.pop("ticket_details", None)
         person_data = validated_data.pop("person_details", None)
-        payment_data = validated_data.pop("payment_details", None)
+        food_data = validated_data.pop("food_details", None)
+        ziarat_data = validated_data.pop("ziyarat_details", None)
 
         # update booking fields
         for attr, value in validated_data.items():
@@ -1036,21 +1441,25 @@ class BookingSerializer(serializers.ModelSerializer):
         instance.save()
 
         # --- Hotels ---
-        if hotel_data is not None:
+        # ONLY update if explicitly provided as a list (not None)
+        # None means "don't touch", empty list [] means "delete all"
+        if isinstance(hotel_data, list):
             instance.hotel_details.all().delete()
             BookingHotelDetails.objects.bulk_create(
                 [BookingHotelDetails(booking=instance, **hd) for hd in hotel_data]
             )
 
         # --- Transport ---
-        if transport_data is not None:
+        # ONLY update if explicitly provided as a list (not None)
+        if isinstance(transport_data, list):
             instance.transport_details.all().delete()
             BookingTransportDetails.objects.bulk_create(
                 [BookingTransportDetails(booking=instance, **td) for td in transport_data]
             )
 
         # --- Tickets ---
-        if ticket_data is not None:
+        # ONLY update if explicitly provided as a list (not None)
+        if isinstance(ticket_data, list):
             instance.ticket_details.all().delete()
             for td in ticket_data:
                 serializer = BookingTicketDetailsSerializer(data=td)
@@ -1058,19 +1467,28 @@ class BookingSerializer(serializers.ModelSerializer):
                 serializer.save(booking=instance)
 
         # --- Persons ---
-        if person_data is not None:
+        # ONLY update if explicitly provided as a list (not None)
+        # This prevents accidental deletion when updating other booking fields (e.g., status change in admin)
+        if isinstance(person_data, list):
             instance.person_details.all().delete()
             for pd in person_data:
                 serializer = BookingPersonDetailSerializer(data=pd)
                 serializer.is_valid(raise_exception=True)
                 serializer.save(booking=instance)
 
-        # --- Payments ---
-        if payment_data is not None:
-            instance.payment_details.all().delete()
-            Payment.objects.bulk_create(
-                [Payment(booking=instance, **pay) for pay in payment_data]
-            )
+        # --- Food Details ---
+        # ONLY update if explicitly provided as a list (not None)
+        if isinstance(food_data, list):
+            instance.food_details.all().delete()
+            for fd in food_data:
+                BookingFoodDetails.objects.create(booking=instance, **fd)
+
+        # --- Ziarat Details ---
+        # ONLY update if explicitly provided as a list (not None)
+        if isinstance(ziarat_data, list):
+            instance.ziyarat_details.all().delete()
+            for zd in ziarat_data:
+                BookingZiyaratDetails.objects.create(booking=instance, **zd)
 
         return instance
 
@@ -2090,7 +2508,6 @@ class IntegratedBookingSerializer(serializers.ModelSerializer):
             'agency',
             'date',
             'status',
-            'payment_status',
             'ledger_id',
             'total_amount',
             'total_discount',
@@ -2120,7 +2537,7 @@ class IntegratedBookingSerializer(serializers.ModelSerializer):
         return {
             'amount': float(obj.total_payment_received) if obj.total_payment_received else 0,
             'method': None,
-            'status': obj.payment_status.lower() if obj.payment_status else 'pending',
+            'status': obj.status.lower() if obj.status else 'pending',
             'transaction_id': None,
         }
     
@@ -2134,6 +2551,5 @@ class IntegratedBookingSerializer(serializers.ModelSerializer):
         
         # Ensure status is lowercase
         data['status'] = data['status'].lower() if data['status'] else 'pending'
-        data['payment_status'] = data['payment_status'].lower() if data['payment_status'] else 'pending'
         
         return data

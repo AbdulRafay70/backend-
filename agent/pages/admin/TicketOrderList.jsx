@@ -27,7 +27,7 @@ const TicketTravelBookingInvoice = () => {
         const organizationId = orgData?.id;
         const token = localStorage.getItem("accessToken");
         const response = await axios.get(
-          `https://api.saer.pk/api/bookings/?organization=${organizationId}&booking_number=${orderNo}`,
+          `http://127.0.0.1:8000/api/bookings/?organization=${organizationId}&booking_number=${orderNo}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -61,7 +61,7 @@ const TicketTravelBookingInvoice = () => {
         // Now fetch agency data
         if (booking.agency) {
           const agencyResponse = await fetch(
-            `https://api.saer.pk/api/agencies/?id=${booking.agency}`
+            `http://127.0.0.1:8000/api/agencies/?id=${booking.agency}`
           );
 
           if (agencyResponse.ok) {

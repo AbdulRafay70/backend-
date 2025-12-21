@@ -7,11 +7,11 @@ from .models import PaxMovement
 @receiver(post_save, sender=Booking)
 def create_pax_movements_for_booking(sender, instance, created, **kwargs):
     """
-    Auto-generate PaxMovement records when a booking is created or when it becomes paid.
+    Auto-generate PaxMovement records when a booking is created or when it becomes approved.
     This creates movement tracking for each passenger in the booking.
     """
-    # Only create movements if booking is paid and movements don't already exist
-    if instance.payment_status == 'paid':
+    # Only create movements if booking is approved and movements don't already exist
+    if instance.status == 'Approved':
         # Get all passengers in this booking
         persons = instance.person_details.all()
         
@@ -28,9 +28,9 @@ def create_pax_movements_for_booking(sender, instance, created, **kwargs):
 @receiver(post_save, sender=BookingPersonDetail)
 def create_pax_movement_for_new_person(sender, instance, created, **kwargs):
     """
-    Auto-generate PaxMovement when a new person is added to a paid booking.
+    Auto-generate PaxMovement when a new person is added to an approved booking.
     """
-    if created and instance.booking.payment_status == 'paid':
+    if created and instance.booking.status == 'Approved':
         if not PaxMovement.objects.filter(booking=instance.booking, person=instance).exists():
             PaxMovement.objects.create(
                 booking=instance.booking,

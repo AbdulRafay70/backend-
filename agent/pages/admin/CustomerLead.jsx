@@ -215,7 +215,7 @@ const CustomerLead = () => {
   const fetchLeads = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`https://api.saer.pk/api/area-leads/`, {
+      const response = await axios.get(`http://127.0.0.1:8000/api/area-leads/`, {
         params: { organization: organizationId },
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -233,7 +233,7 @@ const CustomerLead = () => {
 
   const fetchBranches = async () => {
     try {
-      const response = await axios.get(`https://api.saer.pk/api/branches/`, {
+      const response = await axios.get(`http://127.0.0.1:8000/api/branches/`, {
         params: { organization: organizationId },
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -259,7 +259,7 @@ const CustomerLead = () => {
         params.contact_number = searchQuery;
       }
 
-      const response = await axios.get(`https://api.saer.pk/api/area-leads/search`, {
+      const response = await axios.get(`http://127.0.0.1:8000/api/area-leads/search`, {
         params,
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -315,7 +315,7 @@ const CustomerLead = () => {
         created_by: userId,
       };
 
-      await axios.post(`https://api.saer.pk/api/area-leads/create`, payload, {
+      await axios.post(`http://127.0.0.1:8000/api/area-leads/create`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -331,7 +331,7 @@ const CustomerLead = () => {
   const handleEditLead = async () => {
     try {
       await axios.put(
-        `https://api.saer.pk/api/area-leads/${selectedLead.id}/`,
+        `http://127.0.0.1:8000/api/area-leads/${selectedLead.id}/`,
         leadForm,
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -349,7 +349,7 @@ const CustomerLead = () => {
 
   const handleDeleteLead = async () => {
     try {
-      await axios.delete(`https://api.saer.pk/api/area-leads/${selectedLead.id}/`, {
+      await axios.delete(`http://127.0.0.1:8000/api/area-leads/${selectedLead.id}/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

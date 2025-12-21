@@ -331,7 +331,7 @@ class BookingAdmin(admin.ModelAdmin):
 	form = BookingForm
 	list_display = (
 		'booking_number', 'invoice_no', 'customer_name', 'get_employee', 'get_organization', 
-		'get_branch', 'status', 'payment_status', 'total_amount', 'paid_payment', 
+		'get_branch', 'status', 'total_amount', 'paid_payment', 
 		'pending_payment', 'created_at'
 	)
 	search_fields = (
@@ -339,7 +339,7 @@ class BookingAdmin(admin.ModelAdmin):
 		'person_details__first_name', 'person_details__passport_number', 
 		'user__employee_profile__first_name', 'user__employee_profile__last_name'
 	)
-	list_filter = ('status', 'payment_status', 'is_public_booking', 'organization', 'branch', 'agency', 'created_at')
+	list_filter = ('status', 'is_public_booking', 'organization', 'branch', 'agency', 'created_at')
 	
 	# Streamlined inlines - Remove duplicate passenger section
 	inlines = [
@@ -363,8 +363,8 @@ class BookingAdmin(admin.ModelAdmin):
 			'description': 'Enter customer/client details for the booking.'
 		}),
 		('Booking Information', {
-			'fields': ('booking_number', 'invoice_no', 'status', 'payment_status', 'get_ledger_link', 'expiry_time'),
-			'description': 'Ledger entry is auto-created when payment status is set to "Paid".'
+			'fields': ('booking_number', 'invoice_no', 'status', 'get_ledger_link', 'expiry_time'),
+			'description': 'Ledger entry is auto-created when status is set to "Approved".'
 		}),
 		('Amount Details', {
 			'fields': ('get_amounts_summary',),
@@ -381,14 +381,15 @@ class BookingAdmin(admin.ModelAdmin):
 	)
 	
 	def save_model(self, request, obj, form, change):
-		"""Save the booking and update passenger counts"""
-		# Calculate pending_payment before saving
-		obj.pending_payment = (obj.total_amount or 0) - (obj.paid_payment or 0)
+		"""Save the booking and update passenger counts and amounts"""
+		from django.db.models import Sum
+		from decimal import Decimal
 		
 		super().save_model(request, obj, form, change)
 		
-		# Update passenger counts from booking_pax (new PAX system)
+		# Update passenger counts and amounts after saving
 		if obj.pk:
+			# Update passenger counts from booking_pax (new PAX system)
 			pax_count = obj.booking_pax.count()
 			if pax_count > 0:
 				obj.total_pax = pax_count
@@ -402,7 +403,61 @@ class BookingAdmin(admin.ModelAdmin):
 				obj.total_child = obj.person_details.filter(age_group='Child').count()
 				obj.total_infant = obj.person_details.filter(age_group='Infant').count()
 			
-			obj.save(update_fields=['total_pax', 'total_adult', 'total_child', 'total_infant'])
+			# Recalculate amounts - try new system first, fallback to old
+			if obj.booking_items.exists():
+				# New system: Use booking_items
+				obj.total_ticket_amount = obj.booking_items.filter(
+					inventory_type='ticket').aggregate(total=Sum('final_amount'))['total'] or Decimal('0')
+				obj.total_hotel_amount = obj.booking_items.filter(
+					inventory_type='hotel').aggregate(total=Sum('final_amount'))['total'] or Decimal('0')
+				obj.total_transport_amount = obj.booking_items.filter(
+					inventory_type='transport').aggregate(total=Sum('final_amount'))['total'] or Decimal('0')
+				obj.total_visa_amount = obj.booking_items.filter(
+					inventory_type='visa').aggregate(total=Sum('final_amount'))['total'] or Decimal('0')
+			else:
+				# Old system: Calculate from ticket_details (source of truth)
+				ticket_sum = Decimal('0')
+				
+				# Get all ticket details for this booking
+				for ticket_detail in obj.ticket_details.all():
+					# Count passengers by age group
+					adults = obj.person_details.filter(age_group='Adult').count()
+					children = obj.person_details.filter(age_group='Child').count()
+					infants = obj.person_details.filter(age_group='Infant').count()
+					
+					# Calculate total from ticket prices
+					ticket_sum += (
+						Decimal(str(ticket_detail.adult_price or 0)) * adults +
+						Decimal(str(ticket_detail.child_price or 0)) * children +
+						Decimal(str(ticket_detail.infant_price or 0)) * infants
+					)
+				
+				obj.total_ticket_amount = ticket_sum
+				# Keep other amounts as-is if not using booking_items
+
+			
+			# Calculate total amount
+			obj.total_amount = (
+				Decimal(str(obj.total_ticket_amount or 0)) +
+				Decimal(str(obj.total_hotel_amount or 0)) +
+				Decimal(str(obj.total_transport_amount or 0)) +
+				Decimal(str(obj.total_visa_amount or 0))
+			)
+			
+			# Update paid_payment from completed payment records
+			obj.paid_payment = obj.payment_records.filter(
+				status='completed').aggregate(total=Sum('amount'))['total'] or Decimal('0')
+			
+			# Calculate pending payment
+			obj.pending_payment = Decimal(str(obj.total_amount or 0)) - Decimal(str(obj.paid_payment or 0))
+			
+			# Save all updates
+			obj.save(update_fields=[
+				'total_pax', 'total_adult', 'total_child', 'total_infant',
+				'total_ticket_amount', 'total_hotel_amount', 'total_transport_amount', 'total_visa_amount',
+				'total_amount', 'paid_payment', 'pending_payment'
+			])
+
 	
 	def save_formset(self, request, form, formset, change):
 		"""After saving formsets, update related data"""
@@ -474,33 +529,6 @@ class BookingAdmin(admin.ModelAdmin):
 				'total_ticket_amount', 'total_hotel_amount', 'total_transport_amount', 'total_visa_amount',
 				'total_amount', 'paid_payment', 'pending_payment'
 			])
-		if form.instance.pk:
-			obj = form.instance
-			obj.total_pax = obj.person_details.count()
-			obj.total_adult = obj.person_details.filter(age_group='Adult').count()
-			obj.total_child = obj.person_details.filter(age_group='Child').count()
-			obj.total_infant = obj.person_details.filter(age_group='Infant').count()
-			
-			# Calculate total ticket amount from all passengers - ensure Decimal
-			from django.db.models import Sum
-			ticket_sum = obj.person_details.aggregate(total=Sum('ticket_price'))['total'] or Decimal('0')
-			obj.total_ticket_amount = ticket_sum
-			
-			# Calculate total_amount (ticket + hotel + transport + visa) - ensure all Decimal
-			obj.total_amount = (
-				Decimal(str(obj.total_ticket_amount or 0)) +
-				Decimal(str(obj.total_hotel_amount or 0)) +
-				Decimal(str(obj.total_transport_amount or 0)) +
-				Decimal(str(obj.total_visa_amount or 0))
-			)
-			
-			# Calculate pending_payment - ensure Decimal
-			obj.pending_payment = Decimal(str(obj.total_amount or 0)) - Decimal(str(obj.paid_payment or 0))
-			
-			obj.save(update_fields=[
-				'total_pax', 'total_adult', 'total_child', 'total_infant',
-				'total_ticket_amount', 'total_amount', 'pending_payment'
-			])
 	
 	def get_employee(self, obj):
 		"""Display employee name"""
@@ -559,13 +587,13 @@ class BookingAdmin(admin.ModelAdmin):
 				obj.ledger_entry.id,
 				obj.ledger_entry.created_at.strftime('%Y-%m-%d %H:%M')
 			)
-		elif obj.payment_status == 'Paid':
+		elif obj.status == 'Approved':
 			return format_html(
 				'<span style="color: #d9534f;">⚠️ No ledger entry - Click Save to create</span>'
 			)
 		else:
 			return format_html(
-				'<span style="color: #666;">Will be created when payment status is "Paid"</span>'
+				'<span style="color: #666;">Will be created when status is "Approved"</span>'
 			)
 	get_ledger_link.short_description = "Ledger Entry"
 	
@@ -644,15 +672,21 @@ class BookingAdmin(admin.ModelAdmin):
 				total=Sum('final_amount'))['total'] or 0
 			visa_amount = obj.booking_items.filter(inventory_type='visa').aggregate(
 				total=Sum('final_amount'))['total'] or 0
+			food_amount = obj.booking_items.filter(inventory_type='food').aggregate(
+				total=Sum('final_amount'))['total'] or 0
+			ziarat_amount = obj.booking_items.filter(inventory_type='ziarat').aggregate(
+				total=Sum('final_amount'))['total'] or 0
 			
-			total_amount = ticket_amount + hotel_amount + transport_amount + visa_amount
+			total_amount = ticket_amount + hotel_amount + transport_amount + visa_amount + food_amount + ziarat_amount
 			source = "Booking Items (New System)"
 		else:
-			# Fallback to stored values
+			# Get amounts from booking
 			ticket_amount = obj.total_ticket_amount or 0
 			hotel_amount = obj.total_hotel_amount or 0
 			transport_amount = obj.total_transport_amount or 0
 			visa_amount = obj.total_visa_amount or 0
+			food_amount = obj.total_food_amount_pkr or 0
+			ziarat_amount = obj.total_ziyarat_amount_pkr or 0
 			total_amount = obj.total_amount or 0
 			source = "Stored Values (Legacy)"
 		
@@ -684,6 +718,14 @@ class BookingAdmin(admin.ModelAdmin):
 				<tr>
 					<td style="padding: 10px; border: 1px solid #dee2e6;"><strong>Total Visa Amount</strong></td>
 					<td style="padding: 10px; text-align: right; border: 1px solid #dee2e6; background: #d1ecf1;"><strong>{visa_amount:,.2f}</strong></td>
+				</tr>
+				<tr>
+					<td style="padding: 10px; border: 1px solid #dee2e6;"><strong>Total Food Amount</strong></td>
+					<td style="padding: 10px; text-align: right; border: 1px solid #dee2e6; background: #d4edda;"><strong>{food_amount:,.2f}</strong></td>
+				</tr>
+				<tr>
+					<td style="padding: 10px; border: 1px solid #dee2e6;"><strong>Total Ziarat Amount</strong></td>
+					<td style="padding: 10px; text-align: right; border: 1px solid #dee2e6; background: #e2d5f5;"><strong>{ziarat_amount:,.2f}</strong></td>
 				</tr>
 				<tr style="background: #d4edda; font-size: 16px;">
 					<td style="padding: 12px; border: 1px solid #dee2e6;"><strong>TOTAL AMOUNT</strong></td>

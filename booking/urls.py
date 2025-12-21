@@ -5,6 +5,7 @@ from .views import HotelOutsourcingViewSet, PublicBookingStatusAPIView, PaxSumma
 from .views import HotelPaxSummaryAPIView, TransportPaxSummaryAPIView, FlightPaxSummaryAPIView
 from .views import PublicBookingCreateAPIView, PublicBookingPaymentCreateAPIView, AdminApprovePaymentAPIView
 from .views import get_ticket_price, get_inventory_price  # Import the new views
+from .person_update_view import UpdatePersonDetailView
 
 router = DefaultRouter()
 router.register(r'bookings', BookingViewSet, basename='booking')
@@ -38,6 +39,9 @@ urlpatterns = [
     path('api/pax-summary/hotel-status/', HotelPaxSummaryAPIView.as_view(), name='pax-summary-hotel'),
     path('api/pax-summary/transport-status/', TransportPaxSummaryAPIView.as_view(), name='pax-summary-transport'),
     path('api/pax-summary/flight-status/', FlightPaxSummaryAPIView.as_view(), name='pax-summary-flight'),
+    
+    # Person details update endpoint
+    path('api/person-details/<int:person_id>/', UpdatePersonDetailView.as_view(), name='person-detail-update'),
     
     # AJAX endpoint for dynamic ticket price updates
     path('admin/booking/get-ticket-price/', get_ticket_price, name='get-ticket-price'),

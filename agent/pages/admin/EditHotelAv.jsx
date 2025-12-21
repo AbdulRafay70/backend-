@@ -27,7 +27,7 @@ const EditHotelAvailability = () => {
         const organizationId = orgData?.id;
 
         const response = await axios.get(
-          `https://api.saer.pk/api/hotels/${id}/`,
+          `http://127.0.0.1:8000/api/hotels/${id}/`,
           {
             params: { organization: organizationId },
             headers: {
@@ -120,7 +120,7 @@ const EditHotelAvailability = () => {
       };
 
       await axios.patch(
-        `https://api.saer.pk/api/hotels/${id}/`,
+        `http://127.0.0.1:8000/api/hotels/${id}/`,
         updateData,
         {
           params: { organization: organizationId },

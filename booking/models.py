@@ -1,4 +1,3 @@
-
 from django.db import models
 import hmac
 import hashlib
@@ -139,28 +138,20 @@ class Booking(models.Model):
     )
 
     STATUS_CHOICES = [
+        ('Un-approved', 'Un-approved'),
         ('Pending', 'Pending'),
         ('Confirmed', 'Confirmed'),
-        ('In Progress', 'In Progress'),
-        ('Completed', 'Completed'),
-        ('Cancelled', 'Cancelled'),
+        ('Under-process', 'Under-process'),
+        ('Approved', 'Approved'),
+        ('Delivered', 'Delivered'),
+        ('Canceled', 'Canceled'),
         ('Rejected', 'Rejected'),
-        ('On Hold', 'On Hold'),
-    ]
-    
-    PAYMENT_STATUS_CHOICES = [
-        ('Pending', 'Pending'),
-        ('Partial', 'Partial'),
-        ('Paid', 'Paid'),
-        ('Refunded', 'Refunded'),
     ]
 
     call_status = models.BooleanField(default=False) 
     client_note = models.TextField(blank=True, null=True)  
     
-    is_paid = models.BooleanField(default=False)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
-    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default="Pending")
     is_partial_payment_allowed = models.BooleanField(default=False)
     category = models.CharField(max_length=20,blank=True, null=True) 
     created_at = models.DateTimeField(auto_now_add=True, blank=True, null=True) 
@@ -283,10 +274,6 @@ class Booking(models.Model):
         if self.ledger_entry:
             return self.ledger_entry
         
-        # Only create ledger when there's an amount to record
-        if not self.total_amount or self.total_amount == 0:
-            return None
-        
         try:
             # Determine service type based on booking items
             service_type = 'other'
@@ -304,13 +291,41 @@ class Booking(models.Model):
             # Prepare reference number
             reference_no = self.invoice_no or self.booking_number
             
+            # Build narration based on booking type
+            if self.booking_type == 'TICKET':
+                # Get first adult passenger
+                first_adult = self.person_details.filter(age_group='Adult').first()
+                pax_name = f"{first_adult.first_name} {first_adult.last_name}".strip() if first_adult else "N/A"
+                
+                # Get travel date from trip_details
+                first_ticket = self.ticket_details.first()
+                if first_ticket and first_ticket.trip_details.exists():
+                    first_trip = first_ticket.trip_details.first()
+                    travel_date = first_trip.departure_date_time.strftime('%Y-%m-%d') if first_trip.departure_date_time else "N/A"
+                else:
+                    travel_date = "N/A"
+                
+                # Get ticket type (trip_type)
+                ticket_type = first_ticket.trip_type if first_ticket and first_ticket.trip_type else "N/A"
+                
+                # Get PNR number
+                pnr = first_ticket.pnr if first_ticket and first_ticket.pnr else "N/A"
+                
+                # Build narration: "PNR - PAX Name - Travel Date - Trip Type"
+                narration = f"{pnr} - {pax_name} - {travel_date} - {ticket_type}"
+                transaction_type = 'Group Ticket'
+            else:
+                # For non-ticket bookings, use default narration
+                narration = f"Booking {self.booking_number} - {self.customer_name or 'N/A'}"
+                transaction_type = 'booking_payment'
+            
             # Create main ledger entry
             ledger_entry = LedgerEntry.objects.create(
                 reference_no=reference_no,
                 booking_no=self.booking_number,
-                transaction_type='booking_payment',
+                transaction_type=transaction_type,
                 service_type=service_type,
-                narration=f"Booking {self.booking_number} - {self.customer_name}",
+                narration=narration,
                 remarks=f"Total: {total_amount}, Paid: {paid_amount}, Balance: {balance_amount}",
                 booking=self,
                 organization=self.organization,
@@ -326,7 +341,6 @@ class Booking(models.Model):
                     'total_amount': str(total_amount),
                     'paid_amount': str(paid_amount),
                     'balance_amount': str(balance_amount),
-                    'payment_status': self.payment_status,
                     'booking_status': self.status,
                     'organization': self.organization.name if self.organization else None,
                     'branch': self.branch.name if self.branch else None,
@@ -371,30 +385,31 @@ class Booking(models.Model):
                 )
             
             # Create ledger lines (double-entry)
-            # Entry 1: Record total booking amount
+            # For a booking: Show as DEBIT from agent's perspective
+            # Debit Receivable (agent pays), Credit Sales (company receives)
             
-            # Debit Receivable (Asset increases)
+            # Debit Receivable (Agent's expense - shows in Debit column)
             debit_line = LedgerLine.objects.create(
                 ledger_entry=ledger_entry,
                 account=receivable_account,
                 debit=total_amount,
                 credit=Decimal('0'),
-                balance_after=receivable_account.balance + total_amount,
-                remarks="Booking created - amount receivable"
+                balance_after=receivable_account.balance - total_amount,
+                remarks="Booking cost - deducted from balance"
             )
             
-            # Credit Sales (Revenue increases)
+            # Credit Sales (Company revenue)
             credit_line = LedgerLine.objects.create(
                 ledger_entry=ledger_entry,
                 account=sales_account,
                 debit=Decimal('0'),
                 credit=total_amount,
                 balance_after=sales_account.balance + total_amount,
-                remarks="Sales revenue from booking"
+                remarks="Booking revenue"
             )
             
             # Update account balances
-            receivable_account.balance += total_amount
+            receivable_account.balance -= total_amount
             receivable_account.save()
             
             sales_account.balance += total_amount
@@ -446,15 +461,67 @@ class Booking(models.Model):
             import traceback
             traceback.print_exc()
             return None
+    
+    def delete_ledger_entry(self):
+        """
+        Delete the ledger entry associated with this booking and reverse account balances.
+        Called when booking status changes from 'Approved' to any other status.
+        """
+        if not self.ledger_entry:
+            return
+        
+        try:
+            from ledger.models import LedgerLine, Account
+            from decimal import Decimal
+            
+            ledger_entry = self.ledger_entry
+            
+            # Get all ledger lines for this entry
+            ledger_lines = ledger_entry.lines.all()
+            
+            # Reverse account balances
+            for line in ledger_lines:
+                account = line.account
+                # Reverse the debit/credit
+                account.balance -= line.debit
+                account.balance += line.credit
+                account.save()
+            
+            # Delete all ledger lines
+            ledger_lines.delete()
+            
+            # Delete the ledger entry
+            ledger_entry.delete()
+            
+            # Clear the reference
+            self.ledger_entry = None
+            
+            print(f"✅ Deleted ledger entry for booking {self.booking_number}")
+            
+        except Exception as e:
+            # Log error but don't fail the booking save
+            print(f"❌ Error deleting ledger entry for booking {self.booking_number}: {e}")
+            import traceback
+            traceback.print_exc()
 
     def save(self, *args, **kwargs):
-        # Track if payment_status changed to 'Paid'
-        payment_status_changed_to_paid = False
+        # Track status changes
+        old_status = None
+        status_changed_to_approved = False
+        status_changed_from_approved = False
+        
         if self.pk:
             try:
                 old_instance = Booking.objects.get(pk=self.pk)
-                if old_instance.payment_status != 'Paid' and self.payment_status == 'Paid':
-                    payment_status_changed_to_paid = True
+                old_status = old_instance.status
+                
+                # Status changed TO Approved
+                if old_status != 'Approved' and self.status == 'Approved':
+                    status_changed_to_approved = True
+                
+                # Status changed FROM Approved to something else
+                if old_status == 'Approved' and self.status != 'Approved':
+                    status_changed_from_approved = True
             except Booking.DoesNotExist:
                 pass
         
@@ -478,12 +545,90 @@ class Booking(models.Model):
         is_new = self.pk is None
         super().save(*args, **kwargs)
         
-        # Auto-create ledger entry when payment status becomes 'Paid'
-        if payment_status_changed_to_paid and not self.ledger_entry:
+        # Auto-create ledger entry when status becomes 'Approved'
+        if status_changed_to_approved and not self.ledger_entry:
             ledger_entry = self.create_ledger_entry()
             if ledger_entry:
                 self.ledger_entry = ledger_entry
                 super().save(update_fields=['ledger_entry'])
+        
+        # Delete ledger entry when status changes FROM Approved to something else
+        if status_changed_from_approved and self.ledger_entry:
+            self.delete_ledger_entry()
+            super().save(update_fields=['ledger_entry'])
+        
+        # Recalculate amounts to ensure they're always correct
+        if self.pk:
+            from django.db.models import Sum
+            from decimal import Decimal
+            
+            # Try new system first (booking_items), fallback to old (ticket_details)
+            if self.booking_items.exists():
+                # New system: Use booking_items
+                self.total_ticket_amount = self.booking_items.filter(
+                    inventory_type='ticket').aggregate(total=Sum('final_amount'))['total'] or Decimal('0')
+                self.total_hotel_amount = self.booking_items.filter(
+                    inventory_type='hotel').aggregate(total=Sum('final_amount'))['total'] or Decimal('0')
+                self.total_transport_amount = self.booking_items.filter(
+                    inventory_type='transport').aggregate(total=Sum('final_amount'))['total'] or Decimal('0')
+                self.total_visa_amount = self.booking_items.filter(
+                    inventory_type='visa').aggregate(total=Sum('final_amount'))['total'] or Decimal('0')
+            else:
+                # Old system: Calculate from ticket_details (source of truth)
+                ticket_sum = Decimal('0')
+                
+                for ticket_detail in self.ticket_details.all():
+                    # Count passengers by age group
+                    adults = self.person_details.filter(age_group='Adult').count()
+                    children = self.person_details.filter(age_group='Child').count()
+                    infants = self.person_details.filter(age_group='Infant').count()
+                    
+                    # Calculate total from ticket prices
+                    ticket_sum += (
+                        Decimal(str(ticket_detail.adult_price or 0)) * adults +
+                        Decimal(str(ticket_detail.child_price or 0)) * children +
+                        Decimal(str(ticket_detail.infant_price or 0)) * infants
+                    )
+                
+                self.total_ticket_amount = ticket_sum
+            
+            # Calculate total visa amount in PKR from person_details
+            visa_sum_pkr = Decimal('0')
+            visa_sum_sar = Decimal('0')
+            
+            for person in self.person_details.all():
+                # Check if this person's visa is in PKR or SAR
+                if person.is_visa_price_pkr:
+                    # Visa is in PKR, use visa_rate_in_pkr directly
+                    visa_pkr = Decimal(str(person.visa_rate_in_pkr or 0))
+                    visa_sum_pkr += visa_pkr
+                else:
+                    # Visa is in SAR, use visa_rate_in_sar and convert to PKR
+                    visa_sar = Decimal(str(person.visa_rate_in_sar or 0))
+                    riyal_rate = Decimal(str(person.visa_riyal_rate or 50))
+                    visa_sum_pkr += visa_sar * riyal_rate
+                    visa_sum_sar += visa_sar
+            
+            self.total_visa_amount_pkr = float(visa_sum_pkr)
+            self.total_visa_amount_sar = float(visa_sum_sar)
+            self.total_visa_amount = float(visa_sum_pkr)  # Keep total_visa_amount as PKR for consistency
+            
+            # Calculate total amount in PKR (use PKR-converted values for all components)
+            self.total_amount = (
+                Decimal(str(self.total_ticket_amount_pkr or self.total_ticket_amount or 0)) +
+                Decimal(str(self.total_hotel_amount_pkr or 0)) +
+                Decimal(str(self.total_transport_amount_pkr or 0)) +
+                Decimal(str(self.total_visa_amount_pkr or self.total_visa_amount or 0)) +
+                Decimal(str(self.total_food_amount_pkr or 0)) +
+                Decimal(str(self.total_ziyarat_amount_pkr or 0))
+            )
+            
+            # Save the updated amounts
+            super().save(update_fields=[
+                'total_ticket_amount', 'total_hotel_amount', 
+                'total_transport_amount', 'total_visa_amount', 
+                'total_visa_amount_pkr', 'total_visa_amount_sar', 'total_amount'
+            ])
         
         # Generate invoice_no after first save (when we have an ID)
         if not self.invoice_no:
@@ -562,6 +707,11 @@ class BookingHotelDetails(models.Model):
     self_hotel_name = models.CharField(max_length=255, blank=True, null=True)
     # mark if this particular hotel detail row is from an outsourced/external hotel
     outsourced_hotel = models.BooleanField(default=False)
+    
+    # Organization tracking
+    inventory_owner_organization_id = models.IntegerField(null=True, blank=True)
+    booking_organization_id = models.IntegerField(null=True, blank=True)
+    
     def __str__(self):
         # Be defensive: related `hotel` object may be missing (stale FK).
         # Accessing `self.hotel` can raise DoesNotExist during admin rendering
@@ -646,16 +796,35 @@ class BookingTransportDetails(models.Model):
     vehicle_type = models.ForeignKey(
         "VehicleType", on_delete=models.SET_NULL, null=True, blank=True, related_name="transport_details"
     )
-    # vehicle_type = models.CharField(max_length=50)
-    price = models.FloatField(default=0)
-    total_price = models.FloatField(default=0)
-    is_price_pkr= models.BooleanField(default=True)
-    riyal_rate = models.FloatField(default=0)
+    big_sector_id = models.IntegerField(blank=True, null=True)  # Reference to BigSector if used
     
+    # Pricing fields
+    is_price_pkr = models.BooleanField(default=True)
+    riyal_rate = models.FloatField(default=50)
     price_in_pkr = models.FloatField(default=0)       
     price_in_sar = models.FloatField(default=0) 
-    voucher_no = models.CharField(max_length=100, blank=True, null=True)
-    brn_no = models.CharField(max_length=100, blank=True, null=True)
+    
+    voucher_no = models.CharField(max_length=255, blank=True, null=True)
+    brn_no = models.CharField(max_length=255, blank=True, null=True)
+    
+    # Organization tracking
+    inventory_owner_organization_id = models.IntegerField(null=True, blank=True)
+    booking_organization_id = models.IntegerField(null=True, blank=True)
+    
+    def save(self, *args, **kwargs):
+        # Calculate price_in_pkr and price_in_sar based on is_price_pkr flag
+        # This ensures both values are always populated
+        if self.is_price_pkr:
+            # Price is in PKR, calculate SAR
+            if self.price_in_pkr and self.riyal_rate:
+                self.price_in_sar = self.price_in_pkr / self.riyal_rate
+        else:
+            # Price is in SAR, calculate PKR
+            if self.price_in_sar and self.riyal_rate:
+                self.price_in_pkr = self.price_in_sar * self.riyal_rate
+        
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.booking} - {self.vehicle_type.vehicle_name if self.vehicle_type else 'No Vehicle'}"
 
@@ -681,6 +850,10 @@ class BookingTicketDetails(models.Model):
     status = models.CharField(max_length=50, blank=True, null=True)
     # is_price_pkr= models.BooleanField(default=True)
     # riyal_rate = models.FloatField(default=0)
+    
+    # Organization tracking
+    inventory_owner_organization_id = models.IntegerField(null=True, blank=True)
+    booking_organization_id = models.IntegerField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
         """
@@ -814,10 +987,9 @@ class BookingPersonDetail(models.Model):
     ticket_price = models.FloatField(default=0)  # ticket price
     ticket_discount = models.FloatField(default=0)
     is_visa_price_pkr = models.BooleanField(default=True)  # True → PKR, False → SAR
-    visa_riyal_rate = models.FloatField(default=0, blank=True, null=True)  # Riyal rate at booking
-    visa_rate = models.FloatField(default=0, blank=True, null=True)        # Base visa rate
-    visa_rate_in_sar = models.FloatField(default=0, blank=True, null=True) # Converted to SAR
-    visa_rate_in_pkr = models.FloatField(default=0, blank=True, null=True) # Converted to PKR
+    visa_rate_in_sar = models.FloatField(default=0, blank=True, null=True) # SAR rate if applicable
+    visa_rate_in_pkr = models.FloatField(default=0, blank=True, null=True) # PKR rate if applicable
+    visa_riyal_rate = models.FloatField(default=0, blank=True, null=True)  # Riyal exchange rate at booking time
     ticket_included = models.BooleanField(default=True)
     # ticket_voucher_number = models.CharField(max_length=20, blank=True, null=True)
     # ticker_brn= models.CharField(max_length=20, blank=True, null=True)
@@ -1021,57 +1193,85 @@ class Payment(models.Model):
         res = super().save(*args, **kwargs)
 
         # If status changed to Completed, create ledger entry for payment approval
-        try:
-            if old_status != 'Completed' and self.status == 'Completed' and not self.ledger_entry_id:
-                # Create ledger entry for approved payment
-                try:
-                    from organization.ledger_utils import find_account, create_entry_with_lines
-                except Exception:
-                    find_account = create_entry_with_lines = None
+        if old_status != 'Completed' and self.status == 'Completed' and not self.ledger_entry_id:
+            try:
+                from ledger.models import LedgerEntry, LedgerLine, Account
+                from decimal import Decimal
+                
+                # Get organization
+                org = self.booking.organization if self.booking else self.organization
+                branch = self.booking.branch if self.booking else self.branch
+                agency = self.booking.agency if self.booking else self.agency
+                
+                # Get or create accounts
+                receivable_account = Account.objects.filter(
+                    organization=org,
+                    account_type='RECEIVABLE'
+                ).first()
+                
+                if not receivable_account:
+                    receivable_account = Account.objects.create(
+                        organization=org,
+                        branch=branch,
+                        agency=agency,
+                        name=f"Accounts Receivable - {agency.name if agency else 'Default'}",
+                        account_type='RECEIVABLE'
+                    )
+                
+                # Prepare narration
+                if self.booking:
+                    narration = f"Payment received for booking {self.booking.booking_number}"
+                    reference_no = self.booking.booking_number
+                else:
+                    narration = f"Agent deposit - {self.method or 'Payment'}"
+                    reference_no = self.transaction_number
+                
+                amount = Decimal(str(self.amount or 0))
+                
+                # Create ledger entry
+                ledger_entry = LedgerEntry.objects.create(
+                    reference_no=reference_no,
+                    booking_no=self.booking.booking_number if self.booking else None,
+                    transaction_type='deposit',
+                    service_type='payment',
+                    narration=narration,
+                    remarks=f"Payment #{self.id} - {self.method or 'Payment'}",
+                    organization=org,
+                    branch=branch,
+                    agency=agency,
+                    created_by=self.created_by,
+                    metadata={
+                        'payment_id': self.id,
+                        'transaction_number': self.transaction_number,
+                        'method': self.method,
+                        'amount': str(amount),
+                    }
+                )
 
-                if create_entry_with_lines:
-                    # Find appropriate accounts
-                    org_id = self.booking.organization_id if self.booking else self.organization_id
-                    cash_acc = find_account(org_id, ['CASH', 'BANK']) or find_account(None, ['CASH', 'BANK'])
-                    suspense_acc = find_account(org_id, ['SUSPENSE', 'RECEIVABLE']) or find_account(None, ['SUSPENSE', 'RECEIVABLE'])
-                    
-                    if cash_acc and suspense_acc:
-                        amount = self.amount or 0
-                        
-                        if self.booking:
-                            # Payment associated with a booking
-                            audit_note = f"[auto] Payment #{self.id} approved for booking {self.booking.booking_number}"
-                            narration = f"Payment received for booking {self.booking.booking_number}"
-                            booking_no = self.booking.booking_number
-                            metadata = {'payment_id': self.id, 'booking_id': self.booking.id}
-                        else:
-                            # Standalone payment
-                            audit_note = f"[auto] Standalone payment #{self.id} approved"
-                            narration = f"Standalone payment received - Transaction {self.transaction_number or self.id}"
-                            booking_no = f"PAY-{self.id}"
-                            metadata = {'payment_id': self.id}
-                        
-                        ledger_entry = create_entry_with_lines(
-                            booking_no=booking_no,
-                            service_type='payment',
-                            narration=narration,
-                            metadata=metadata,
-                            internal_notes=[audit_note],
-                            created_by=self.created_by,
-                            lines=[
-                                {'account': cash_acc, 'debit': amount, 'credit': 0},
-                                {'account': suspense_acc, 'debit': 0, 'credit': amount},
-                            ],
-                            organization=cash_acc.organization if cash_acc else None,
-                        )
-                        
-                        if ledger_entry:
-                            self.ledger_entry_id = ledger_entry.id
-                            super().save(update_fields=['ledger_entry_id'])
-
-        except Exception:
-            # swallow any errors during ledger creation
-            pass
+                
+                # Create ledger line - Credit to agent's account (increases balance)
+                LedgerLine.objects.create(
+                    ledger_entry=ledger_entry,
+                    account=receivable_account,
+                    debit=Decimal('0'),
+                    credit=amount,
+                    balance_after=receivable_account.balance + amount,
+                    remarks="Deposit received"
+                )
+                
+                # Update account balance
+                receivable_account.balance += amount
+                receivable_account.save()
+                
+                # Save ledger entry ID
+                self.ledger_entry_id = ledger_entry.id
+                super().save(update_fields=['ledger_entry_id'])
+                
+            except Exception as e:
+                # Log the error instead of silently swallowing it
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.error(f"Failed to create ledger entry for payment {self.id}: {e}")
 
         # If a previously completed payment was changed to Rejected, attempt to reverse the
         # ledger entry that was created when it was approved, and adjust booking totals.
@@ -1231,7 +1431,16 @@ class BookingTransportSector(models.Model):
         BookingTransportDetails, on_delete=models.CASCADE, related_name="sector_details"
     )
     sector_no = models.IntegerField(default=0)  # SECTOR NO
-    small_sector_id = models.IntegerField(blank=True, null=True)  # SMALL SECTOR ID (ya FK banani ho to bata dena)
+    small_sector_id = models.IntegerField(blank=True, null=True)  # SMALL SECTOR ID (reference only)
+    sector_type = models.CharField(max_length=50, blank=True, null=True)  # AIRPORT PICKUP, HOTEL TO HOTEL, AIRPORT DROP
+    is_airport_pickup = models.BooleanField(default=False)
+    is_airport_drop = models.BooleanField(default=False)
+    is_hotel_to_hotel = models.BooleanField(default=False)
+    
+    # Store actual city names (expanded from BigSector or SmallSector)
+    departure_city = models.CharField(max_length=100, blank=True, null=True)
+    arrival_city = models.CharField(max_length=100, blank=True, null=True)
+    
     date = models.DateField(blank=True, null=True)
     contact_number = models.CharField(max_length=20, blank=True, null=True)
     contact_person_name = models.CharField(max_length=100, blank=True, null=True)
@@ -1729,3 +1938,76 @@ class BookingPayment(models.Model):
     
     def __str__(self):
         return f"{self.booking.booking_number} - {self.amount} ({self.payment_method})"
+
+
+
+# Booking-level Food Details (per-passenger-type pricing)
+class BookingFoodDetails(models.Model):
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name='food_details')
+    food = models.CharField(max_length=255)
+    
+    # Per-passenger-type prices
+    adult_price = models.FloatField(default=0)
+    child_price = models.FloatField(default=0)
+    infant_price = models.FloatField(default=0)
+    
+    # Passenger counts
+    total_adults = models.IntegerField(default=0)
+    total_children = models.IntegerField(default=0)
+    total_infants = models.IntegerField(default=0)
+    
+    # Currency and conversion
+    is_price_pkr = models.BooleanField(default=False)
+    riyal_rate = models.FloatField(default=0)
+    total_price_pkr = models.FloatField(default=0)
+    total_price_sar = models.FloatField(default=0)
+    
+    # Organization tracking
+    inventory_owner_organization_id = models.IntegerField(null=True, blank=True)
+    booking_organization_id = models.IntegerField(null=True, blank=True)
+    
+    # Additional details
+    contact_person_name = models.CharField(max_length=255, null=True, blank=True)
+    contact_number = models.CharField(max_length=50, null=True, blank=True)
+    food_voucher_number = models.CharField(max_length=100, null=True, blank=True)
+    food_brn = models.CharField(max_length=100, null=True, blank=True)
+    
+    def __str__(self):
+        return f"{self.food} - Booking {self.booking.booking_number}"
+
+
+# Booking-level Ziarat Details (per-passenger-type pricing)
+class BookingZiyaratDetails(models.Model):
+    booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name='ziyarat_details')
+    ziarat = models.CharField(max_length=255)
+    city = models.CharField(max_length=255)
+    
+    # Per-passenger-type prices
+    adult_price = models.FloatField(default=0)
+    child_price = models.FloatField(default=0)
+    infant_price = models.FloatField(default=0)
+    
+    # Passenger counts
+    total_adults = models.IntegerField(default=0)
+    total_children = models.IntegerField(default=0)
+    total_infants = models.IntegerField(default=0)
+    
+    # Currency and conversion
+    is_price_pkr = models.BooleanField(default=False)
+    riyal_rate = models.FloatField(default=0)
+    total_price_pkr = models.FloatField(default=0)
+    total_price_sar = models.FloatField(default=0)
+    
+    # Organization tracking
+    inventory_owner_organization_id = models.IntegerField(null=True, blank=True)
+    booking_organization_id = models.IntegerField(null=True, blank=True)
+    
+    # Additional details
+    date = models.DateField(null=True, blank=True)
+    contact_person_name = models.CharField(max_length=255, null=True, blank=True)
+    contact_number = models.CharField(max_length=50, null=True, blank=True)
+    ziyarat_voucher_number = models.CharField(max_length=100, null=True, blank=True)
+    ziyarat_brn = models.CharField(max_length=100, null=True, blank=True)
+    
+    def __str__(self):
+        return f"{self.ziarat} - Booking {self.booking.booking_number}"
