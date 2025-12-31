@@ -2,7 +2,7 @@ import requests
 
 def run():
     # Your local API URL
-    url = "https://api.saer.pk/api/token/"
+    url = "http://127.0.0.1:8000/api/token/"
 
     # Your credentials
     data = {

@@ -220,7 +220,7 @@ Authorization: Bearer YOUR_JWT_TOKEN
 **Swagger UI:** `http://127.0.0.1:8000/swagger/`  
 **ReDoc:** `http://127.0.0.1:8000/redoc/`  
 <<<<<<< HEAD
-**OpenAPI Schema:** `https://api.saer.pk/api/schema/`
+**OpenAPI Schema:** `http://127.0.0.1:8000/api/schema/`
 =======
 **OpenAPI Schema:** `http://127.0.0.1:8000/api/schema/`
 >>>>>>> f9cbc8a4bc532ae662e983738af71ee464ed2766

@@ -108,7 +108,7 @@ Notes about the 403 "Missing 'organization' query parameter." error
 ```powershell
 $env:DJANGO_SETTINGS_MODULE="configuration.settings_local"; python manage.py runserver
 # then call the tickets list with an organization id
-curl "https://api.saer.pk/api/tickets/?organization=1"
+curl "http://127.0.0.1:8000/api/tickets/?organization=1"
 ```
 
 - If you prefer the endpoint to be usable without `?organization`, I can change `TicketViewSet.get_queryset` to fall back to the authenticated user's organization (or to return a global tenant-safe set). Tell me the desired behavior and I'll implement it.
