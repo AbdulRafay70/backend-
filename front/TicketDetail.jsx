@@ -681,7 +681,7 @@ const TicketDetail = () => {
                           {/* {agentData.logo && (
                             <div className="mt-3 text-center">
                               <img 
-                                src={`https://api.saer.pk/${agentData.logo}`} 
+                                src={`http://127.0.0.1:8000/${agentData.logo}`} 
                                 alt="Agency Logo" 
                                 style={{ maxWidth: '150px', maxHeight: '80px' }}
                                 className="img-thumbnail"

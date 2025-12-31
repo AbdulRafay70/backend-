@@ -377,7 +377,7 @@ class UmrahPackageTransportDetailsSerializer(ModelSerializer):
         """
         data = super().to_representation(instance)
         # Remove legacy or unwanted keys if present
-        for k in ("vehicle_type", "adault_price", "child_price", "infant_price"):
+        for k in ("adault_price", "child_price", "infant_price"):
             if k in data:
                 data.pop(k, None)
 
@@ -490,7 +490,7 @@ class UmrahPackageSerializer(ModelSerializer):
             data.pop('organization', None)
 
         for k in (
-            'transport_price', 'transport_selling_price', 'transport_purchase_price',
+            'transport_price', 'transport_purchase_price',
             'quint_room_price', 'quad_room_price', 'triple_room_price', 'double_room_price', 'sharing_bed_price',
         ):
             if k in data:
@@ -641,15 +641,84 @@ class UmrahPackageSerializer(ModelSerializer):
 
 class PublicUmrahPackageHotelSummarySerializer(serializers.ModelSerializer):
     hotel_name = serializers.CharField(source="hotel.name", read_only=True)
+    hotel_info = HotelsSerializer(source="hotel", read_only=True)  # Include full hotel object with ID
 
     class Meta:
         model = UmrahPackageHotelDetails
-        fields = ["hotel_name", "check_in_date", "check_out_date", "number_of_nights"]
+        fields = [
+            "hotel_info",  # Add hotel_info to fields
+            "hotel_name", 
+            "check_in_date", 
+            "check_out_date", 
+            "number_of_nights",
+            "sharing_bed_selling_price",
+            "quaint_bed_selling_price",
+            "quad_bed_selling_price",
+            "triple_bed_selling_price",
+            "double_bed_selling_price",
+        ]
+
+
+class PublicUmrahPackageTicketSummarySerializer(serializers.ModelSerializer):
+    ticket_info = serializers.SerializerMethodField()
+    trip_details = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UmrahPackageTicketDetails
+        fields = ["trip_details", "ticket_info"]
+    
+    def get_ticket_info(self, obj):
+        """Return ticket pricing information"""
+        try:
+            if not hasattr(obj, 'ticket') or not obj.ticket:
+                return None
+            
+            ticket = obj.ticket
+            return {
+                "adult_price": getattr(ticket, 'adult_price', 0),
+                "adult_selling_price": getattr(ticket, 'adult_selling_price', None),
+                "child_price": getattr(ticket, 'child_price', 0),
+                "child_selling_price": getattr(ticket, 'child_selling_price', None),
+                "infant_price": getattr(ticket, 'infant_price', 0),
+                "infant_selling_price": getattr(ticket, 'infant_selling_price', None),
+            }
+        except Exception:
+            return None
+
+    def get_trip_details(self, obj):
+        # Get trip details from the related ticket
+        try:
+            # The model has a 'ticket' field, not 'ticket_info'
+            if not hasattr(obj, 'ticket') or not obj.ticket:
+                return []
+            
+            # trip_details is a related field on the Ticket model
+            if not hasattr(obj.ticket, 'trip_details'):
+                return []
+            
+            trips = obj.ticket.trip_details.all()
+            return [{
+                "trip_type": getattr(trip, 'trip_type', ''),
+                # Get city names from the related City model
+                "departure_city_name": trip.departure_city.name if trip.departure_city else '',
+                "arrival_city_name": trip.arrival_city.name if trip.arrival_city else '',
+                "flight_number": getattr(trip, 'flight_number', ''),
+                "departure_date_time": getattr(trip, 'departure_date_time', None),
+                "arrival_date_time": getattr(trip, 'arrival_date_time', None),
+            } for trip in trips]
+        except Exception as e:
+            # Log the error but don't crash the API
+            import traceback
+            print(f"Error getting trip details: {e}")
+            print(traceback.format_exc())
+            return []
 
 
 class PublicUmrahPackageListSerializer(serializers.ModelSerializer):
     price = serializers.SerializerMethodField()
     hotels = PublicUmrahPackageHotelSummarySerializer(source="hotel_details", many=True, read_only=True)
+    transport = UmrahPackageTransportDetailsSerializer(source="transport_details", many=True, read_only=True)
+    tickets = PublicUmrahPackageTicketSummarySerializer(source="ticket_details", many=True, read_only=True)
 
     class Meta:
         model = UmrahPackage
@@ -666,6 +735,15 @@ class PublicUmrahPackageListSerializer(serializers.ModelSerializer):
             "reselling_allowed",
             "is_public",
             "hotels",
+            "transport",
+            "tickets",
+            "adault_visa_selling_price",
+            "child_visa_selling_price",
+            "infant_visa_selling_price",
+            "food_selling_price",
+            "makkah_ziyarat_selling_price",
+            "madinah_ziyarat_selling_price",
+            "transport_selling_price",
         ]
 
     def get_price(self, obj):
@@ -692,6 +770,7 @@ class PublicUmrahPackageDetailSerializer(ModelSerializer):
             "rules",
             "price",
             "price_per_person",
+            "organization_id",  # Add organization_id
             "adault_visa_selling_price",
             "child_visa_selling_price",
             "infant_visa_selling_price",
@@ -703,6 +782,10 @@ class PublicUmrahPackageDetailSerializer(ModelSerializer):
             "available_end_date",
             "reselling_allowed",
             "is_public",
+            "food_selling_price",
+            "makkah_ziyarat_selling_price",
+            "madinah_ziyarat_selling_price",
+            "transport_selling_price",
             "hotels",
             "transport",
             "tickets",

@@ -202,7 +202,7 @@ GET /api/public/booking-status/{booking_number}/
   "payment_status": "paid",
   "total_amount": 125000.00,
   "paid_amount": 125000.00,
-  "qr_code_url": "https://api.saer.pk/media/qr-codes/SAER-BK-2024-001234.png"
+  "qr_code_url": "http://127.0.0.1:8000/media/qr-codes/SAER-BK-2024-001234.png"
 }
 ```
 
@@ -514,12 +514,12 @@ curl https://api.saer.pk/api/pax-movements/current-status/ \
 
 ### Swagger UI
 ```
-https://api.saer.pk/swagger/
+http://127.0.0.1:8000/swagger/
 ```
 
 ### ReDoc
 ```
-https://api.saer.pk/redoc/
+http://127.0.0.1:8000/redoc/
 ```
 
 ### OpenAPI Schema (JSON)

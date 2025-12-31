@@ -125,7 +125,7 @@ GET /api/public/booking-status/SAER-BK-2024-001234/
   "status": "confirmed",
   "payment_status": "paid",
   "total_amount": 125000.00,
-  "qr_code_url": "https://api.saer.pk/media/qr-codes/SAER-BK-2024-001234.png"
+  "qr_code_url": "http://127.0.0.1:8000/media/qr-codes/SAER-BK-2024-001234.png"
 }
 ```
 
@@ -217,8 +217,8 @@ Authorization: Bearer YOUR_JWT_TOKEN
 
 ## Swagger Access
 
-**Swagger UI:** `https://api.saer.pk/swagger/`  
-**ReDoc:** `https://api.saer.pk/redoc/`  
+**Swagger UI:** `http://127.0.0.1:8000/swagger/`  
+**ReDoc:** `http://127.0.0.1:8000/redoc/`  
 **OpenAPI Schema:** `https://api.saer.pk/api/schema/`
 
 ### Swagger Tags
@@ -336,7 +336,7 @@ sudo systemctl restart gunicorn
 pm2 restart all
 
 # 4. Verify Swagger
-curl https://api.saer.pk/swagger/
+curl http://127.0.0.1:8000/swagger/
 
 # 5. Test public endpoints
 curl https://api.saer.pk/api/forms/by-url/?url=/forms/test
@@ -505,7 +505,7 @@ DynamicForm.objects.filter(form_page_url__startswith='/forms/test-form')
 - Module Status: `MODULES_STATUS_REPORT.md`
 - Quick Reference: `QUICK_REFERENCE.md` (this file)
 
-**Swagger Access:** https://api.saer.pk/swagger/
+**Swagger Access:** http://127.0.0.1:8000/swagger/
 
 ---
 

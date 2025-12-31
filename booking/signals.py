@@ -5,7 +5,7 @@ from django.db.transaction import TransactionManagementError
 from django.utils import timezone
 from django.db.models import F
 
-from .models import Booking, BookingTicketDetails
+from .models import Booking, BookingTicketDetails, Payment
 from tickets.models import Ticket
 from packages.models import UmrahPackage
 
@@ -361,3 +361,29 @@ def hotel_outsourcing_post_delete(sender, instance, **kwargs):
     except Exception:
         pass
     
+
+@receiver(post_save, sender=Payment)
+def update_booking_paid_status(sender, instance, created, **kwargs):
+    """
+    Automatically update booking.is_paid when a payment status changes to Completed.
+    This ensures the is_paid field is always accurate based on payment status.
+    """
+    if not instance.booking_id:
+        return
+    
+    try:
+        booking = Booking.objects.get(id=instance.booking_id)
+        
+        # Check if booking has any completed payments
+        has_completed_payment = booking.payment_details.filter(status='Completed').exists()
+        
+        # Update is_paid if it's different
+        if booking.is_paid != has_completed_payment:
+            booking.is_paid = has_completed_payment
+            booking.save(update_fields=['is_paid'])
+            
+            print(f"✅ Updated booking {booking.booking_number} is_paid to {has_completed_payment}")
+    except Booking.DoesNotExist:
+        pass
+    except Exception as e:
+        print(f"❌ Error updating booking paid status: {e}")

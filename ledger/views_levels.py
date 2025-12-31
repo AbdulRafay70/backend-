@@ -40,16 +40,24 @@ class OrganizationLedgerAPIView(APIView):
             'created_by', 'reversed_by'
         ).prefetch_related('lines').order_by('-creation_datetime')
         
-        # Calculate summary statistics
-        total_debit = entries.filter(transaction_type='debit').aggregate(
-            total=Sum('transaction_amount')
-        )['total'] or Decimal('0.00')
+        # Calculate summary statistics from LedgerLines
+        from ledger.models import LedgerLine, Account
         
-        total_credit = entries.filter(transaction_type='credit').aggregate(
-            total=Sum('transaction_amount')
-        )['total'] or Decimal('0.00')
+        # Get organization's accounts
+        org_accounts = Account.objects.filter(organization=organization)
         
-        net_balance = total_debit - total_credit
+        # Calculate net balance from all organization accounts
+        net_balance = sum(acc.balance for acc in org_accounts)
+        
+        # Calculate total debit and credit from lines for this organization's accounts
+        total_debit = Decimal('0.00')
+        total_credit = Decimal('0.00')
+        
+        for entry in entries:
+            for line in entry.lines.all():
+                if line.account.organization_id == organization_id:
+                    total_debit += line.debit
+                    total_credit += line.credit
         
         # Breakdown by service type
         service_breakdown = entries.values('service_type').annotate(
@@ -72,6 +80,7 @@ class OrganizationLedgerAPIView(APIView):
             'service_breakdown': list(service_breakdown),
             'entries': serializer.data
         })
+
 
 
 class BranchLedgerAPIView(APIView):
@@ -151,16 +160,22 @@ class AgencyLedgerAPIView(APIView):
             'created_by', 'reversed_by'
         ).prefetch_related('lines').order_by('-creation_datetime')
         
-        # Calculate summary statistics
-        total_debit = entries.filter(transaction_type='debit').aggregate(
-            total=Sum('transaction_amount')
-        )['total'] or Decimal('0.00')
+        # Calculate summary statistics from LedgerLines
+        from ledger.models import LedgerLine, Account
         
-        total_credit = entries.filter(transaction_type='credit').aggregate(
-            total=Sum('transaction_amount')
-        )['total'] or Decimal('0.00')
+        # Calculate total debit and credit from lines for this agency's account
+        total_debit = Decimal('0.00')
+        total_credit = Decimal('0.00')
         
-        net_balance = total_debit - total_credit
+        for entry in entries:
+            for line in entry.lines.all():
+                if line.account.agency_id == agency_id:
+                    total_debit += line.debit
+                    total_credit += line.credit
+        
+        # Calculate net balance: credit - debit (positive means agent has credit balance)
+        net_balance = total_credit - total_debit
+
         
         # Breakdown by service type
         service_breakdown = entries.values('service_type').annotate(
@@ -174,8 +189,13 @@ class AgencyLedgerAPIView(APIView):
             total=Sum('transaction_amount')
         )['total'] or Decimal('0.00')
         
-        # Serialize entries
+        # Serialize entries and add running balance
         serializer = LedgerEntrySerializer(entries, many=True, context={'request': request})
+        entries_with_balance = self._add_running_balance(serializer.data, agency_id)
+        
+        # Get closing balance from the most recent entry's running balance
+        # The entries are in reverse chronological order, so the first entry has the latest balance
+        net_balance = Decimal(str(entries_with_balance[0]['running_balance'])) if entries_with_balance else Decimal('0.00')
         
         return Response({
             'agency_id': agency_id,
@@ -190,8 +210,32 @@ class AgencyLedgerAPIView(APIView):
                 'commission_entries': commission_entries.count(),
             },
             'service_breakdown': list(service_breakdown),
-            'entries': serializer.data
+            'entries': entries_with_balance
         })
+    
+    def _add_running_balance(self, entries_data, agency_id):
+        """Calculate running balance for ledger entries"""
+        # Reverse to chronological order for balance calculation
+        entries_data = list(reversed(entries_data))
+        
+        running_balance = Decimal('0.00')
+        
+        for entry in entries_data:
+            # Calculate net change from this entry's lines
+            # Since entries are already filtered by agency, we can use all lines
+            for line in entry.get('lines', []):
+                # Check if this line belongs to the agent's account (RECEIVABLE type)
+                account = line.get('account', {})
+                if account.get('account_type') == 'RECEIVABLE':
+                    running_balance += Decimal(str(line.get('credit', 0)))
+                    running_balance -= Decimal(str(line.get('debit', 0)))
+            
+            # Add running balance to entry
+            entry['running_balance'] = float(running_balance)
+        
+        # Reverse back to reverse chronological order
+        return list(reversed(entries_data))
+
 
 
 class AreaAgencyLedgerAPIView(APIView):

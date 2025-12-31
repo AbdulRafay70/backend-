@@ -162,37 +162,37 @@ python test_enhanced_ledger.py
 
 **Hotels:**
 ```bash
-curl -X GET "http://127.0.0.1:8000/api/hotels/" \
+curl -X GET "https://api.saer.pk/api/hotels/" \
   -H "Authorization: Token YOUR_TOKEN"
 ```
 
 **Organization Ledger:**
 ```bash
-curl -X GET "http://127.0.0.1:8000/api/ledger/organization/11/" \
+curl -X GET "https://api.saer.pk/api/ledger/organization/11/" \
   -H "Authorization: Token YOUR_TOKEN"
 ```
 
 **Branch Ledger:**
 ```bash
-curl -X GET "http://127.0.0.1:8000/api/ledger/branch/5/" \
+curl -X GET "https://api.saer.pk/api/ledger/branch/5/" \
   -H "Authorization: Token YOUR_TOKEN"
 ```
 
 **Agency Ledger:**
 ```bash
-curl -X GET "http://127.0.0.1:8000/api/ledger/agency/25/" \
+curl -X GET "https://api.saer.pk/api/ledger/agency/25/" \
   -H "Authorization: Token YOUR_TOKEN"
 ```
 
 **Area Agency Ledger:**
 ```bash
-curl -X GET "http://127.0.0.1:8000/api/ledger/area-agency/8/" \
+curl -X GET "https://api.saer.pk/api/ledger/area-agency/8/" \
   -H "Authorization: Token YOUR_TOKEN"
 ```
 
 **Org-to-Org Ledger:**
 ```bash
-curl -X GET "http://127.0.0.1:8000/api/ledger/org-to-org/11/15/" \
+curl -X GET "https://api.saer.pk/api/ledger/org-to-org/11/15/" \
   -H "Authorization: Token YOUR_TOKEN"
 ```
 

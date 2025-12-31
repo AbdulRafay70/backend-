@@ -312,6 +312,12 @@ class BookingViewSet(viewsets.ModelViewSet):
             )
             .order_by("-date")
         )
+        # Filter by organization if provided
+        organization_id = self.request.query_params.get("organization")
+        if organization_id:
+            qs = qs.filter(organization_id=organization_id)
+        
+        # Filter by booking_number if provided
         booking_number = self.request.query_params.get("booking_number")
         if booking_number:
             qs = qs.filter(booking_number=booking_number)

@@ -32,6 +32,50 @@ class PassportLeadViewSet(viewsets.ModelViewSet):
             return PassportLeadCreateSerializer
         return PassportLeadSerializer
 
+    @action(detail=False, methods=['post'], url_path='validate-customer')
+    def validate_customer(self, request):
+        """
+        Validate customer data before creating lead.
+        Checks for duplicates by phone, email, or passport number.
+        Returns existing customer info if found.
+        """
+        from customers.models import Customer
+        from customers.serializers import CustomerSerializer
+        
+        phone = request.data.get('customer_phone')
+        passport_number = request.data.get('passport_number')
+        
+        if not phone:
+            return Response({'error': 'Phone is required'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Check for existing customer
+        customer = None
+        duplicate_field = None
+        
+        if phone:
+            customer = Customer.objects.filter(phone=phone, is_active=True).first()
+            if customer:
+                duplicate_field = 'phone'
+        
+        if not customer and passport_number:
+            customer = Customer.objects.filter(passport_number=passport_number, is_active=True).first()
+            if customer:
+                duplicate_field = 'passport_number'
+        
+        if customer:
+            return Response({
+                'duplicate': True,
+                'duplicate_field': duplicate_field,
+                'customer_id': customer.id,
+                'customer': CustomerSerializer(customer).data
+            })
+        else:
+            return Response({
+                'duplicate': False,
+                'customer_id': None,
+                'customer': None
+            })
+
     def perform_destroy(self, instance):
         # soft delete
         instance.is_deleted = True
@@ -304,9 +348,17 @@ class PaxUpdateView(APIView):
     class PaxUpdateSerializer(serializers.Serializer):
         first_name = serializers.CharField(required=False)
         last_name = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+        nickname = serializers.CharField(required=False, allow_null=True, allow_blank=True)
         passport_number = serializers.CharField(required=False)
-        phone = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+        date_of_birth = serializers.DateField(required=False, allow_null=True)
+        date_of_issue = serializers.DateField(required=False, allow_null=True)
+        date_of_expiry = serializers.DateField(required=False, allow_null=True)
+        issuing_country = serializers.CharField(required=False, allow_null=True, allow_blank=True)
         nationality = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+        address = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+        email = serializers.EmailField(required=False, allow_null=True, allow_blank=True)
+        phone = serializers.CharField(required=False, allow_null=True, allow_blank=True)
+        whatsapp_number = serializers.CharField(required=False, allow_null=True, allow_blank=True)
         notes = serializers.CharField(required=False, allow_null=True, allow_blank=True)
 
     def post(self, request, pax_id=None, *args, **kwargs):
@@ -332,7 +384,12 @@ class PaxUpdateView(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         changed = False
-        for field in ['first_name', 'last_name', 'passport_number', 'phone', 'nationality', 'notes']:
+        allowed_fields = [
+            'first_name', 'last_name', 'nickname', 'passport_number', 'date_of_birth',
+            'date_of_issue', 'date_of_expiry', 'issuing_country', 'nationality',
+            'address', 'email', 'phone', 'whatsapp_number', 'notes'
+        ]
+        for field in allowed_fields:
             if field in data:
                 setattr(pax, field, data.get(field))
                 changed = True

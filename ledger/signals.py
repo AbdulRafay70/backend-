@@ -12,8 +12,9 @@ from ledger.currency_utils import convert_sar_to_pkr
 def auto_post_payment(sender, instance: Payment, created, **kwargs):
     """
     Auto-post a simple ledger entry for completed payments.
-    This is a conservative default: only posts when Payment.status == 'Completed'
-    and both a payer account (agent) and receiver account (organization) exist.
+    Handles both:
+    1. Booking payments (with booking attached)
+    2. Deposit payments (without booking - agent depositing money)
     """
     # only post for completed payments
     try:
@@ -30,11 +31,19 @@ def auto_post_payment(sender, instance: Payment, created, **kwargs):
         # if metadata query fails for some DB backends, continue and rely on later checks
         pass
 
-    # Multi-org atomic posting: group booking items by inventory_owner_organization
     booking = instance.booking
+    
+    # Case 1: Deposit payment (no booking) - Agent depositing money
+    # DISABLED: Now handled by Payment.save() method with correct RECEIVABLE account
     if not booking:
+        # print(f"🔵 Processing DEPOSIT payment {instance.id}")
+        # Deposit ledger creation is now handled in Payment.save() method
+        # which correctly uses RECEIVABLE account instead of SALES
         return
-
+    
+    # Case 2: Booking payment (existing logic)
+    print(f"🟢 Processing BOOKING payment {instance.id}")
+    # Multi-org atomic posting: group booking items by inventory_owner_organization
     # Collect all booking items with inventory_owner_organization
     hotel_items = list(getattr(booking, "hotel_details", []).all())
     transport_items = list(getattr(booking, "transport_details", []).all())
@@ -45,8 +54,10 @@ def auto_post_payment(sender, instance: Payment, created, **kwargs):
     from collections import defaultdict
     org_items = defaultdict(list)
     for item in all_items:
-        if item.inventory_owner_organization_id:
+        # Safely check if attribute exists before accessing
+        if hasattr(item, 'inventory_owner_organization_id') and item.inventory_owner_organization_id:
             org_items[item.inventory_owner_organization_id].append(item)
+
 
     # If no items with owner org, fallback to posting full payment to booking.organization
     if not org_items:
@@ -133,29 +144,31 @@ def auto_post_payment(sender, instance: Payment, created, **kwargs):
             payment_time_str = payment_time.strftime('%Y-%m-%d %H:%M:%S') if payment_time else 'N/A'
             audit_note = f"Auto-posted payment for org {owner_org_id} via Payment id {instance.id} by agent {instance.agent_id} at {payment_time_str}"
             entry = LedgerEntry.objects.create(
+                organization_id=owner_org_id,
+                agency=instance.agency,  # ✅ Added this
                 booking_no=(booking.booking_number if booking else None),
                 service_type="payment",
                 narration=f"Payment for inventory owner org {owner_org_id}",
                 metadata={"payment_id": instance.id, "owner_org_id": owner_org_id},
                 internal_notes=[audit_note],
             )
-            # Debit agent (payer)
-            agent_account.balance = agent_account.balance + amount
+            # Credit agent (payer) - money going out
+            agent_account.balance = agent_account.balance - amount
             agent_account.save()
             LedgerLine.objects.create(
                 ledger_entry=entry,
                 account=agent_account,
-                debit=amount,
-                credit=Decimal("0.00"),
+                debit=Decimal("0.00"),
+                credit=amount,
                 final_balance=agent_account.balance,
             )
-            # Credit owner org (receiver)
-            org_account.balance = org_account.balance - amount
+            # Debit owner org (receiver) - money coming in
+            org_account.balance = org_account.balance + amount
             org_account.save()
             LedgerLine.objects.create(
                 ledger_entry=entry,
                 account=org_account,
-                debit=Decimal("0.00"),
-                credit=amount,
+                debit=amount,
+                credit=Decimal("0.00"),
                 final_balance=org_account.balance,
             )

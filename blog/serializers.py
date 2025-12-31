@@ -3,14 +3,16 @@ from . import models
 
 
 class BlogSectionSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
+    
     class Meta:
         model = models.BlogSection
         fields = ("id", "order", "section_type", "content")
 
 
 class BlogSerializer(serializers.ModelSerializer):
-    # allow writing sections as a nested array on create/update
-    sections = BlogSectionSerializer(many=True, required=False, write_only=True)
+    # allow writing sections as a nested array on create/update, and reading them
+    sections = BlogSectionSerializer(many=True, required=False)
     # expose meta so frontend can store tags/seo/etc without DB changes
     meta = serializers.JSONField(required=False)
     # support image upload for cover image
@@ -19,11 +21,13 @@ class BlogSerializer(serializers.ModelSerializer):
     likes_count = serializers.SerializerMethodField(read_only=True)
     # include total comments count so list endpoints can show comment totals without a separate query
     comments_count = serializers.SerializerMethodField(read_only=True)
+    # include author details (name and profile image)
+    author_details = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = models.Blog
         # include comments_count so list endpoints can show totals without extra queries on the client
-        fields = ("id", "title", "slug", "summary", "status", "published_at", "reading_time_minutes", "cover_image", "meta", "sections", "likes_count", "comments_count")
+        fields = ("id", "title", "slug", "summary", "status", "published_at", "reading_time_minutes", "cover_image", "meta", "sections", "likes_count", "comments_count", "author_details")
 
     def validate(self, attrs):
         # normalize meta.tags and meta.hashtags if present
@@ -75,6 +79,53 @@ class BlogSerializer(serializers.ModelSerializer):
             return obj.comments.count() if hasattr(obj, 'comments') else 0
         except Exception:
             return 0
+
+    def get_author_details(self, obj):
+        if not obj.author:
+            return None
+        return {
+            "id": obj.author.id,
+            "name": obj.author.get_full_name() or obj.author.username,
+            "username": obj.author.username,
+            "profile_image": getattr(obj.author, 'profile_image', None)
+        }
+
+    def create(self, validated_data):
+        sections_data = validated_data.pop("sections", None)
+        blog = models.Blog.objects.create(**validated_data)
+        if sections_data:
+            sections_objs = [
+                models.BlogSection(
+                    blog=blog, 
+                    order=s.get("order", 0), 
+                    section_type=s.get("section_type"), 
+                    content=s.get("content", {})
+                ) for s in sections_data
+            ]
+            models.BlogSection.objects.bulk_create(sections_objs)
+        return blog
+
+    def update(self, instance, validated_data):
+        sections_data = validated_data.pop("sections", None)
+        # update simple fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        if sections_data is not None:
+            # replace existing sections with provided ones
+            instance.sections.all().delete()
+            sections_objs = [
+                models.BlogSection(
+                    blog=instance, 
+                    order=s.get("order", 0), 
+                    section_type=s.get("section_type"), 
+                    content=s.get("content", {})
+                ) for s in sections_data
+            ]
+            models.BlogSection.objects.bulk_create(sections_objs)
+
+        return instance
 
 
 class BlogDetailSerializer(BlogSerializer):

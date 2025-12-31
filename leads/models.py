@@ -85,6 +85,7 @@ class Lead(models.Model):
 
     # Task-related flags and notes
     is_internal_task = models.BooleanField(default=False)
+    is_instant = models.BooleanField(default=False)  # Mark as instant lead/loan/task
     # Optional task categorization (e.g. 'meeting', 'call', 'follow-up')
     task_type = models.CharField(max_length=64, blank=True, null=True)
     notes = models.TextField(blank=True, null=True)
@@ -129,6 +130,7 @@ class FollowUpHistory(models.Model):
     remarks = models.TextField(blank=True, null=True)
     next_followup_date = models.DateField(blank=True, null=True)
     followup_result = models.CharField(max_length=20, choices=FOLLOWUP_RESULT, default="pending")
+    is_instant = models.BooleanField(default=False)  # Mark as instant followup
     created_at = models.DateTimeField(auto_now_add=True)
     created_by_user = models.ForeignKey(User, on_delete=models.SET_NULL, blank=True, null=True)
 

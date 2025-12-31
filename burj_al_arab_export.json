@@ -1,0 +1,206 @@
+{
+  "hotel": {
+    "name": "Burj Al Arab",
+    "city_name": "Dubai",
+    "city_id": 7,
+    "address": "Jumeirah Street, Dubai, UAE",
+    "google_location": "https://maps.google.com/?q=Burj+Al+Arab+Dubai",
+    "reselling_allowed": false,
+    "contact_number": "+971-4-301-7777",
+    "category": "5-star",
+    "distance": 3.0,
+    "walking_distance": 3000.0,
+    "walking_time": 35.0,
+    "is_active": true,
+    "available_start_date": "2025-12-15",
+    "available_end_date": "2026-02-28",
+    "status": "active",
+    "owner_organization_id": 11
+  },
+  "prices": [
+    {
+      "start_date": "2025-12-15",
+      "end_date": "2025-12-31",
+      "room_type": "room",
+      "price": 50000.0,
+      "purchase_price": 40000.0,
+      "is_sharing_allowed": false
+    },
+    {
+      "start_date": "2025-12-15",
+      "end_date": "2025-12-31",
+      "room_type": "sharing",
+      "price": 45000.0,
+      "purchase_price": 36000.0,
+      "is_sharing_allowed": true
+    },
+    {
+      "start_date": "2025-12-15",
+      "end_date": "2025-12-31",
+      "room_type": "double",
+      "price": 55000.0,
+      "purchase_price": 44000.0,
+      "is_sharing_allowed": false
+    },
+    {
+      "start_date": "2025-12-15",
+      "end_date": "2025-12-31",
+      "room_type": "triple",
+      "price": 60000.0,
+      "purchase_price": 48000.0,
+      "is_sharing_allowed": false
+    },
+    {
+      "start_date": "2025-12-15",
+      "end_date": "2025-12-31",
+      "room_type": "quad",
+      "price": 65000.0,
+      "purchase_price": 52000.0,
+      "is_sharing_allowed": false
+    },
+    {
+      "start_date": "2025-12-15",
+      "end_date": "2025-12-31",
+      "room_type": "quint",
+      "price": 70000.0,
+      "purchase_price": 56000.0,
+      "is_sharing_allowed": false
+    },
+    {
+      "start_date": "2025-12-15",
+      "end_date": "2025-12-31",
+      "room_type": "6-bed",
+      "price": 75000.0,
+      "purchase_price": 60000.0,
+      "is_sharing_allowed": false
+    },
+    {
+      "start_date": "2025-12-15",
+      "end_date": "2025-12-31",
+      "room_type": "7-bed",
+      "price": 80000.0,
+      "purchase_price": 64000.0,
+      "is_sharing_allowed": false
+    },
+    {
+      "start_date": "2025-12-15",
+      "end_date": "2025-12-31",
+      "room_type": "8-bed",
+      "price": 85000.0,
+      "purchase_price": 68000.0,
+      "is_sharing_allowed": false
+    },
+    {
+      "start_date": "2025-12-15",
+      "end_date": "2025-12-31",
+      "room_type": "9-bed",
+      "price": 90000.0,
+      "purchase_price": 72000.0,
+      "is_sharing_allowed": false
+    },
+    {
+      "start_date": "2025-12-15",
+      "end_date": "2025-12-31",
+      "room_type": "10-bed",
+      "price": 95000.0,
+      "purchase_price": 76000.0,
+      "is_sharing_allowed": false
+    },
+    {
+      "start_date": "2026-01-01",
+      "end_date": "2026-02-28",
+      "room_type": "room",
+      "price": 60000.0,
+      "purchase_price": 48000.0,
+      "is_sharing_allowed": false
+    },
+    {
+      "start_date": "2026-01-01",
+      "end_date": "2026-02-28",
+      "room_type": "sharing",
+      "price": 55000.0,
+      "purchase_price": 44000.0,
+      "is_sharing_allowed": true
+    },
+    {
+      "start_date": "2026-01-01",
+      "end_date": "2026-02-28",
+      "room_type": "double",
+      "price": 65000.0,
+      "purchase_price": 52000.0,
+      "is_sharing_allowed": false
+    },
+    {
+      "start_date": "2026-01-01",
+      "end_date": "2026-02-28",
+      "room_type": "triple",
+      "price": 70000.0,
+      "purchase_price": 56000.0,
+      "is_sharing_allowed": false
+    },
+    {
+      "start_date": "2026-01-01",
+      "end_date": "2026-02-28",
+      "room_type": "quad",
+      "price": 75000.0,
+      "purchase_price": 60000.0,
+      "is_sharing_allowed": false
+    },
+    {
+      "start_date": "2026-01-01",
+      "end_date": "2026-02-28",
+      "room_type": "quint",
+      "price": 80000.0,
+      "purchase_price": 64000.0,
+      "is_sharing_allowed": false
+    },
+    {
+      "start_date": "2026-01-01",
+      "end_date": "2026-02-28",
+      "room_type": "6-bed",
+      "price": 85000.0,
+      "purchase_price": 68000.0,
+      "is_sharing_allowed": false
+    },
+    {
+      "start_date": "2026-01-01",
+      "end_date": "2026-02-28",
+      "room_type": "7-bed",
+      "price": 90000.0,
+      "purchase_price": 72000.0,
+      "is_sharing_allowed": false
+    },
+    {
+      "start_date": "2026-01-01",
+      "end_date": "2026-02-28",
+      "room_type": "8-bed",
+      "price": 95000.0,
+      "purchase_price": 76000.0,
+      "is_sharing_allowed": false
+    },
+    {
+      "start_date": "2026-01-01",
+      "end_date": "2026-02-28",
+      "room_type": "9-bed",
+      "price": 100000.0,
+      "purchase_price": 80000.0,
+      "is_sharing_allowed": false
+    },
+    {
+      "start_date": "2026-01-01",
+      "end_date": "2026-02-28",
+      "room_type": "10-bed",
+      "price": 105000.0,
+      "purchase_price": 84000.0,
+      "is_sharing_allowed": false
+    }
+  ],
+  "contact_details": [
+    {
+      "contact_person": "Luxury Concierge",
+      "contact_number": "+971-4-301-7777"
+    }
+  ],
+  "rooms": [],
+  "photos": []
+}

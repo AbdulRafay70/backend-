@@ -3,8 +3,10 @@ from django.urls import path, include
 from .views import BookingViewSet,PaymentViewSet, SectorViewSet,BigSectorViewSet, VehicleTypeViewSet, InternalNoteViewSet, BankAccountViewSet, OrganizationLinkViewSet, AllowedResellerViewSet, DiscountGroupViewSet, MarkupViewSet
 from .views import HotelOutsourcingViewSet, PublicBookingStatusAPIView, PaxSummaryAPIView, AdminPublicBookingViewSet
 from .views import HotelPaxSummaryAPIView, TransportPaxSummaryAPIView, FlightPaxSummaryAPIView
-from .views import PublicBookingCreateAPIView, PublicBookingPaymentCreateAPIView, AdminApprovePaymentAPIView
+from .views import PublicBookingCreateAPIView, PublicBookingPaymentCreateAPIView, AdminApprovePaymentAPIView, PublicBookingViewSet
 from .views import get_ticket_price, get_inventory_price  # Import the new views
+from .person_update_view import UpdatePersonDetailView
+from .daily_operations_view import DailyOperationsAPIView
 
 router = DefaultRouter()
 router.register(r'bookings', BookingViewSet, basename='booking')
@@ -23,6 +25,8 @@ router.register(r'bank-accounts', BankAccountViewSet, basename='bank-accounts')
 router.register(r"markups", MarkupViewSet, basename="markup")
 router.register(r'hotel-outsourcing', HotelOutsourcingViewSet, basename='hotel-outsourcing')
 router.register(r'admin/public-bookings', AdminPublicBookingViewSet, basename='admin-public-bookings')
+# Note: Using 'public/booking-details' to avoid conflict with PublicBookingCreateAPIView at 'public/bookings/'
+router.register(r'public/booking-details', PublicBookingViewSet, basename='public-booking-details')
 urlpatterns = [
     path('api/', include(router.urls)),
     
@@ -30,7 +34,8 @@ urlpatterns = [
     path('api/public/booking-status/<str:booking_no>/', PublicBookingStatusAPIView.as_view(), name='public-booking-status-by-number'),
     path('api/public/booking-status/', PublicBookingStatusAPIView.as_view(), name='public-booking-status-by-ref'),
     # Public create endpoints for booking & payments
-    path('api/public/bookings/', PublicBookingCreateAPIView.as_view(), name='public-booking-create'),
+    path('api/public/bookings/', PublicBookingCreateAPIView.as_view(), name='public-booking-create'),  # GET list + POST create
+    # path('api/public/bookings/<int:pk>/', PublicBookingViewSet.as_view({'get': 'retrieve'}), name='public-booking-detail'),  # Handled by router now
     path('api/public/bookings/payments/', PublicBookingPaymentCreateAPIView.as_view(), name='public-booking-payment-create'),
     # Admin actions for payments
     path('api/admin/payments/<int:payment_id>/approve/', AdminApprovePaymentAPIView.as_view(), name='admin-payment-approve'),
@@ -39,9 +44,16 @@ urlpatterns = [
     path('api/pax-summary/transport-status/', TransportPaxSummaryAPIView.as_view(), name='pax-summary-transport'),
     path('api/pax-summary/flight-status/', FlightPaxSummaryAPIView.as_view(), name='pax-summary-flight'),
     
+    # Person details update endpoint
+    path('api/person-details/<int:person_id>/', UpdatePersonDetailView.as_view(), name='person-detail-update'),
+    
     # AJAX endpoint for dynamic ticket price updates
     path('admin/booking/get-ticket-price/', get_ticket_price, name='get-ticket-price'),
     
     # AJAX endpoint for dynamic inventory price updates (hotel, transport, visa, package, ticket)
     path('admin/booking/get-inventory-price/', get_inventory_price, name='get-inventory-price'),
+    
+    # Daily operations endpoint
+    path('api/daily-operations/', DailyOperationsAPIView.as_view(), name='daily-operations'),
+    path('api/daily-operations/update-status/', DailyOperationsAPIView.as_view(), name='daily-operations-update-status'),
 ]

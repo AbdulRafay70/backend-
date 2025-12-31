@@ -1,5 +1,5 @@
 import requests, json, datetime
-url='http://127.0.0.1:8000/api/hotels/'
+url='https://api.saer.pk/api/hotels/'
 payload={
  'name':'FrontendRuntimeTest',
  'address':'addr',

@@ -3,6 +3,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.permissions import AllowAny
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter, OrderingFilter
 from drf_spectacular.utils import extend_schema, OpenApiParameter, extend_schema_view, OpenApiExample
@@ -1346,15 +1347,16 @@ class UmrahPackageViewSet(ModelViewSet):
         linked_org_ids_only = linked_org_ids - {own_org_id}
         
         # Base filter: always show packages from own organization
+        # This includes ALL packages where organization_id matches, regardless of inventory_owner_organization_id
         base_filter = Q(organization_id=own_org_id)
         
         # For linked organizations, only show if reselling_allowed=True
         linked_filter = Q(organization_id__in=linked_org_ids_only) & Q(reselling_allowed=True)
         
-        # For reseller callers (third parties), ensure items can be resold
-        resell_filter = Q(reselling_allowed=True)
-        # If inventory_owner_organization_id is set, only allow resale to different organizations
-        resell_filter &= ~Q(inventory_owner_organization_id=own_org_id)
+        # For reseller callers (third parties via AllowedReseller), ensure items can be resold
+        # Only show packages from allowed reseller organizations that are NOT the requesting organization
+        # (own packages are already shown via base_filter)
+        resell_filter = Q(reselling_allowed=True) & Q(organization_id__in=allowed_owner_org_ids) & ~Q(organization_id=own_org_id)
         
         queryset = queryset.filter(
             base_filter | linked_filter | resell_filter
@@ -1476,6 +1478,7 @@ class AllPricesAPIView(APIView):
 @extend_schema(exclude=True)
 class PublicUmrahPackageListAPIView(generics.ListAPIView):
     """Public list of Umrah packages (read-only)."""
+    permission_classes = [AllowAny]
     serializer_class = PublicUmrahPackageListSerializer
 
     def get_queryset(self):
@@ -1529,6 +1532,7 @@ class PublicUmrahPackageListAPIView(generics.ListAPIView):
 @extend_schema(exclude=True)
 class PublicUmrahPackageDetailAPIView(APIView):
     """Public package detail view. Lookup by id or slug (slugified title)."""
+    permission_classes = [AllowAny]
 
     def get(self, request, identifier):
         # try id

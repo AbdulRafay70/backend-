@@ -115,14 +115,14 @@ WSGI_APPLICATION = "configuration.wsgi.application"
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'saeraqnj_saer_db',     # your actual DB name in cPanel
-        'USER': 'saeraqnj_ahsanraza',           # your MySQL username in cPanel
-        'PASSWORD': 'YjToTZu!+BnM',  # your MySQL password
-        'HOST': 'localhost',          # usually localhost on cPanel servers
+        'NAME': 'saerpk_local',   # Change this if your DB name is different
+        'USER': 'root',
+        'PASSWORD': 'root',       # Your MySQL password
+        'HOST': '127.0.0.1',
         'PORT': '3306',
         'OPTIONS': {
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-            'charset': 'utf8mb4',
+            'charset': 'utf8mb4',  # Use utf8mb4 for full Unicode support (emojis, arrows, etc.)
         },
     }
 }

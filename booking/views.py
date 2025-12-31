@@ -1,4 +1,5 @@
 from rest_framework import viewsets,status
+from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import AllowAny
 from rest_framework.throttling import SimpleRateThrottle
@@ -15,7 +16,7 @@ from django.db import transaction
 from rest_framework import generics
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
-from .serializers import PublicBookingCreateSerializer, PublicPaymentCreateSerializer
+from .serializers import PublicBookingCreateSerializer, PublicPaymentCreateSerializer, BookingSerializer
 from packages.models import UmrahPackage
 from leads.models import Lead, FollowUp
 from django.contrib.auth import get_user_model
@@ -171,7 +172,7 @@ from .models import (
     Markup,
     BookingCallRemark
 )
-from .serializers import BookingSerializer, PaymentSerializer, SectorSerializer, BigSectorSerializer, VehicleTypeSerializer, InternalNoteSerializer, DiscountGroupSerializer, BankAccountSerializer, OrganizationLinkSerializer, AllowedResellerSerializer, MarkupSerializer, BookingCallRemarkSerializer, PublicBookingSerializer
+from .serializers import BookingSerializer, PaymentSerializer, SectorSerializer, BigSectorSerializer, VehicleTypeSerializer, InternalNoteSerializer, DiscountGroupSerializer, BankAccountSerializer, OrganizationLinkSerializer, AllowedResellerSerializer, MarkupSerializer, BookingCallRemarkSerializer
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.response import Response
 from universal.scope import apply_user_scope
@@ -294,9 +295,11 @@ class BookingViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """
         Optimized queryset to prevent N+1 queries using select_related and prefetch_related.
+        Excludes public bookings to prevent finance conflicts.
         """
         qs = (
-            Booking.objects.annotate(
+            Booking.objects.filter(is_public_booking=False)  # Exclude public bookings
+            .annotate(
                 paid_amount=Coalesce(
                     Sum("payment_details__amount", output_field=FloatField()),
                     Value(0.0, output_field=FloatField()),
@@ -317,6 +320,8 @@ class BookingViewSet(viewsets.ModelViewSet):
             .prefetch_related(
                 "hotel_details",
                 "transport_details",
+                "food_details",
+                "ziyarat_details",
                 Prefetch(
                     "ticket_details",
                     queryset=BookingTicketDetails.objects.prefetch_related(
@@ -335,180 +340,414 @@ class BookingViewSet(viewsets.ModelViewSet):
         return qs
 
 
-class PublicBookingCreateAPIView(generics.CreateAPIView):
-    """Create a public booking for an Umrah package.
 
-    Expected payload (JSON):
-      - umrah_package_id, total_pax, contact_name, contact_phone
-      - optional: total_adult/child/infant, contact_email, pay_now, pay_amount
-
-    Creates Booking (is_public_booking=True), decreases package left_seats, creates a Lead,
-    and optionally creates a Payment (public_mode=True, status='Pending').
+@extend_schema(
+    summary="Create a public booking for an Umrah package",
+    description="""
+    Create a public booking with optional passenger details.
+    
+    **Features:**
+    - No authentication required
+    - Accepts passenger details (name, passport, email, phone, bed preference)
+    - Validates passenger counts and types
+    - Creates booking, person records, and lead
+    - Optionally creates payment
+    
+    **Passenger Details:**
+    - Optional array of passenger information
+    - Each passenger must have: type, name, passport_number, passport_expiry
+    - Optional fields: email, phone, include_bed
+    - Types: Adult, Child, Infant
+    """,
+    request=PublicBookingCreateSerializer,
+    responses={
+        201: {
+            "type": "object",
+            "properties": {
+                "success": {"type": "boolean"},
+                "booking_number": {"type": "string"},
+                "invoice_no": {"type": "string"},
+                "total_amount": {"type": "number"},
+                "remaining_balance": {"type": "number"},
+                "payment_id": {"type": "integer", "nullable": True}
+            }
+        },
+        400: {"description": "Validation error"}
+    },
+    examples=[
+        OpenApiExample(
+            "Basic Booking",
+            value={
+                "umrah_package_id": 38,
+                "total_pax": 2,
+                "total_adult": 2,
+                "contact_name": "Test User",
+                "contact_phone": "03001234567",
+                "contact_email": "test@example.com",
+                "pay_now": False
+            }
+        ),
+        OpenApiExample(
+            "Booking with Passenger Details",
+            value={
+                "umrah_package_id": 38,
+                "total_pax": 2,
+                "total_adult": 2,
+                "total_child": 0,
+                "total_infant": 0,
+                "contact_name": "Test User",
+                "contact_phone": "03001234567",
+                "contact_email": "test@example.com",
+                "person_details": [
+                    {
+                        "type": "Adult",
+                        "name": "Ali Raza",
+                        "passport_number": "123AK098",
+                        "passport_expiry": "2025-06-16",
+                        "email": "ali@example.com",
+                        "phone": "03001111111",
+                        "include_bed": True
+                    },
+                    {
+                        "type": "Adult",
+                        "name": "Sara Khan",
+                        "passport_number": "456XY789",
+                        "passport_expiry": "2026-12-31",
+                        "email": "sara@example.com",
+                        "phone": "03002222222",
+                        "include_bed": False
+                    }
+                ],
+                "pay_now": False
+            }
+        )
+    ]
+)
+class PublicBookingCreateAPIView(generics.ListCreateAPIView):
+    """Public booking endpoints supporting both list (GET) and create (POST).
+    
+    GET /api/public/bookings/ - List public bookings (with filters)
+    POST /api/public/bookings/ - Create new booking
+    
+    Accepts the full booking payload with:
+    - hotel_details, ticket_details, transport_details
+    - food_details, ziyarat_details, person_details
+    - All booking-level fields
+    
+    Creates Booking with is_public_booking=True and status='Under-process'.
+    
+    Query parameters for GET:
+    - email: Filter by contact email
+    - phone: Filter by contact phone
+    - booking_number: Filter by booking number
     """
     permission_classes = [AllowAny]
-    serializer_class = PublicBookingCreateSerializer
-
+    
+    def get_queryset(self):
+        queryset = Booking.objects.filter(is_public_booking=True)
+        
+        # Filter by email
+        email = self.request.query_params.get('email')
+        if email:
+            queryset = queryset.filter(person_details__contact_details__icontains=email)
+        
+        # Filter by phone
+        phone = self.request.query_params.get('phone')
+        if phone:
+            queryset = queryset.filter(person_details__contact_number__icontains=phone)
+        
+        # Filter by booking number
+        booking_number = self.request.query_params.get('booking_number')
+        if booking_number:
+            queryset = queryset.filter(booking_number__iexact=booking_number)
+        
+        return queryset.select_related('umrah_package', 'organization').prefetch_related('person_details', 'hotel_details', 'ticket_details')
+    
+    def get_serializer_class(self):
+        from .serializers import BookingSerializer
+        return BookingSerializer
+    
+    def to_representation(self, instance):
+        """Override to exclude user, agency, branch, organization objects from response."""
+        ret = super().to_representation(instance)
+        # Remove dummy user/agency/branch/organization objects
+        ret.pop('user', None)
+        ret.pop('agency', None)
+        ret.pop('branch', None)
+        ret.pop('organization', None)
+        # Add organization_id
+        ret['organization_id'] = instance.organization_id
+        return ret
+    
+    def list(self, request, *args, **kwargs):
+        """Override list to apply to_representation to each item."""
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        data = serializer.data
+        # Remove user/agency/branch/organization from each item
+        for item in data:
+            item.pop('user', None)
+            item.pop('agency', None)
+            item.pop('branch', None)
+            item.pop('organization', None)
+            # Add organization_id if not present
+            if 'organization_id' not in item:
+                booking = queryset.get(id=item['id'])
+                item['organization_id'] = booking.organization_id
+        return Response(data)
+    
+    def perform_create(self, serializer):
+        # Get umrah_package_id from validated data
+        umrah_package_id = serializer.validated_data.get('umrah_package_id') or serializer.validated_data.get('umrah_package')
+        
+        # Get contact_information from validated data
+        contact_information = serializer.validated_data.get('contact_information', [])
+        
+        # Save booking with public booking flags
+        booking = serializer.save(
+            is_public_booking=True,
+            status='Under-process',
+            created_by_user_type='customer',
+            contact_information=contact_information  # Save contact information
+        )
+        
+        # Store package_id on the instance for use in create() method
+        if umrah_package_id:
+            booking._umrah_package_id = umrah_package_id
+    
     def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        data = serializer.validated_data
-
-        pkg = UmrahPackage.objects.select_for_update().get(pk=data['umrah_package_id'])
-
-        User = get_user_model()
-        system_user = User.objects.filter(is_superuser=True).first() or User.objects.first()
-
-        with transaction.atomic():
-            # double-check seats under lock
-            pkg.refresh_from_db()
-            total_pax = int(data['total_pax'])
-            if (pkg.left_seats or 0) < total_pax:
-                return Response({"success": False, "message": f"Only {pkg.left_seats or 0} seats left"}, status=400)
-
-            # create booking_number
-            import secrets, time
-            booking_number = f"PB-{int(time.time())}-{secrets.token_hex(3).upper()}"
-
-            org = pkg.organization
-            # choose first branch if available
-            branch = None
+        # Add required organization fields to request data before validation
+        request_data = request.data.copy()
+        
+        # Get package to extract organization details
+        umrah_package_id = request_data.get('umrah_package_id') or request_data.get('umrah_package')
+        
+        if umrah_package_id:
             try:
-                branch = org.branches.first()
-            except Exception:
-                branch = None
-
-            # choose or create an agency to satisfy non-null FK
-            agency = None
-            try:
-                if branch:
+                pkg = UmrahPackage.objects.select_related('organization').get(pk=umrah_package_id)
+                org = pkg.organization
+                
+                # Get or create branch
+                branch = org.branches.first() if hasattr(org, 'branches') else None
+                
+                # Get or create agency
+                agency = None
+                if branch and hasattr(branch, 'agencies'):
                     agency = branch.agencies.first()
-                if not agency:
+                if not agency and hasattr(org, 'agencies'):
                     agency = org.agencies.first()
                 if not agency and branch:
-                    # create a lightweight Agency record for public bookings
                     agency = Agency.objects.create(branch=branch, name='Public Agency')
-            except Exception:
-                agency = None
-
-            booking = Booking.objects.create(
-                user=system_user,
-                organization=org,
-                branch=branch,
-                agency=agency,
-                booking_number=booking_number,
-                total_pax=total_pax,
-                total_adult=data.get('total_adult', 0) or 0,
-                total_child=data.get('total_child', 0) or 0,
-                total_infant=data.get('total_infant', 0) or 0,
-                total_amount=float((pkg.price_per_person or 0) * total_pax),
-                status='unpaid',
-                payment_status='Pending',
-                is_public_booking=True,
-                created_by_user_type='customer',
-                umrah_package=pkg,
+                
+                # Get system user
+                User = get_user_model()
+                system_user = User.objects.filter(is_superuser=True).first() or User.objects.first()
+                
+                # Add required fields to request data
+                request_data['organization_id'] = org.id
+                request_data['branch_id'] = branch.id if branch else None
+                request_data['agency_id'] = agency.id if agency else None
+                request_data['user_id'] = system_user.id
+                
+            except UmrahPackage.DoesNotExist:
+                pass
+        
+        # Now validate and create with the updated data
+        serializer = self.get_serializer(data=request_data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        
+        # Auto-populate inventory from package for public bookings
+        booking = serializer.instance
+        # Use the package_id stored in perform_create or fall back to request data
+        package_id_for_population = getattr(booking, '_umrah_package_id', None) or umrah_package_id
+        
+        print(f"DEBUG: package_id_for_population = {package_id_for_population}, booking = {booking}, booking.id = {booking.id if booking else None}")
+        print(f"DEBUG: booking.umrah_package = {booking.umrah_package if booking else None}")
+        
+        if package_id_for_population and booking:
+            try:
+                print(f"DEBUG: Calling _populate_inventory_from_package for booking {booking.id}")
+                self._populate_inventory_from_package(booking, package_id_for_population)
+                print(f"DEBUG: Successfully populated inventory for booking {booking.id}")
+            except Exception as e:
+                # Log error but don't fail the booking
+                import traceback
+                print(f"ERROR populating inventory: {e}")
+                print(traceback.format_exc())
+        else:
+            print(f"DEBUG: Skipping inventory population - package_id={package_id_for_population}, booking={booking}")
+        
+        headers = self.get_success_headers(serializer.data)
+        from rest_framework.response import Response
+        return Response(serializer.data, status=201, headers=headers)
+    
+    def _populate_inventory_from_package(self, booking, package_id):
+        """Auto-populate hotel, ticket, transport, food, and ziyarat details from package."""
+        from .models import BookingHotelDetail, BookingTicketDetail, BookingTransportDetail
+        
+        # Get package with all related data
+        pkg = UmrahPackage.objects.prefetch_related(
+            'hotel_details__hotel_info',
+            'ticket_details__ticket_info', 
+            'transport_details__transport_sector_info'
+        ).get(pk=package_id)
+        
+        total_pax = booking.total_pax or 1
+        
+        # 1. Create Hotel Details
+        for hotel_detail in pkg.hotel_details.all():
+            hotel_info = hotel_detail.hotel_info
+            # Use sharing bed price as default (can be enhanced based on passenger room selections)
+            price_per_night = hotel_detail.sharing_bed_selling_price or 0
+            total_price = price_per_night * (hotel_detail.number_of_nights or 0) * total_pax
+            
+            BookingHotelDetail.objects.create(
+                booking=booking,
+                hotel=hotel_info,
+                check_in_date=hotel_detail.check_in_date,
+                check_out_date=hotel_detail.check_out_date,
+                number_of_nights=hotel_detail.number_of_nights,
+                room_type='Sharing',  # Default to sharing
+                quantity=total_pax,
+                price=price_per_night,
+                total_price=total_price,
+                is_price_pkr=True,
+                riyal_rate=1,
+                total_in_pkr=total_price,
             )
+        
+        # 2. Create Ticket Details
+        for ticket_detail in pkg.ticket_details.all():
+            ticket_info = ticket_detail.ticket_info
+            adult_price = ticket_info.adult_selling_price or ticket_info.adult_price or 0
+            child_price = ticket_info.child_selling_price or ticket_info.child_price or 0
+            infant_price = ticket_info.infant_selling_price or ticket_info.infant_price or 0
+            
+            total_ticket_price = (
+                (booking.total_adult or 0) * adult_price +
+                (booking.total_child or 0) * child_price +
+                (booking.total_infant or 0) * infant_price
+            )
+            
+            BookingTicketDetail.objects.create(
+                booking=booking,
+                ticket=ticket_info,
+                adult_price=adult_price,
+                child_price=child_price,
+                infant_price=infant_price,
+                total_price=total_ticket_price,
+            )
+        
+        # 3. Create Transport Details
+        for transport_detail in pkg.transport_details.all():
+            transport_sector = transport_detail.transport_sector_info
+            price = transport_detail.transport_selling_price or 0
+            total_transport_price = price * total_pax
+            
+            BookingTransportDetail.objects.create(
+                booking=booking,
+                transport_sector=transport_sector,
+                vehicle_type=transport_detail.vehicle_type,
+                price=price,
+                total_price=total_transport_price,
+            )
+        
+        # 4. Create Food Details (if package has food)
+        if pkg.food_selling_price and pkg.food_selling_price > 0:
+            from .models import BookingFoodDetail
+            total_food_price = pkg.food_selling_price * total_pax
+            
+            BookingFoodDetail.objects.create(
+                booking=booking,
+                food_price=pkg.food_selling_price,
+                total_price=total_food_price,
+                is_price_pkr=True,
+            )
+        
+        # 5. Create Ziyarat Details (if package has ziyarat)
+        from .models import BookingZiyaratDetail
+        
+        if pkg.makkah_ziyarat_selling_price and pkg.makkah_ziyarat_selling_price > 0:
+            total_makkah_ziyarat = pkg.makkah_ziyarat_selling_price * total_pax
+            BookingZiyaratDetail.objects.create(
+                booking=booking,
+                ziyarat_type='Makkah',
+                price=pkg.makkah_ziyarat_selling_price,
+                total_price=total_makkah_ziyarat,
+                is_price_pkr=True,
+            )
+        
+        if pkg.madinah_ziyarat_selling_price and pkg.madinah_ziyarat_selling_price > 0:
+            total_madinah_ziyarat = pkg.madinah_ziyarat_selling_price * total_pax
+            BookingZiyaratDetail.objects.create(
+                booking=booking,
+                ziyarat_type='Madinah',
+                price=pkg.madinah_ziyarat_selling_price,
+                total_price=total_madinah_ziyarat,
+                is_price_pkr=True,
+            )
+        
+        # 6. Refresh booking to recalculate totals
+        booking.refresh_from_db()
+        print(f"DEBUG: Inventory populated successfully for booking {booking.id}")
 
-            # generate invoice_no and save
-            try:
-                booking.generate_invoice_no()
-                booking.save(update_fields=['invoice_no'])
-            except Exception:
-                pass
 
-            # decrement package seats
-            try:
-                pkg.booked_seats = (pkg.booked_seats or 0) + total_pax
-                pkg.left_seats = max(0, (pkg.left_seats or 0) - total_pax)
-                pkg.save(update_fields=['booked_seats', 'left_seats'])
-            except Exception:
-                pass
 
-            # create a lead
-            lead = None
-            try:
-                lead = Lead.objects.create(
-                    customer_full_name=data.get('contact_name'),
-                    contact_number=data.get('contact_phone'),
-                    email=data.get('contact_email'),
-                    branch=branch,
-                    organization=org,
-                    lead_source='whatsapp',
-                    lead_status='new',
-                    interested_in='umrah',
-                    booking=booking,
-                )
-            except Exception:
-                # don't fail booking creation if lead creation fails
-                lead = None
-
-            payment = None
-            if data.get('pay_now'):
-                amount = float(data.get('pay_amount') or booking.total_amount)
-                payment = Payment.objects.create(
-                    organization=org,
-                    branch=branch,
-                    booking=booking,
-                    method='online',
-                    amount=amount,
-                    status='Pending',
-                    public_mode=True,
-                )
-
-            # create follow-up if partial payment
-            try:
-                paid = float(payment.amount) if payment else 0.0
-                remaining = float(booking.total_amount or 0) - paid
-                if remaining > 0:
-                    from leads.models import FollowUp as LF
-                    fu = LF.objects.create(
-                        booking=booking,
-                        lead=lead,
-                        remaining_amount=remaining,
-                        status='open',
-                        notes='Auto follow-up for remaining payment on public booking',
-                        created_by=system_user,
-                    )
-                    # notify sales/admin asynchronously after commit (if notification util exists)
-                    try:
-                        from django.db import transaction as _tx
-                        def _notify():
-                            try:
-                                from notifications import services as _ns
-                                _ns.enqueue_followup_created(fu.id)
-                            except Exception:
-                                pass
-                        _tx.on_commit(_notify)
-                    except Exception:
-                        pass
-            except Exception:
-                pass
-
-        # Response
-        resp = {
-            "success": True,
-            "booking_number": booking.booking_number,
-            "invoice_no": booking.invoice_no,
-            "total_amount": float(booking.total_amount or 0),
-            "remaining_balance": float(booking.total_amount or 0) - (float(payment.amount) if payment else 0),
-            "payment_id": getattr(payment, 'id', None),
-        }
-
-        # notify booking created and pending payment created (best-effort) after commit
-        try:
-            from django.db import transaction as _tx
-            def _notify_booking():
-                try:
-                    from notifications import services as _ns
-                    _ns.enqueue_public_booking_created(booking.id)
-                    if payment:
-                        _ns.enqueue_public_payment_created(payment.id)
-                except Exception:
-                    pass
-            _tx.on_commit(_notify_booking)
-        except Exception:
-            pass
-        return Response(resp, status=201)
-
+class PublicBookingViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Public booking endpoints for customers to view their bookings.
+    
+    GET /api/public/bookings/ - List bookings (filtered by email or phone)
+    GET /api/public/bookings/{id}/ - Retrieve single booking
+    
+    Query parameters:
+    - email: Filter by contact email
+    - phone: Filter by contact phone  
+    - booking_number: Filter by booking number
+    """
+    permission_classes = [AllowAny]
+    
+    def get_serializer_class(self):
+        from .serializers import BookingSerializer
+        return BookingSerializer
+    
+    def get_queryset(self):
+        queryset = Booking.objects.filter(is_public_booking=True)
+        
+        # Filter by email
+        email = self.request.query_params.get('email')
+        if email:
+            queryset = queryset.filter(person_details__contact_details__icontains=email)
+        
+        # Filter by phone
+        phone = self.request.query_params.get('phone')
+        if phone:
+            queryset = queryset.filter(person_details__contact_number__icontains=phone)
+        
+        # Filter by booking number
+        booking_number = self.request.query_params.get('booking_number')
+        if booking_number:
+            queryset = queryset.filter(booking_number__iexact=booking_number)
+        
+        return queryset.select_related('umrah_package', 'organization').prefetch_related('person_details', 'hotel_details', 'ticket_details')
+    
+    @action(detail=True, methods=['post', 'patch'], url_path='confirm')
+    def confirm(self, request, pk=None):
+        """
+        Confirm a public booking by updating its status to 'Confirmed'.
+        
+        POST/PATCH /api/public/bookings/{id}/confirm/
+        """
+        booking = self.get_object()
+        
+        # Update status to Confirmed
+        booking.status = 'Confirmed'
+        booking.save()
+        
+        # Return updated booking
+        serializer = self.get_serializer(booking)
+        return Response(serializer.data)
 
 class PublicBookingPaymentCreateAPIView(generics.CreateAPIView):
     """Create a public payment for a booking (public_mode=True).
@@ -1006,10 +1245,19 @@ class PublicBookingPaymentCreateAPIView(generics.CreateAPIView):
 class AdminPublicBookingViewSet(viewsets.ModelViewSet):
     """Admin endpoints for public bookings: list, retrieve and actions: confirm, cancel, verify_payment."""
     permission_classes = [IsAuthenticated, IsAdminUser]
-    serializer_class = PublicBookingSerializer
+    
+    def get_serializer_class(self):
+        from .serializers import BookingSerializer
+        return BookingSerializer
 
     def get_queryset(self):
         qs = Booking.objects.filter(is_public_booking=True).prefetch_related('person_details', 'payment_details').order_by('-date')
+        
+        # Filter by organization if provided
+        organization_id = self.request.query_params.get('organization')
+        if organization_id:
+            qs = qs.filter(organization_id=organization_id)
+        
         # allow optional filtering by status/booking_number
         booking_no = self.request.query_params.get('booking_number')
         status_q = self.request.query_params.get('status')
@@ -1020,55 +1268,36 @@ class AdminPublicBookingViewSet(viewsets.ModelViewSet):
         return qs
 
     def list(self, request, *args, **kwargs):
-        qs = self.get_queryset()
-        results = []
-        for b in qs:
-            person = b.person_details.first()
-            lead_id = None
-            try:
-                lead = b.lead_set.first()
-                lead_id = lead.id if lead else None
-            except Exception:
-                lead_id = None
+        """Override list to exclude user/agency/branch/organization objects."""
+        queryset = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(queryset, many=True)
+        data = serializer.data
+        # Remove user/agency/branch/organization from each item
+        for item in data:
+            item.pop('user', None)
+            item.pop('agency', None)
+            item.pop('branch', None)
+            item.pop('organization', None)
+            # Ensure organization_id is present
+            if 'organization_id' not in item:
+                booking = queryset.get(id=item['id'])
+                item['organization_id'] = booking.organization_id
+        return Response(data)
+    # Removed custom list() method - now uses PublicBookingSerializer
+    # which excludes dummy user/agency/branch objects
 
-            # payment status summary
-            paid = float(b.total_payment_received or 0)
-            total = float(b.total_amount or 0)
-            payment_status = 'paid' if paid >= total and total > 0 else ('partial' if paid > 0 else 'unpaid')
+    @action(detail=True, methods=['post'], url_path='approve')
+    def approve_booking(self, request, pk=None):
+        """Approve a public booking - sets status to 'Approved'."""
+        try:
+            booking = Booking.objects.get(pk=pk, is_public_booking=True)
+        except Booking.DoesNotExist:
+            return Response({'detail': 'Not found'}, status=404)
 
-            # customers list sorted by paid/unpaid (person-level paid info may not exist; group-level fallback)
-            persons = []
-            for p in b.person_details.all():
-                persons.append({
-                    'id': p.id,
-                    'first_name': p.first_name,
-                    'last_name': p.last_name,
-                    'contact_number': getattr(p, 'contact_number', None),
-                    'passport_number': getattr(p, 'passport_number', None),
-                    'ticket_price': float(p.ticket_price or 0),
-                    'is_paid': None,  # per-person payment mapping not tracked here
-                })
+        booking.status = 'Approved'
+        booking.save(update_fields=['status'])
 
-            # sort persons by ticket_price desc (proxy for paid/unpaid grouping) — leave paid flag null
-            persons = sorted(persons, key=lambda x: x.get('ticket_price', 0), reverse=True)
-
-            results.append({
-                'id': b.id,
-                'booking_number': b.booking_number,
-                'invoice_no': b.invoice_no,
-                'customer_name': f"{person.first_name if person else ''} {person.last_name if person else ''}".strip(),
-                'contact_number': getattr(person, 'contact_number', '') if person else '',
-                'payment_status': payment_status,
-                'lead_id': lead_id,
-                'total_amount': total,
-                'paid_amount': paid,
-                'pending_amount': max(0.0, total - paid),
-                'persons': persons,
-                'status': b.status,
-                'created_at': b.created_at,
-            })
-
-        return Response({'count': len(results), 'results': results})
+        return Response({'detail': 'Booking approved successfully', 'status': booking.status})
 
     @action(detail=True, methods=['post'], url_path='confirm')
     def confirm_booking(self, request, pk=None):
@@ -1290,7 +1519,7 @@ class PublicBookingStatusAPIView(APIView):
         if booking.expiry_time and booking.expiry_time < timezone.now():
             return Response({"detail": "Booking expired."}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = PublicBookingSerializer(booking, context={"request": request})
+        serializer = BookingSerializer(booking, context={"request": request})
         return Response(serializer.data)
     
     # The public booking view is read-only for status lookups. Create/update

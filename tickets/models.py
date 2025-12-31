@@ -278,6 +278,53 @@ class HotelCategory(models.Model):
     without needing to change model choice constants.
     """
     name = models.CharField(max_length=100, unique=True)
+
+
+class HotelFloor(models.Model):
+    """
+    Model to store hotel floor information.
+    Allows creating floors before adding rooms.
+    """
+    FLOOR_CHOICES = [
+        ('ground', 'Ground Floor'),
+        ('0', 'Ground Floor'),
+        ('1', '1st Floor'),
+        ('2', '2nd Floor'),
+        ('3', '3rd Floor'),
+        ('4', '4th Floor'),
+        ('5', '5th Floor'),
+        ('6', '6th Floor'),
+        ('7', '7th Floor'),
+        ('8', '8th Floor'),
+        ('9', '9th Floor'),
+        ('10', '10th Floor'),
+        ('basement', 'Basement'),
+    ]
+    
+    hotel = models.ForeignKey(Hotels, on_delete=models.CASCADE, related_name="floors")
+    floor_no = models.CharField(max_length=50, choices=FLOOR_CHOICES)
+    floor_title = models.CharField(max_length=100, blank=True, null=True)
+    map_image = models.ImageField(upload_to='floor_maps/', blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Hotel Floor"
+        verbose_name_plural = "Hotel Floors"
+        unique_together = ['hotel', 'floor_no']
+        ordering = ['hotel', 'floor_no']
+    
+    def __str__(self):
+        return f"{self.hotel.name} - {self.floor_title or f'Floor {self.floor_no}'}"
+
+
+class HotelCategory(models.Model):
+    """
+    Dynamic hotel categories so admins can add/edit/delete categories
+    without needing to change model choice constants.
+    """
+    name = models.CharField(max_length=100, unique=True)
     slug = models.SlugField(max_length=120, unique=True)
     organization = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="hotel_categories", null=True, blank=True
@@ -423,9 +470,17 @@ class HotelRooms(models.Model):
         ('triple', 'Triple'),
         ('quad', 'Quad'),
         ('quint', 'Quint'),
+        ('sharing', 'Sharing'),
         ('suite', 'Suite'),
         ('deluxe', 'Deluxe'),
         ('executive', 'Executive'),
+    ]
+    
+    STATUS_CHOICES = [
+        ('AVAILABLE', 'Available'),
+        ('OCCUPIED', 'Occupied'),
+        ('NEED CLEANING', 'Need Cleaning'),
+        ('UNDER MAINTENANCE', 'Under Maintenance'),
     ]
 
     hotel = models.ForeignKey(Hotels, on_delete=models.PROTECT, related_name="rooms")
@@ -433,6 +488,7 @@ class HotelRooms(models.Model):
     room_type = models.CharField(max_length=50, choices=ROOM_TYPE_CHOICES)
     room_number = models.CharField(max_length=20)
     total_beds = models.IntegerField(default=1)
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='AVAILABLE')
     
     def __str__(self):
         return f"{self.hotel.name} - Room {self.room_number} (Floor {self.floor})"
@@ -445,14 +501,19 @@ class RoomDetails(models.Model):
     """
     Model to store the details of a Hotel Room.
     """
+    
+    STATUS_CHOICES = [
+        ('AVAILABLE', 'Available'),
+        ('OCCUPIED', 'Occupied'),
+    ]
 
     room = models.ForeignKey(HotelRooms, on_delete=models.CASCADE, related_name="details")
     bed_number = models.CharField(max_length=20)
     is_assigned = models.BooleanField(default=False)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='AVAILABLE')
     
     def __str__(self):
-        status = "Assigned" if self.is_assigned else "Available"
-        return f"Bed {self.bed_number} - Room {self.room.room_number} ({status})"
+        return f"Bed {self.bed_number} - Room {self.room.room_number} ({self.status})"
     
     class Meta:
         verbose_name = "Room Detail"

@@ -27,7 +27,7 @@ class Employee(models.Model):
     # Role & Organization
     role = models.CharField(max_length=100, blank=True)
     branch = models.ForeignKey('organization.Branch', on_delete=models.SET_NULL, null=True, blank=True, related_name='employees')
-    commission_group = models.ForeignKey(CommissionGroup, on_delete=models.SET_NULL, null=True, blank=True, related_name='employees')
+    commission_group = models.ForeignKey('commissions.CommissionRule', on_delete=models.SET_NULL, null=True, blank=True, related_name='hr_employees')
     
     # Office Schedule
     check_in_time = models.TimeField(null=True, blank=True, help_text="Expected check-in time")
