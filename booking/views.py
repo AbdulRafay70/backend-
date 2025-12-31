@@ -538,6 +538,7 @@ class PublicBookingCreateAPIView(generics.ListCreateAPIView):
                     agency = org.agencies.first()
                 if not agency and branch:
                     agency = Agency.objects.create(branch=branch, name='Public Agency')
+<<<<<<< HEAD
                 
                 # Get system user
                 User = get_user_model()
@@ -615,6 +616,26 @@ class PublicBookingCreateAPIView(generics.ListCreateAPIView):
                 is_price_pkr=True,
                 riyal_rate=1,
                 total_in_pkr=total_price,
+=======
+            except Exception:
+                agency = None
+
+            booking = Booking.objects.create(
+                user=system_user,
+                organization=org,
+                branch=branch,
+                agency=agency,
+                booking_number=booking_number,
+                total_pax=total_pax,
+                total_adult=data.get('total_adult', 0) or 0,
+                total_child=data.get('total_child', 0) or 0,
+                total_infant=data.get('total_infant', 0) or 0,
+                total_amount=float((pkg.price_per_person or 0) * total_pax),
+                status='Pending',
+                is_public_booking=True,
+                created_by_user_type='customer',
+                umrah_package=pkg,
+>>>>>>> f9cbc8a4bc532ae662e983738af71ee464ed2766
             )
         
         # 2. Create Ticket Details
