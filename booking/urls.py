@@ -6,10 +6,7 @@ from .views import HotelPaxSummaryAPIView, TransportPaxSummaryAPIView, FlightPax
 from .views import PublicBookingCreateAPIView, PublicBookingPaymentCreateAPIView, AdminApprovePaymentAPIView, PublicBookingViewSet
 from .views import get_ticket_price, get_inventory_price  # Import the new views
 from .person_update_view import UpdatePersonDetailView
-<<<<<<< HEAD
 from .daily_operations_view import DailyOperationsAPIView
-=======
->>>>>>> f9cbc8a4bc532ae662e983738af71ee464ed2766
 
 router = DefaultRouter()
 router.register(r'bookings', BookingViewSet, basename='booking')

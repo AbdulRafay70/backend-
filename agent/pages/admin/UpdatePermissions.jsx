@@ -54,7 +54,7 @@ const UpdateGroupPermissions = () => {
         if (!token) throw new Error("Authentication token not available");
 
         const permsRes = await axios.get(
-          "http://127.0.0.1:8000/api/permissions/",
+          "https://api.saer.pk/api/permissions/",
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -144,10 +144,10 @@ const UpdateGroupPermissions = () => {
 
         // Fetch fresh data
         const [groupsRes, permsRes] = await Promise.all([
-          axios.get("http://127.0.0.1:8000/api/groups/", {
+          axios.get("https://api.saer.pk/api/groups/", {
             headers: { Authorization: `Bearer ${token}` },
           }),
-          axios.get("http://127.0.0.1:8000/api/permissions/", {
+          axios.get("https://api.saer.pk/api/permissions/", {
             headers: { Authorization: `Bearer ${token}` },
           })
         ]);
@@ -164,7 +164,7 @@ const UpdateGroupPermissions = () => {
         // Fetch all groups' permissions in parallel
         const permissionsMap = {};
         const permissionRequests = filteredGroups.map(group => 
-          axios.get(`http://127.0.0.1:8000/api/groups/${group.id}/`, {
+          axios.get(`https://api.saer.pk/api/groups/${group.id}/`, {
             headers: { Authorization: `Bearer ${token}` },
           })
         );
@@ -272,7 +272,7 @@ const UpdateGroupPermissions = () => {
       if (!token) throw new Error("Authentication token not available");
 
       const res = await axios.get(
-        `http://127.0.0.1:8000/api/groups/${selectedGroup}/`,
+        `https://api.saer.pk/api/groups/${selectedGroup}/`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const groupData = res.data;
@@ -288,7 +288,7 @@ const UpdateGroupPermissions = () => {
       };
 
       await axios.patch(
-        `http://127.0.0.1:8000/api/groups/${selectedGroup}/`,
+        `https://api.saer.pk/api/groups/${selectedGroup}/`,
         payload,
         {
           headers: {

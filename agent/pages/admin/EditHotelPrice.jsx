@@ -54,7 +54,7 @@ const EditHotelAvailabilityAndPrices = () => {
         const organizationId = orgData?.id;
 
         const response = await axios.get(
-          `http://127.0.0.1:8000/api/hotels/${id}/`,
+          `https://api.saer.pk/api/hotels/${id}/`,
           {
             params: { organization: organizationId },
             headers: {
@@ -460,7 +460,7 @@ const EditHotelAvailabilityAndPrices = () => {
         prices: preparePriceDataForAPI(),
       };
 
-      await axios.patch(`http://127.0.0.1:8000/api/hotels/${id}/`, data, {
+      await axios.patch(`https://api.saer.pk/api/hotels/${id}/`, data, {
         params: { organization: organizationId },
         headers: {
           "Content-Type": "application/json",

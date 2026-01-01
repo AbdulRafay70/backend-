@@ -132,32 +132,11 @@ class PublicTicketSerializer(serializers.ModelSerializer):
 
 
 
-<<<<<<< HEAD
 
 # PublicBookingSerializer removed - using BookingSerializer with custom to_representation in view
 
 
 
-=======
-    class Meta:
-        model = Booking
-        fields = (
-            "booking_number",
-            "public_ref",
-            "creation_date",
-            "person_details",
-            "service_summary",
-            "booking_type",
-            "hotel_details",
-            "transport_details",
-            "ticket_details",
-            "status",
-            "total_paid",
-            "remaining_balance",
-            "uploaded_documents",
-            "status_timeline",
-        )
->>>>>>> f9cbc8a4bc532ae662e983738af71ee464ed2766
 
     def get_service_summary(self, obj):
         # Minimal public-facing summary
@@ -1216,10 +1195,7 @@ class BookingSerializer(serializers.ModelSerializer):
             'customer_contact',
             'customer_email',
             'customer_address',
-<<<<<<< HEAD
             'contact_information',  # Array of contact objects
-=======
->>>>>>> f9cbc8a4bc532ae662e983738af71ee464ed2766
             
             # Other fields
             'call_status',
@@ -1313,11 +1289,8 @@ class BookingSerializer(serializers.ModelSerializer):
         
         # Extract nested data BEFORE validation to handle manually
         # Use None as default to distinguish between "not provided" vs "empty list"
-<<<<<<< HEAD
         self._hotel_details_data = data.pop('hotel_details', None)
         self._transport_details_data = data.pop('transport_details', None)
-=======
->>>>>>> f9cbc8a4bc532ae662e983738af71ee464ed2766
         self._ticket_details_data = data.pop('ticket_details', None)
         self._person_details_data = data.pop('person_details', None)
         self._food_details_data = data.pop('food_details', None)
@@ -1328,13 +1301,10 @@ class BookingSerializer(serializers.ModelSerializer):
         
         # Only add back if explicitly provided (not None)
         # This prevents accidental deletion when updating other fields (e.g., status change)
-<<<<<<< HEAD
         if self._hotel_details_data is not None:
             ret['hotel_details'] = self._hotel_details_data
         if self._transport_details_data is not None:
             ret['transport_details'] = self._transport_details_data
-=======
->>>>>>> f9cbc8a4bc532ae662e983738af71ee464ed2766
         if self._ticket_details_data is not None:
             ret['ticket_details'] = self._ticket_details_data
         if self._person_details_data is not None:
@@ -1380,10 +1350,7 @@ class BookingSerializer(serializers.ModelSerializer):
         person_data = validated_data.pop("person_details", [])
         food_data = validated_data.pop("food_details", [])
         ziarat_data = validated_data.pop("ziyarat_details", [])
-<<<<<<< HEAD
         visa_data = validated_data.pop("visa_details", [])  # Extract visa details
-=======
->>>>>>> f9cbc8a4bc532ae662e983738af71ee464ed2766
         journal_data = validated_data.pop("journal_items", [])
         
         # Map visa prices to person_data by matching passenger names/types
@@ -1662,10 +1629,6 @@ class BookingSerializer(serializers.ModelSerializer):
                         except VehicleType.DoesNotExist:
                             td["vehicle_type"] = None
 
-                # Remove old price fields that no longer exist in the model
-                td.pop("price", None)
-                td.pop("total_price", None)
-
                 # create transport detail
                 transport_detail = BookingTransportDetails.objects.create(
                     booking=booking, **td
@@ -1691,7 +1654,6 @@ class BookingSerializer(serializers.ModelSerializer):
             serializer.save(booking=booking)
 
         # --- Booking-level Food Details ---
-<<<<<<< HEAD
         total_food_pkr = 0
         total_food_sar = 0
         for fd in food_data:
@@ -1722,14 +1684,6 @@ class BookingSerializer(serializers.ModelSerializer):
                 (ticket.child_price or 0) * booking.total_child +
                 (ticket.infant_price or 0) * booking.total_infant
             )
-=======
-        for fd in food_data:
-            BookingFoodDetails.objects.create(booking=booking, **fd)
-
-        # --- Booking-level Ziarat Details ---
-        for zd in ziarat_data:
-            BookingZiyaratDetails.objects.create(booking=booking, **zd)
->>>>>>> f9cbc8a4bc532ae662e983738af71ee464ed2766
 
         # Calculate visa totals from person_details
         total_visa_pkr = 0

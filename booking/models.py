@@ -1998,10 +1998,7 @@ class BookingFoodDetails(models.Model):
     contact_number = models.CharField(max_length=50, null=True, blank=True)
     food_voucher_number = models.CharField(max_length=100, null=True, blank=True)
     food_brn = models.CharField(max_length=100, null=True, blank=True)
-<<<<<<< HEAD
     status = models.CharField(max_length=20, default='Served') # e.g., Pending, Served, Cancelled
-=======
->>>>>>> f9cbc8a4bc532ae662e983738af71ee464ed2766
     
     def __str__(self):
         return f"{self.food} - Booking {self.booking.booking_number}"
@@ -2039,10 +2036,7 @@ class BookingZiyaratDetails(models.Model):
     contact_number = models.CharField(max_length=50, null=True, blank=True)
     ziyarat_voucher_number = models.CharField(max_length=100, null=True, blank=True)
     ziyarat_brn = models.CharField(max_length=100, null=True, blank=True)
-<<<<<<< HEAD
     status = models.CharField(max_length=20, default='Pending') # e.g., Pending, Started, Completed, Canceled
-=======
->>>>>>> f9cbc8a4bc532ae662e983738af71ee464ed2766
     
     def __str__(self):
         return f"{self.ziarat} - Booking {self.booking.booking_number}"

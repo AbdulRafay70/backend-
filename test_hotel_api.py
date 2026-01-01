@@ -208,15 +208,15 @@ def show_sample_curl_commands():
     
     print("""
 # 1. Get all hotels
-curl -X GET "http://127.0.0.1:8000/api/hotels/" \\
+curl -X GET "https://api.saer.pk/api/hotels/" \\
   -H "Authorization: Token YOUR_TOKEN_HERE"
 
 # 2. Get hotels for specific organization
-curl -X GET "http://127.0.0.1:8000/api/hotels/?organization=11" \\
+curl -X GET "https://api.saer.pk/api/hotels/?organization=11" \\
   -H "Authorization: Token YOUR_TOKEN_HERE"
 
 # 3. Create a new hotel
-curl -X POST "http://127.0.0.1:8000/api/hotels/" \\
+curl -X POST "https://api.saer.pk/api/hotels/" \\
   -H "Authorization: Token YOUR_TOKEN_HERE" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -244,11 +244,11 @@ curl -X POST "http://127.0.0.1:8000/api/hotels/" \\
   }'
 
 # 4. Get single hotel by ID
-curl -X GET "http://127.0.0.1:8000/api/hotels/23/" \\
+curl -X GET "https://api.saer.pk/api/hotels/23/" \\
   -H "Authorization: Token YOUR_TOKEN_HERE"
 
 # 5. Update hotel
-curl -X PATCH "http://127.0.0.1:8000/api/hotels/23/" \\
+curl -X PATCH "https://api.saer.pk/api/hotels/23/" \\
   -H "Authorization: Token YOUR_TOKEN_HERE" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -257,7 +257,7 @@ curl -X PATCH "http://127.0.0.1:8000/api/hotels/23/" \\
   }'
 
 # 6. Delete hotel (soft delete - sets is_active=false)
-curl -X DELETE "http://127.0.0.1:8000/api/hotels/23/" \\
+curl -X DELETE "https://api.saer.pk/api/hotels/23/" \\
   -H "Authorization: Token YOUR_TOKEN_HERE"
 """)
 

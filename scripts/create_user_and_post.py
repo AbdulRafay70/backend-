@@ -17,7 +17,7 @@ except User.DoesNotExist:
     print('Created superuser:', username)
 
 # Obtain JWT token
-token_url='http://127.0.0.1:8000/api/token/'
+token_url='https://api.saer.pk/api/token/'
 resp = requests.post(token_url, json={'username':username,'password':password})
 print('token status', resp.status_code)
 try:
@@ -32,7 +32,7 @@ if not tokens or 'access' not in tokens:
 else:
     access = tokens['access']
     # Now post hotel using access token
-    url='http://127.0.0.1:8000/api/hotels/'
+    url='https://api.saer.pk/api/hotels/'
     payload={
      'name':'FrontendAuthenticatedTest',
      'address':'addr',

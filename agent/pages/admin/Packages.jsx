@@ -130,7 +130,7 @@ const UmrahPackage = () => {
             const decoded = jwtDecode(token);
             const userId = decoded.user_id || decoded.id;
 
-            const userRes = await axios.get(`http://127.0.0.1:8000/api/users/${userId}/`, {
+            const userRes = await axios.get(`https://api.saer.pk/api/users/${userId}/`, {
               headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
@@ -155,28 +155,28 @@ const UmrahPackage = () => {
 
         const [packageRes, hotelsRes, ticketsRes, airlinesRes] =
           await Promise.all([
-            axios.get("http://127.0.0.1:8000/api/umrah-packages/", {
+            axios.get("https://api.saer.pk/api/umrah-packages/", {
               params: { organization: orgId, include_past: filters.includePast ? true : undefined },
               headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
               },
             }),
-            axios.get("http://127.0.0.1:8000/api/hotels/", {
+            axios.get("https://api.saer.pk/api/hotels/", {
               params: { organization: orgId },
               headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
               },
             }),
-            axios.get("http://127.0.0.1:8000/api/tickets/", {
+            axios.get("https://api.saer.pk/api/tickets/", {
               params: { organization: orgId },
               headers: {
                 Authorization: `Bearer ${token}`,
                 "Content-Type": "application/json",
               },
             }),
-            axios.get("http://127.0.0.1:8000/api/airlines/", {
+            axios.get("https://api.saer.pk/api/airlines/", {
               params: { organization: orgId },
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -370,7 +370,7 @@ const UmrahPackage = () => {
 
     try {
       await axios.delete(
-        `http://127.0.0.1:8000/api/umrah-packages/${packageId}/`,
+        `https://api.saer.pk/api/umrah-packages/${packageId}/`,
         {
           params: { organization: organizationId },
           headers: {

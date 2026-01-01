@@ -61,7 +61,7 @@ Condition 2: Individual Passenger visa_status = "Approved"
 ```javascript
 // API filters bookings by status
 const response = await fetch(
-  `http://127.0.0.1:8000/api/bookings/?organization=${organizationId}&status=Approved`
+  `https://api.saer.pk/api/bookings/?organization=${organizationId}&status=Approved`
 );
 
 // Code filters passengers by visa status
@@ -849,7 +849,7 @@ Fetches all approved bookings in one request instead of multiple calls
 ```javascript
 // ✅ Good: Single call
 const response = await fetch(
-  `http://127.0.0.1:8000/api/bookings/?organization=${organizationId}&status=Approved`
+  `https://api.saer.pk/api/bookings/?organization=${organizationId}&status=Approved`
 );
 
 // ❌ Bad: Multiple calls
@@ -1086,7 +1086,7 @@ const statusOptions = [
 ### **API Endpoints Configuration**
 
 ```javascript
-const API_BASE_URL = "http://127.0.0.1:8000/api";
+const API_BASE_URL = "https://api.saer.pk/api";
 
 const ENDPOINTS = {
   bookings: `${API_BASE_URL}/bookings/`,

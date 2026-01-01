@@ -88,12 +88,12 @@ const EditHotelDetail = () => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const hotelResponse = await axios.get(`http://127.0.0.1:8000/api/hotels/${id}/`, {
+        const hotelResponse = await axios.get(`https://api.saer.pk/api/hotels/${id}/`, {
           params: { organization: organizationId },
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        const allHotelsResponse = await axios.get("http://127.0.0.1:8000/api/hotels/", {
+        const allHotelsResponse = await axios.get("https://api.saer.pk/api/hotels/", {
           params: { organization: organizationId },
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -133,7 +133,7 @@ const EditHotelDetail = () => {
     const fetchCities = async () => {
       try {
         const response = await axios.get(
-          `http://127.0.0.1:8000/api/cities/?organization=${organizationId}`,
+          `https://api.saer.pk/api/cities/?organization=${organizationId}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -183,7 +183,7 @@ const EditHotelDetail = () => {
         organization: organizationId,
       };
 
-      await axios.patch(`http://127.0.0.1:8000/api/hotels/${id}/`, patchData, {
+      await axios.patch(`https://api.saer.pk/api/hotels/${id}/`, patchData, {
         params: { organization: organizationId },
         headers: {
           Authorization: `Bearer ${token}`,

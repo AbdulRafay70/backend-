@@ -116,14 +116,14 @@ const AgencyRelations = () => {
     try {
       // First get the agency details to find the associated user
       const agencyResponse = await axios.get(
-        `http://127.0.0.1:8000/api/agencies/${agencyId}/`,
+        `https://api.saer.pk/api/agencies/${agencyId}/`,
         axiosConfig
       );
 
       // Then get the user details if available
       if (agencyResponse.data.user) {
         const userResponse = await axios.get(
-          `http://127.0.0.1:8000/api/users/${agencyResponse.data.user}/`,
+          `https://api.saer.pk/api/users/${agencyResponse.data.user}/`,
           axiosConfig
         );
 
@@ -212,12 +212,12 @@ const AgencyRelations = () => {
 
       if (editingId) {
         await axios.put(
-          `http://127.0.0.1:8000/api/agencies/${editingId}/`,
+          `https://api.saer.pk/api/agencies/${editingId}/`,
           formData,
           config
         );
       } else {
-        await axios.post("http://127.0.0.1:8000/api/agencies/", formData, config);
+        await axios.post("https://api.saer.pk/api/agencies/", formData, config);
       }
 
       localStorage.removeItem(AGENCIES_CACHE_KEY);
@@ -247,7 +247,7 @@ const AgencyRelations = () => {
         setAgencies(JSON.parse(cachedData));
       } else {
         const response = await axios.get(
-          "http://127.0.0.1:8000/api/agencies/",
+          "https://api.saer.pk/api/agencies/",
           axiosConfig
         );
         const data = response.data || [];
@@ -271,7 +271,7 @@ const AgencyRelations = () => {
   const fetchAgencyDetails = async (id) => {
     try {
       const response = await axios.get(
-        `http://127.0.0.1:8000/api/agencies/${id}/`,
+        `https://api.saer.pk/api/agencies/${id}/`,
         axiosConfig
       );
       if (response.data.contacts) {
@@ -437,7 +437,7 @@ const AgencyRelations = () => {
     setIsSubmitting(true);
     try {
       await axios.patch(
-        `http://127.0.0.1:8000/api/agencies/${currentAgencyId}/`,
+        `https://api.saer.pk/api/agencies/${currentAgencyId}/`,
         { contacts: contentForm.contacts },
         axiosConfig
       );
@@ -465,7 +465,7 @@ const AgencyRelations = () => {
       setIsLoading(true);
       try {
         await axios.delete(
-          `http://127.0.0.1:8000/api/agencies/${id}/`,
+          `https://api.saer.pk/api/agencies/${id}/`,
           axiosConfig
         );
 

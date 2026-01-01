@@ -5,7 +5,7 @@ Check how the API returns booking data
 import requests
 
 # Test API endpoint
-url = "http://127.0.0.1:8000/api/bookings/?organization=11&status=Approved"
+url = "https://api.saer.pk/api/bookings/?organization=11&status=Approved"
 
 try:
     response = requests.get(url, headers={

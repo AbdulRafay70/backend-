@@ -219,11 +219,7 @@ Authorization: Bearer YOUR_JWT_TOKEN
 
 **Swagger UI:** `http://127.0.0.1:8000/swagger/`  
 **ReDoc:** `http://127.0.0.1:8000/redoc/`  
-<<<<<<< HEAD
-**OpenAPI Schema:** `http://127.0.0.1:8000/api/schema/`
-=======
-**OpenAPI Schema:** `http://127.0.0.1:8000/api/schema/`
->>>>>>> f9cbc8a4bc532ae662e983738af71ee464ed2766
+**OpenAPI Schema:** `https://api.saer.pk/api/schema/`
 
 ### Swagger Tags
 
@@ -277,40 +273,40 @@ QUICK_REFERENCE.md (this file)
 
 ```bash
 # Create form
-curl -X POST http://127.0.0.1:8000/api/forms/ \
+curl -X POST https://api.saer.pk/api/forms/ \
   -H "Authorization: Bearer TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"form_title": "Test Form", "fields": [...], "status": "active"}'
 
 # Submit form (public)
-curl -X POST http://127.0.0.1:8000/api/forms/test-form-abc123/submit/ \
+curl -X POST https://api.saer.pk/api/forms/test-form-abc123/submit/ \
   -H "Content-Type: application/json" \
   -d '{"full_name": "Test User", "contact_number": "+923001234567"}'
 
 # List forms
-curl http://127.0.0.1:8000/api/forms/ \
+curl https://api.saer.pk/api/forms/ \
   -H "Authorization: Bearer TOKEN"
 ```
 
 ### Test Public Booking Status
 
 ```bash
-curl http://127.0.0.1:8000/api/public/booking-status/SAER-BK-2024-001234/
+curl https://api.saer.pk/api/public/booking-status/SAER-BK-2024-001234/
 ```
 
 ### Test Pax Movement
 
 ```bash
 # Summary
-curl http://127.0.0.1:8000/api/pax-movements/summary/ \
+curl https://api.saer.pk/api/pax-movements/summary/ \
   -H "Authorization: Bearer TOKEN"
 
 # Current status
-curl http://127.0.0.1:8000/api/pax-movements/current-status/ \
+curl https://api.saer.pk/api/pax-movements/current-status/ \
   -H "Authorization: Bearer TOKEN"
 
 # Timeline
-curl "http://127.0.0.1:8000/api/pax-movements/timeline/?days=30" \
+curl "https://api.saer.pk/api/pax-movements/timeline/?days=30" \
   -H "Authorization: Bearer TOKEN"
 ```
 
@@ -343,7 +339,7 @@ pm2 restart all
 curl http://127.0.0.1:8000/swagger/
 
 # 5. Test public endpoints
-curl http://127.0.0.1:8000/api/forms/by-url/?url=/forms/test
+curl https://api.saer.pk/api/forms/by-url/?url=/forms/test
 ```
 
 ### Post-Deployment

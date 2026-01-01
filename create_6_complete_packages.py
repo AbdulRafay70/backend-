@@ -330,7 +330,7 @@ for idx, config in enumerate(packages_config):
     }
     
     # Make API request
-    url = 'http://127.0.0.1:8000/api/umrah-packages/'
+    url = 'https://api.saer.pk/api/umrah-packages/'
     headers = {
         'Authorization': f'Bearer {access_token}',
         'Content-Type': 'application/json',
