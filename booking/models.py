@@ -859,7 +859,7 @@ class BookingTicketDetails(models.Model):
     booking = models.ForeignKey(
         Booking, on_delete=models.CASCADE, related_name="ticket_details"
     )
-    ticket = models.ForeignKey("tickets.Ticket", on_delete=models.PROTECT)
+    ticket = models.ForeignKey("tickets.Ticket", on_delete=models.PROTECT, null=True, blank=True)
     is_meal_included = models.BooleanField(default=False)
     is_refundable = models.BooleanField(default=False)
     pnr = models.CharField(max_length=100)
@@ -870,9 +870,9 @@ class BookingTicketDetails(models.Model):
     weight = models.FloatField(default=0)
     pieces = models.IntegerField(default=0)
     is_umrah_seat = models.BooleanField(default=False)
-    trip_type = models.CharField(max_length=50)
-    departure_stay_type = models.CharField(max_length=50)
-    return_stay_type = models.CharField(max_length=50)
+    trip_type = models.CharField(max_length=50, null=True, blank=True)
+    departure_stay_type = models.CharField(max_length=50, null=True, blank=True)
+    return_stay_type = models.CharField(max_length=50, null=True, blank=True)
     status = models.CharField(max_length=50, blank=True, null=True)
     # is_price_pkr= models.BooleanField(default=True)
     # riyal_rate = models.FloatField(default=0)
