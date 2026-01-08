@@ -82,10 +82,10 @@ def create_org_for_user(instance: User):
 
 
 
-@receiver(post_save, sender=User)
-def create_organization_for_new_user(sender, instance: User, created: bool, **kwargs):
-    # only act when a user is newly created
-    if not created:
-        return
+# @receiver(post_save, sender=User)
+# def create_organization_for_new_user(sender, instance: User, created: bool, **kwargs):
+#     # only act when a user is newly created
+#     if not created:
+#         return
 
-    create_org_for_user(instance)
+#     create_org_for_user(instance)

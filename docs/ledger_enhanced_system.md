@@ -308,31 +308,31 @@ def create_ledger_entry(booking):
 
 ### Get all organization transactions
 ```bash
-curl -X GET "https://api.saer.pk/api/ledger/organization/11/" \
+curl -X GET "http://127.0.0.1:8000/api/ledger/organization/11/" \
   -H "Authorization: Token YOUR_TOKEN"
 ```
 
 ### Get branch ledger
 ```bash
-curl -X GET "https://api.saer.pk/api/ledger/branch/5/" \
+curl -X GET "http://127.0.0.1:8000/api/ledger/branch/5/" \
   -H "Authorization: Token YOUR_TOKEN"
 ```
 
 ### Get agency ledger
 ```bash
-curl -X GET "https://api.saer.pk/api/ledger/agency/25/" \
+curl -X GET "http://127.0.0.1:8000/api/ledger/agency/25/" \
   -H "Authorization: Token YOUR_TOKEN"
 ```
 
 ### Get area agency ledger
 ```bash
-curl -X GET "https://api.saer.pk/api/ledger/area-agency/8/" \
+curl -X GET "http://127.0.0.1:8000/api/ledger/area-agency/8/" \
   -H "Authorization: Token YOUR_TOKEN"
 ```
 
 ### Get inter-organization ledger
 ```bash
-curl -X GET "https://api.saer.pk/api/ledger/org-to-org/11/15/" \
+curl -X GET "http://127.0.0.1:8000/api/ledger/org-to-org/11/15/" \
   -H "Authorization: Token YOUR_TOKEN"
 ```
 

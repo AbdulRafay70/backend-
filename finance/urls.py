@@ -17,6 +17,8 @@ urlpatterns = [
     path("reports/fbr/summary/csv", views.report_fbr_summary_csv, name="report-fbr-summary-csv"),
     path("api/finance/dashboard/period", views.dashboard_period, name="dashboard-period"),
     path("api/finance/dashboard", views.compact_dashboard, name="dashboard-compact"),
+    path("api/finance/balance-sheet", views.balance_sheet, name="balance-sheet"),
+    path("api/finance/audit-trail", views.audit_trail, name="audit-trail"),
     
     # 📊 Reports Module API Endpoints
     path("api/v1/reports/sales-summary/", reports_views.sales_summary_report, name="sales-summary"),

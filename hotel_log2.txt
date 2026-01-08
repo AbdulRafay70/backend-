@@ -1,0 +1,47 @@
+﻿python : E:\New 
+folder\backend\.venv\Lib\site-packages\rest_framework_simplejwt\__init__.py:1: 
+UserWarning: pkg_resources is deprecated as an API. See 
+https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is 
+slated for removal as early as 2025-11-30. Refrain from using this package or pin to 
+Setuptools<81.
+At line:1 char:1
++ python populate_hotels_complete.py 2>&1 | Out-File -FilePath hotel_lo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (E:\New folder\b... Setuptools<81.:String) 
+    [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  from pkg_resources import DistributionNotFound, get_distribution
+E:\New folder\backend\.venv\Lib\site-packages\django\db\models\base.py:366: 
+RuntimeWarning: Model 'tickets.hotelcategory' was already registered. Reloading models 
+is not advised as it can lead to inconsistencies, most notably with related models.
+  new_class._meta.apps.register_model(new_class._meta.app_label, new_class)
+================================================================================
+COMPREHENSIVE HOTEL DATA POPULATION
+================================================================================
+
+Traceback (most recent call last):
+  File "E:\New folder\backend\populate_hotels_complete.py", line 31, in <module>
+    print(f"\u2705 Using organization: {org.name} (ID: {org.id})")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File 
+"C:\Users\abdul\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 
+19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u2705' in position 0: 
+character maps to <undefined>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "E:\New folder\backend\populate_hotels_complete.py", line 33, in <module>
+    print(f"\u274c Error: {e}")
+    ~~~~~^^^^^^^^^^^^^^^^^^
+  File 
+"C:\Users\abdul\AppData\Local\Programs\Python\Python313\Lib\encodings\cp1252.py", line 
+19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u274c' in position 0: 
+character maps to <undefined>

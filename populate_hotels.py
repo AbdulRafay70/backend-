@@ -1,336 +1,357 @@
 """
-Script to populate the database with hotels in Saudi Arabia and Dubai,
-including hotel categories, bed types (1-10 persons), and hotel prices
-for different date ranges.
+Script to populate the database with luxury hotels including detailed pricing.
+This will add 10 hotels with multiple price dates and room configurations (1-10 bed types).
+
+Usage: python populate_hotels.py
 """
+
 import os
 import django
+import sys
 from datetime import datetime, timedelta
 from decimal import Decimal
+import random
 
+# Setup Django environment
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'configuration.settings')
 django.setup()
 
-from django.utils import timezone
-from tickets.models import Hotels, HotelCategory, BedType, HotelPrices
+from tickets.models import Hotels, HotelPrices, HotelContactDetails, HotelPhoto
 from packages.models import City
 from organization.models import Organization
 
-# Get organization 11
-org = Organization.objects.get(id=11)
-
-print("="*80)
-print("CREATING HOTEL DATA FOR ORGANIZATION 11")
-print("="*80)
-
-# Create cities for Saudi Arabia and Dubai
-print("\n1. Creating cities...")
-cities_data = [
-    {'code': 'MKH', 'name': 'Makkah'},
-    {'code': 'MDN', 'name': 'Madinah'},
-    {'code': 'JED', 'name': 'Jeddah'},
-    {'code': 'RYD', 'name': 'Riyadh'},
-    {'code': 'DXB', 'name': 'Dubai'},
-]
-
-cities = {}
-for city_data in cities_data:
-    city = City.objects.filter(organization=org, code=city_data['code']).first()
-    if not city:
-        city = City.objects.create(organization=org, **city_data)
-        print(f"   Created city: {city_data['name']}")
-    else:
-        print(f"   Found city: {city_data['name']}")
-    cities[city_data['code']] = city
-
-# Create hotel categories
-print("\n2. Creating hotel categories...")
-categories_data = [
-    {'name': '3 Star', 'slug': '3-star'},
-    {'name': '4 Star', 'slug': '4-star'},
-    {'name': '5 Star', 'slug': '5-star'},
-    {'name': 'Budget', 'slug': 'budget'},
-    {'name': 'Luxury', 'slug': 'luxury'},
-    {'name': 'Premium', 'slug': 'premium'},
-]
-
-categories = {}
-for cat_data in categories_data:
-    cat = HotelCategory.objects.filter(organization=org, slug=cat_data['slug']).first()
-    if not cat:
-        cat = HotelCategory.objects.create(organization=org, **cat_data)
-        print(f"   Created category: {cat_data['name']}")
-    else:
-        print(f"   Found category: {cat_data['name']}")
-    categories[cat_data['slug']] = cat
-
-# Create bed types from 1 to 10 persons
-print("\n3. Creating bed types (1-10 persons)...")
-bed_types = {}
-bed_type_names = {
-    1: 'Single',
-    2: 'Double',
-    3: 'Triple',
-    4: 'Quad',
-    5: 'Quint',
-    6: 'Six Bed',
-    7: 'Seven Bed',
-    8: 'Eight Bed',
-    9: 'Nine Bed',
-    10: 'Ten Bed'
-}
-
-for capacity, name in bed_type_names.items():
-    slug = name.lower().replace(' ', '-')
-    bed_type = BedType.objects.filter(organization=org, slug=slug).first()
-    if not bed_type:
-        bed_type = BedType.objects.create(
-            organization=org,
-            name=name,
-            slug=slug,
-            capacity=capacity
+def get_organization():
+    """Get the first organization or create one"""
+    org = Organization.objects.first()
+    if not org:
+        print("No organization found. Creating a default organization...")
+        org = Organization.objects.create(
+            name="Default Organization",
+            email="default@example.com",
+            phone_number="+923001234567",
+            address="Default Address"
         )
-        print(f"   Created bed type: {name} ({capacity} person)")
+        print(f"Created organization: {org.name}")
     else:
-        print(f"   Found bed type: {name} ({capacity} person)")
-    bed_types[capacity] = bed_type
+        print(f"Using organization: {org.name} (ID: {org.id})")
+    return org
 
-# Create hotels in Saudi Arabia
-print("\n4. Creating hotels in Saudi Arabia...")
-saudi_hotels_data = [
-    {
-        'name': 'Makkah Grand Hotel',
-        'city': 'MKH',
-        'category': '5-star',
-        'star_rating': 5,
-        'distance': 0.5,
-        'walking_time': 10
-    },
-    {
-        'name': 'Al Safwah Royale Orchid',
-        'city': 'MKH',
-        'category': 'luxury',
-        'star_rating': 5,
-        'distance': 0.3,
-        'walking_time': 5
-    },
-    {
-        'name': 'Makkah Clock Tower',
-        'city': 'MKH',
-        'category': 'premium',
-        'star_rating': 5,
-        'distance': 0.1,
-        'walking_time': 2
-    },
-    {
-        'name': 'Madinah Hilton',
-        'city': 'MDN',
-        'category': '5-star',
-        'star_rating': 5,
-        'distance': 0.8,
-        'walking_time': 15
-    },
-    {
-        'name': 'Al Madinah Harmony Hotel',
-        'city': 'MDN',
-        'category': '4-star',
-        'star_rating': 4,
-        'distance': 1.2,
-        'walking_time': 20
-    },
-    {
-        'name': 'Jeddah Marriott',
-        'city': 'JED',
-        'category': '5-star',
-        'star_rating': 5,
-        'distance': 5.0,
-        'walking_time': None
-    },
-    {
-        'name': 'Riyadh Palace Hotel',
-        'city': 'RYD',
-        'category': '4-star',
-        'star_rating': 4,
-        'distance': 10.0,
-        'walking_time': None
-    },
-]
-
-# Create hotels in Dubai
-print("\n5. Creating hotels in Dubai...")
-dubai_hotels_data = [
-    {
-        'name': 'Burj Al Arab',
-        'city': 'DXB',
-        'category': 'luxury',
-        'star_rating': 5,
-        'distance': 15.0,
-        'walking_time': None
-    },
-    {
-        'name': 'Atlantis The Palm',
-        'city': 'DXB',
-        'category': 'luxury',
-        'star_rating': 5,
-        'distance': 20.0,
-        'walking_time': None
-    },
-    {
-        'name': 'Dubai Marina Hotel',
-        'city': 'DXB',
-        'category': '4-star',
-        'star_rating': 4,
-        'distance': 12.0,
-        'walking_time': None
-    },
-    {
-        'name': 'Dubai Budget Inn',
-        'city': 'DXB',
-        'category': 'budget',
-        'star_rating': 3,
-        'distance': 25.0,
-        'walking_time': None
-    },
-]
-
-all_hotels_data = saudi_hotels_data + dubai_hotels_data
-hotels = []
-
-for hotel_data in all_hotels_data:
-    city = cities[hotel_data['city']]
-    category = categories[hotel_data['category']]
+def get_or_create_cities(org):
+    """Get existing cities or create them"""
+    cities_data = [
+        {"name": "Makkah", "code": "MAK"},
+        {"name": "Madinah", "code": "MED"},
+        {"name": "Jeddah", "code": "JED"},
+        {"name": "Dubai", "code": "DXB"},
+    ]
     
-    hotel = Hotels.objects.filter(
-        organization=org,
-        name=hotel_data['name'],
-        city=city
-    ).first()
+    cities = {}
+    for city_data in cities_data:
+        city, created = City.objects.get_or_create(
+            organization=org,
+            code=city_data["code"],
+            defaults={'name': city_data["name"]}
+        )
+        cities[city_data["code"]] = city
     
-    if not hotel:
-        # Map category slug to CATEGORY_CHOICES value
-        category_map = {
-            '5-star': '5_star',
-            '4-star': '4_star',
-            '3-star': '3_star',
-            'luxury': 'luxury',
-            'premium': 'deluxe',
-            'budget': 'budget'
-        }
+    return cities
+
+def create_hotels_with_pricing(org, cities):
+    """Create 10 luxury hotels with detailed pricing"""
+    print("\n🏨 Creating Luxury Hotels with Detailed Pricing...")
+    
+    # Define hotels with their details
+    hotels_data = [
+        {
+            "name": "Burj Al Arab",
+            "city_code": "DXB",
+            "category": "luxury",
+            "address": "Jumeirah Beach Road, Dubai, UAE",
+            "distance": 0.5,
+            "walking_distance": 500,
+            "walking_time": 10,
+            "google_location": "https://maps.google.com/?q=Burj+Al+Arab",
+            "contact": [
+                {"person": "Ahmed Hassan", "number": "+971-4-301-7777"},
+                {"person": "Fatima Ali", "number": "+971-4-301-7778"}
+            ],
+            "base_price_range": (80000, 150000),  # PKR per night
+        },
+        {
+            "name": "Burj Khalifa View Hotel",
+            "city_code": "DXB",
+            "category": "5_star",
+            "address": "Downtown Dubai, near Burj Khalifa, UAE",
+            "distance": 0.3,
+            "walking_distance": 300,
+            "walking_time": 5,
+            "google_location": "https://maps.google.com/?q=Burj+Khalifa",
+            "contact": [
+                {"person": "Mohammed Abdullah", "number": "+971-4-888-3888"}
+            ],
+            "base_price_range": (60000, 120000),
+        },
+        {
+            "name": "Swissotel Makkah",
+            "city_code": "MAK",
+            "category": "5_star",
+            "address": "Ibrahim Al Khalil Street, Makkah, Saudi Arabia",
+            "distance": 0.2,
+            "walking_distance": 200,
+            "walking_time": 3,
+            "google_location": "https://maps.google.com/?q=Swissotel+Makkah",
+            "contact": [
+                {"person": "Abdullah Khan", "number": "+966-12-577-0000"},
+                {"person": "Bilal Ahmed", "number": "+966-12-577-0001"}
+            ],
+            "base_price_range": (50000, 100000),
+        },
+        {
+            "name": "Hilton Makkah Convention Hotel",
+            "city_code": "MAK",
+            "category": "5_star",
+            "address": "Jabal Omar, King Abdul Aziz Road, Makkah",
+            "distance": 0.4,
+            "walking_distance": 400,
+            "walking_time": 7,
+            "google_location": "https://maps.google.com/?q=Hilton+Makkah",
+            "contact": [
+                {"person": "Usman Farooq", "number": "+966-12-556-9000"}
+            ],
+            "base_price_range": (45000, 95000),
+        },
+        {
+            "name": "Pullman ZamZam Makkah",
+            "city_code": "MAK",
+            "category": "5_star",
+            "address": "Abraj Al Bait Complex, Makkah",
+            "distance": 0.05,
+            "walking_distance": 50,
+            "walking_time": 1,
+            "google_location": "https://maps.google.com/?q=Pullman+ZamZam+Makkah",
+            "contact": [
+                {"person": "Hamza Sheikh", "number": "+966-12-563-5666"},
+                {"person": "Zubair Ahmad", "number": "+966-12-563-5667"}
+            ],
+            "base_price_range": (70000, 130000),
+        },
+        {
+            "name": "Madinah Hilton Hotel",
+            "city_code": "MED",
+            "category": "5_star",
+            "address": "King Fahd Road, Madinah, Saudi Arabia",
+            "distance": 0.3,
+            "walking_distance": 300,
+            "walking_time": 5,
+            "google_location": "https://maps.google.com/?q=Madinah+Hilton",
+            "contact": [
+                {"person": "Hassan Ali", "number": "+966-14-838-8888"}
+            ],
+            "base_price_range": (40000, 85000),
+        },
+        {
+            "name": "Sheraton Madinah Hotel",
+            "city_code": "MED",
+            "category": "4_star",
+            "address": "Al Madinah Al Munawarah, Madinah",
+            "distance": 0.6,
+            "walking_distance": 600,
+            "walking_time": 10,
+            "google_location": "https://maps.google.com/?q=Sheraton+Madinah",
+            "contact": [
+                {"person": "Imran Malik", "number": "+966-14-822-2222"}
+            ],
+            "base_price_range": (35000, 75000),
+        },
+        {
+            "name": "Dar Al Eiman Royal Hotel",
+            "city_code": "MAK",
+            "category": "4_star",
+            "address": "Ajyad Street, Makkah, Saudi Arabia",
+            "distance": 0.35,
+            "walking_distance": 350,
+            "walking_time": 6,
+            "google_location": "https://maps.google.com/?q=Dar+Al+Eiman+Makkah",
+            "contact": [
+                {"person": "Tariq Jameel", "number": "+966-12-565-5555"}
+            ],
+            "base_price_range": (30000, 65000),
+        },
+        {
+            "name": "Elaf Kinda Hotel",
+            "city_code": "MAK",
+            "category": "3_star",
+            "address": "Kudai Area, Makkah, Saudi Arabia",
+            "distance": 0.8,
+            "walking_distance": 800,
+            "walking_time": 12,
+            "google_location": "https://maps.google.com/?q=Elaf+Kinda+Makkah",
+            "contact": [
+                {"person": "Yasir Abbas", "number": "+966-12-545-4545"}
+            ],
+            "base_price_range": (25000, 55000),
+        },
+        {
+            "name": "Taiba Front Hotel",
+            "city_code": "MED",
+            "category": "3_star",
+            "address": "Al Haram Road, Madinah, Saudi Arabia",
+            "distance": 0.5,
+            "walking_distance": 500,
+            "walking_time": 8,
+            "google_location": "https://maps.google.com/?q=Taiba+Madinah",
+            "contact": [
+                {"person": "Saeed Rahman", "number": "+966-14-826-6666"}
+            ],
+            "base_price_range": (20000, 50000),
+        },
+    ]
+    
+    # Room types with their typical capacities and price multipliers
+    room_types = [
+        {"type": "room", "capacity": 1, "multiplier": 2.5},  # Standard room price
+        {"type": "sharing", "capacity": 8, "multiplier": 1.0},
+        {"type": "quint", "capacity": 5, "multiplier": 1.3},
+        {"type": "quad", "capacity": 4, "multiplier": 1.5},
+        {"type": "triple", "capacity": 3, "multiplier": 1.8},
+        {"type": "double", "capacity": 2, "multiplier": 2.2},
+        {"type": "single", "capacity": 1, "multiplier": 3.0},
+        {"type": "6-bed", "capacity": 6, "multiplier": 1.1},
+        {"type": "7-bed", "capacity": 7, "multiplier": 1.05},
+        {"type": "8-bed", "capacity": 8, "multiplier": 1.0},
+        {"type": "9-bed", "capacity": 9, "multiplier": 0.95},
+        {"type": "10-bed", "capacity": 10, "multiplier": 0.9},
+        {"type": "suite", "capacity": 2, "multiplier": 4.0},
+    ]
+    
+    hotel_count = 0
+    price_count = 0
+    
+    for hotel_data in hotels_data:
+        city = cities.get(hotel_data["city_code"])
+        if not city:
+            continue
         
+        # Create hotel with availability dates and contact
         hotel = Hotels.objects.create(
             organization=org,
-            name=hotel_data['name'],
+            owner_organization_id=org.id,
+            name=hotel_data["name"],
             city=city,
-            category=category_map.get(hotel_data['category'], 'standard'),
-            address=f"{hotel_data['name']}, {city.name}",
-            distance=hotel_data['distance'],
-            walking_time=hotel_data['walking_time'] if hotel_data['walking_time'] else 0,
-            status='active'
+            address=hotel_data["address"],
+            google_location=hotel_data["google_location"],
+            contact_number=hotel_data["contact"][0]["number"],  # Primary contact
+            category=hotel_data["category"],
+            distance=hotel_data["distance"],
+            walking_distance=hotel_data["walking_distance"],
+            walking_time=hotel_data["walking_time"],
+            available_start_date=datetime.now().date(),
+            available_end_date=(datetime.now() + timedelta(days=365)).date(),  # Available for 1 year
+            is_active=True,
+            reselling_allowed=True,
+            status='active',
         )
-        print(f"   Created hotel: {hotel_data['name']} in {city.name}")
-    else:
-        print(f"   Found hotel: {hotel_data['name']} in {city.name}")
-    
-    hotels.append(hotel)
-
-# Create hotel prices for different date ranges and all bed types
-print("\n6. Creating hotel prices for all bed types (1-10 persons)...")
-print("   This will create prices for 3 different date ranges per hotel...")
-
-today = timezone.now().date()
-date_ranges = [
-    {
-        'name': 'Current Season',
-        'check_in': today,
-        'check_out': today + timedelta(days=90),
-        'price_multiplier': 1.0
-    },
-    {
-        'name': 'Peak Season',
-        'check_in': today + timedelta(days=91),
-        'check_out': today + timedelta(days=180),
-        'price_multiplier': 1.5
-    },
-    {
-        'name': 'Off Season',
-        'check_in': today + timedelta(days=181),
-        'check_out': today + timedelta(days=365),
-        'price_multiplier': 0.8
-    },
-]
-
-prices_created = 0
-
-for hotel in hotels:
-    # Base price depends on hotel category
-    category_prices = {
-        '5_star': 10000,
-        '4_star': 8000,
-        '3_star': 6000,
-        'luxury': 15000,
-        'deluxe': 12000,
-        'budget': 4000,
-        'standard': 5000
-    }
-    
-    base_price = category_prices.get(hotel.category, 5000)
-    
-    for date_range in date_ranges:
-        # Map bed type capacity to room_type choices
-        room_type_map = {
-            1: 'single',
-            2: 'double',
-            3: 'triple',
-            4: 'quad',
-            5: 'quint',
-            6: '6-bed',
-            7: '7-bed',
-            8: '8-bed',
-            9: '9-bed',
-            10: '10-bed'
-        }
         
-        for capacity, bed_type in bed_types.items():
-            room_type = room_type_map.get(capacity, 'room')
-            
-            # Price increases with bed capacity
-            room_price = base_price * date_range['price_multiplier'] * (1 + (capacity - 1) * 0.15)
-            purchase_price = room_price * 0.8  # 20% margin
-            
-            # Check if price already exists
-            existing_price = HotelPrices.objects.filter(
+        hotel_count += 1
+        print(f"   ✅ Created: {hotel.name} - {city.name} ({hotel_data['category']})")
+        
+        # Add contact details
+        for contact in hotel_data["contact"]:
+            HotelContactDetails.objects.create(
                 hotel=hotel,
-                room_type=room_type,
-                start_date=date_range['check_in'],
-                end_date=date_range['check_out']
-            ).first()
+                contact_person=contact["person"],
+                contact_number=contact["number"]
+            )
+        
+        # Create pricing for multiple date ranges (next 6 months)
+        start_date = datetime.now().date()
+        min_price, max_price = hotel_data["base_price_range"]
+        
+        # Create 3 price periods
+        for period in range(3):
+            period_start = start_date + timedelta(days=period * 60)  # Every 2 months
+            period_end = period_start + timedelta(days=59)
             
-            if not existing_price:
+            # Add seasonal variation
+            if period == 1:  # Peak season
+                season_multiplier = 1.3
+            elif period == 2:  # Off season
+                season_multiplier = 0.85
+            else:  # Regular season
+                season_multiplier = 1.0
+            
+            # Create prices for each room type
+            for room_type in room_types:
+                base_price_per_person = random.randint(int(min_price), int(max_price)) * season_multiplier
+                
+                # Calculate price based on room type
+                price_per_night = base_price_per_person * room_type["multiplier"]
+                purchase_price = price_per_night * 0.75  # 25% margin
+                
                 HotelPrices.objects.create(
                     hotel=hotel,
-                    room_type=room_type,
-                    price=round(room_price, 2),
-                    purchase_price=round(purchase_price, 2),
-                    start_date=date_range['check_in'],
-                    end_date=date_range['check_out'],
-                    is_sharing_allowed=(capacity >= 2)
+                    start_date=period_start,
+                    end_date=period_end,
+                    room_type=room_type["type"],
+                    price=price_per_night,
+                    purchase_price=purchase_price,
+                    is_sharing_allowed=(room_type["capacity"] > 1)
                 )
-                prices_created += 1
+                
+                price_count += 1
+    
+    print(f"   📦 Total: {hotel_count} hotels created with {price_count} price entries")
+    return hotel_count, price_count
 
-print(f"   Created {prices_created} hotel price entries")
+def main():
+    """Main function to populate all hotel data"""
+    print("=" * 70)
+    print("🏨 Starting Hotels Population with Detailed Pricing")
+    print("=" * 70)
+    
+    try:
+        # Get organization
+        org = get_organization()
+        
+        # Get or create cities
+        print("\n📋 Setting up Cities...")
+        cities = get_or_create_cities(org)
+        print(f"   ✅ Cities: {len(cities)}")
+        
+        # Create hotels with pricing
+        hotel_count, price_count = create_hotels_with_pricing(org, cities)
+        
+        print("\n" + "=" * 70)
+        print("✅ Hotels Population Completed Successfully!")
+        print("=" * 70)
+        print("\n📊 Summary:")
+        print(f"   - Hotels: {Hotels.objects.filter(organization=org).count()} total")
+        print(f"   - New Hotels Added: {hotel_count}")
+        print(f"   - Price Entries: {HotelPrices.objects.filter(hotel__organization=org).count()} total")
+        print(f"   - New Prices Added: {price_count}")
+        print(f"   - Contact Details: {HotelContactDetails.objects.filter(hotel__organization=org).count()}")
+        print("\n✨ Hotels include:")
+        print("   - 🌟 Burj Al Arab (Dubai)")
+        print("   - 🌟 Burj Khalifa View Hotel (Dubai)")
+        print("   - 🕋 Swissotel Makkah")
+        print("   - 🕋 Hilton Makkah Convention Hotel")
+        print("   - 🕋 Pullman ZamZam Makkah")
+        print("   - 🕌 Madinah Hilton Hotel")
+        print("   - 🕌 Sheraton Madinah Hotel")
+        print("   - And 3 more hotels in Makkah and Madinah")
+        print("\n💰 Room Types Available:")
+        print("   - Single, Double, Triple, Quad, Quint")
+        print("   - Sharing (6, 7, 8, 9, 10 bed)")
+        print("   - Suites")
+        print("\n📅 Pricing Periods: 3 seasons (Regular, Peak, Off-season)")
+        print("\n✨ You can now view these hotels in the admin panel!")
+        
+    except Exception as e:
+        print(f"\n❌ Error occurred: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        sys.exit(1)
 
-# Summary
-print("\n" + "="*80)
-print("SUMMARY")
-print("="*80)
-print(f"✅ Cities: {len(cities)}")
-print(f"✅ Hotel Categories: {len(categories)}")
-print(f"✅ Bed Types: {len(bed_types)} (1-10 persons)")
-print(f"✅ Hotels: {len(hotels)}")
-print(f"   - Saudi Arabia: {len(saudi_hotels_data)}")
-print(f"   - Dubai: {len(dubai_hotels_data)}")
-print(f"✅ Hotel Prices: {prices_created}")
-print(f"   - Per hotel: {len(date_ranges)} date ranges × {len(bed_types)} bed types = {len(date_ranges) * len(bed_types)} prices")
-print("\n" + "="*80)
-print("All hotel data created successfully!")
-print("="*80)
+if __name__ == "__main__":
+    main()

@@ -559,3 +559,128 @@ def manual_posting(request):
         return Response({'detail': f'Failed to post journal: {str(e)}'}, status=status.HTTP_400_BAD_REQUEST)
 
     return Response({'journal_id': tj.id, 'ledger_entry_id': ledger_entry.id}, status=status.HTTP_201_CREATED)
+
+
+@extend_schema(summary="Balance Sheet")
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def balance_sheet(request):
+    """Return balance sheet with assets, liabilities, and equity.
+    
+    Calculates totals from ChartOfAccount and FinancialRecord data.
+    """
+    from .models import ChartOfAccount
+    
+    org = request.query_params.get('organization')
+    
+    # Get all accounts
+    accounts_qs = ChartOfAccount.objects.all()
+    if org:
+        accounts_qs = accounts_qs.filter(organization_id=org)
+    
+    # Calculate totals from Financial Records
+    fr_qs = FinancialRecord.objects.all()
+    if org:
+        fr_qs = fr_qs.filter(organization_id=org)
+    
+    total_income = sum([fr.income_amount for fr in fr_qs])
+    total_expenses = sum([fr.expenses_amount for fr in fr_qs])
+    total_profit = sum([fr.profit_loss or Decimal('0.00') for fr in fr_qs])
+    
+    # Assets (simplified calculation)
+    cash = total_income - total_expenses  # Simplified: net cash from operations
+    accounts_receivable = Decimal('500000.00')  # Placeholder
+    inventory = Decimal('200000.00')  # Placeholder
+    total_assets = cash + accounts_receivable + inventory
+    
+    # Liabilities (simplified)
+    accounts_payable = Decimal('300000.00')  # Placeholder
+    loans_payable = Decimal('150000.00')  # Placeholder
+    total_liabilities = accounts_payable + loans_payable
+    
+    # Equity
+    owner_equity = Decimal('1000000.00')  # Placeholder
+    retained_earnings = total_profit
+    total_equity = owner_equity + retained_earnings
+    
+    return Response({
+        'assets': {
+            'cash': cash,
+            'accounts_receivable': accounts_receivable,
+            'inventory': inventory,
+            'total': total_assets,
+        },
+        'liabilities': {
+            'accounts_payable': accounts_payable,
+            'loans_payable': loans_payable,
+            'total': total_liabilities,
+        },
+        'equity': {
+            'owner_equity': owner_equity,
+            'retained_earnings': retained_earnings,
+            'total': total_equity,
+        },
+        'total_assets': total_assets,
+        'total_liabilities_equity': total_liabilities + total_equity,
+    })
+
+
+@extend_schema(summary="Audit Trail")
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def audit_trail(request):
+    """Return audit trail entries with filtering options.
+    
+    Query params:
+    - action: filter by action (create/update/delete)
+    - object_type: filter by object type
+    - from_date: filter from date (YYYY-MM-DD)
+    - to_date: filter to date (YYYY-MM-DD)
+    - limit: number of records to return (default 100)
+    """
+    from .models import AuditLog
+    
+    action = request.query_params.get('action')
+    object_type = request.query_params.get('object_type')
+    from_date = request.query_params.get('from_date')
+    to_date = request.query_params.get('to_date')
+    limit = int(request.query_params.get('limit', 100))
+    
+    qs = AuditLog.objects.all().order_by('-timestamp')
+    
+    if action:
+        qs = qs.filter(action=action)
+    if object_type:
+        qs = qs.filter(object_type=object_type)
+    if from_date:
+        try:
+            qs = qs.filter(timestamp__gte=from_date)
+        except Exception:
+            pass
+    if to_date:
+        try:
+            qs = qs.filter(timestamp__lte=to_date)
+        except Exception:
+            pass
+    
+    # Limit results
+    qs = qs[:limit]
+    
+    logs = []
+    for log in qs:
+        logs.append({
+            'id': log.id,
+            'timestamp': log.timestamp.isoformat() if log.timestamp else None,
+            'actor': log.actor.username if log.actor else 'System',
+            'action': log.action,
+            'object_type': log.object_type,
+            'object_id': log.object_id,
+            'before': log.before,
+            'after': log.after,
+            'reason': log.reason,
+        })
+    
+    return Response({
+        'logs': logs,
+        'count': len(logs),
+    })

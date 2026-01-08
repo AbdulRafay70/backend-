@@ -452,9 +452,7 @@ class UmrahPackageSerializer(ModelSerializer):
             # update requests can set selling & purchase prices for extras.
             # (Keep other internal fields excluded below.)
 
-            # activation flags / service & partial payment internals
-            'is_active', 'is_quaint_active', 'is_sharing_active', 'is_quad_active',
-            'is_triple_active', 'is_double_active',
+            # service & partial payment internals - KEEP is_active AVAILABLE
             'adault_service_charge', 'child_service_charge', 'infant_service_charge',
             'is_service_charge_active',
             'adault_partial_payment', 'child_partial_payment', 'infant_partial_payment',
@@ -734,6 +732,7 @@ class PublicUmrahPackageListSerializer(serializers.ModelSerializer):
             "available_end_date",
             "reselling_allowed",
             "is_public",
+            "is_active",  # Add this so frontend can see the status
             "hotels",
             "transport",
             "tickets",

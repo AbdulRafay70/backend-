@@ -22,7 +22,7 @@ const TicketDetail = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [airlines, setAirlines] = useState([]);
   const [cities, setCities] = useState([]);
-  
+
   const tabs = [
     { name: "Ticket Bookings", path: "/ticket-booking" },
     { name: "Add Tickets", path: "/ticket-booking/add-ticket" },
@@ -134,7 +134,7 @@ const TicketDetail = () => {
   // Format date to DD/MM/YYYY format
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
-    
+
     const date = new Date(dateString);
     const day = String(date.getDate()).padStart(2, "0");
     const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -144,9 +144,9 @@ const TicketDetail = () => {
 
   // Shimmer effect component
   const ShimmerEffect = ({ type = "text", className = "" }) => (
-    <div 
+    <div
       className={`shimmer ${className}`}
-      style={{ 
+      style={{
         background: "linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)",
         backgroundSize: "200% 100%",
         animation: "shimmer 1.5s infinite",
@@ -239,7 +239,7 @@ const TicketDetail = () => {
     sno: index + 1,
     orderNo: booking.id || "N/A",
     passportNo: booking.person_passport_number || "N/A",
-    group:booking.person_age_group || "N/A",
+    group: booking.person_age_group || "N/A",
     title: booking.person_title || "N/A",
     gender: booking.person_title === "MR" ? "M" : (booking.person_title === "MRS" ? "F" : "N/A"),
     firstName: booking.person_first_name || "N/A",
@@ -361,11 +361,10 @@ const TicketDetail = () => {
                       <NavLink
                         key={index}
                         to={tab.path}
-                        className={`nav-link btn btn-link text-decoration-none px-0 me-3 border-0 ${
-                          tab.name === "Ticket Bookings"
-                            ? "text-primary fw-semibold"
-                            : "text-muted"
-                        }`}
+                        className={`nav-link btn btn-link text-decoration-none px-0 me-3 border-0 ${tab.name === "Ticket Bookings"
+                          ? "text-primary fw-semibold"
+                          : "text-muted"
+                          }`}
                         style={{ backgroundColor: "transparent" }}
                       >
                         {tab.name}
@@ -531,90 +530,89 @@ const TicketDetail = () => {
                 <div className="row mb-4">
                   <div className="col-12">
                     {/* <div className="card border-0"> */}
-                      <div className="card-header border-0 bg-white">
-                        <h5 className="mb-0 fw-bold">Confirm Pax Details</h5>
-                      </div>
-                      <div className="card-body">
-                        <div className="table-responsive">
-                          <table className="table text-center table-hover">
-                            <thead
-                              className="table-light"
-                              style={{ background: "#EAF2FF" }}
-                            >
-                              <tr>
-                                <th className="fw-normal">SNO</th>
-                                <th className="fw-normal">Order</th>
-                                <th className="fw-normal">Title</th>
-                                <th className="fw-normal">Group</th>
-                                <th className="fw-normal">G</th>
-                                <th className="fw-normal">F.Name</th>
-                                <th className="fw-normal">L.Name</th>
-                                <th className="fw-normal">DOB</th>
-                                <th className="fw-normal">Passport</th>
-                                <th className="fw-normal">Issue date</th>
-                                <th className="fw-normal">Expiry date</th>
-                                <th className="fw-normal">Country</th>
-                                <th className="fw-normal">Ticket Price</th>
-                                <th className="fw-normal">Status</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {passengers.length > 0 ? (
-                                passengers.map((passenger) => (
-                                  <tr key={passenger.sno}>
-                                    <td className="text-muted">{passenger.sno}</td>
-                                    <td className="text-muted">
-                                      {passenger.orderNo}
-                                    </td>
-                                    <td className="text-muted">{passenger.title}</td>
-                                    <td className="text-muted">{passenger.group}</td>
-                                    <td className="text-muted">{passenger.gender}</td>
-                                    <td className="text-muted">
-                                      {passenger.firstName}
-                                    </td>
-                                    <td className="text-muted">
-                                      {passenger.lastName}
-                                    </td>
-                                    <td className="text-muted">{passenger.dob}</td>
-                                    <td className="text-muted">
-                                      {passenger.passportNo}
-                                    </td>
-                                    <td className="text-muted">
-                                      {passenger.issueDate}
-                                    </td>
-                                    <td className="text-muted">
-                                      {passenger.expiryDate}
-                                    </td>
-                                    <td className="text-muted">
-                                      {passenger.country}
-                                    </td>
-                                    <td className="text-muted">
-                                      {passenger.ticketPrice}
-                                    </td>
-                                    <td className="text-muted">
-                                      <span 
-                                        className={`badge ${
-                                          passenger.bookingStatus === 'Confirmed' 
-                                            ? 'bg-success' 
-                                            : passenger.bookingStatus === 'Pending'
-                                            ? 'bg-warning'
-                                            : 'bg-secondary'
+                    <div className="card-header border-0 bg-white">
+                      <h5 className="mb-0 fw-bold">Confirm Pax Details</h5>
+                    </div>
+                    <div className="card-body">
+                      <div className="table-responsive">
+                        <table className="table text-center table-hover">
+                          <thead
+                            className="table-light"
+                            style={{ background: "#EAF2FF" }}
+                          >
+                            <tr>
+                              <th className="fw-normal">SNO</th>
+                              <th className="fw-normal">Order</th>
+                              <th className="fw-normal">Title</th>
+                              <th className="fw-normal">Group</th>
+                              <th className="fw-normal">G</th>
+                              <th className="fw-normal">F.Name</th>
+                              <th className="fw-normal">L.Name</th>
+                              <th className="fw-normal">DOB</th>
+                              <th className="fw-normal">Passport</th>
+                              <th className="fw-normal">Issue date</th>
+                              <th className="fw-normal">Expiry date</th>
+                              <th className="fw-normal">Country</th>
+                              <th className="fw-normal">Ticket Price</th>
+                              <th className="fw-normal">Status</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {passengers.length > 0 ? (
+                              passengers.map((passenger) => (
+                                <tr key={passenger.sno}>
+                                  <td className="text-muted">{passenger.sno}</td>
+                                  <td className="text-muted">
+                                    {passenger.orderNo}
+                                  </td>
+                                  <td className="text-muted">{passenger.title}</td>
+                                  <td className="text-muted">{passenger.group}</td>
+                                  <td className="text-muted">{passenger.gender}</td>
+                                  <td className="text-muted">
+                                    {passenger.firstName}
+                                  </td>
+                                  <td className="text-muted">
+                                    {passenger.lastName}
+                                  </td>
+                                  <td className="text-muted">{passenger.dob}</td>
+                                  <td className="text-muted">
+                                    {passenger.passportNo}
+                                  </td>
+                                  <td className="text-muted">
+                                    {passenger.issueDate}
+                                  </td>
+                                  <td className="text-muted">
+                                    {passenger.expiryDate}
+                                  </td>
+                                  <td className="text-muted">
+                                    {passenger.country}
+                                  </td>
+                                  <td className="text-muted">
+                                    {passenger.ticketPrice}
+                                  </td>
+                                  <td className="text-muted">
+                                    <span
+                                      className={`badge ${passenger.bookingStatus === 'Confirmed'
+                                        ? 'bg-success'
+                                        : passenger.bookingStatus === 'Pending'
+                                          ? 'bg-warning'
+                                          : 'bg-secondary'
                                         }`}
-                                      >
-                                        {passenger.bookingStatus}
-                                      </span>
-                                    </td>
-                                  </tr>
-                                ))
-                              ) : (
-                                <tr>
-                                  <td colSpan="13" className="text-center text-muted py-3">
-                                    No passengers found for this ticket
+                                    >
+                                      {passenger.bookingStatus}
+                                    </span>
                                   </td>
                                 </tr>
-                              )}
-                            </tbody>
-                          </table>
+                              ))
+                            ) : (
+                              <tr>
+                                <td colSpan="13" className="text-center text-muted py-3">
+                                  No passengers found for this ticket
+                                </td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
                         {/* </div> */}
                       </div>
                     </div>
@@ -626,59 +624,58 @@ const TicketDetail = () => {
                   <div className="row mb-4">
                     <div className="col-12">
                       {/* <div className="card border-0 "> */}
-                        <div className="card-header border-0 bg-white">
-                          <h5 className="mb-0 fw-bold">Agent Details</h5>
-                        </div>
-                        <div className="card-body">
-                          <div className="table-responsive">
-                            <table className="table text-center table-hover">
-                              <thead className="table-light">
-                                <tr>
-                                  <th className="fw-normal">id</th>
-                                  <th className="fw-normal">Name</th>
-                                  <th className="fw-normal">Contact No 1.</th>
-                                  <th className="fw-normal">Contact No 2.</th>
-                                  <th className="fw-normal">Email</th>
-                                  <th className="fw-normal">Address</th>
-                                  <th className="fw-normal">BALANCE</th>
-                                  <th className="fw-normal">Agreement</th>
-                                  <th className="fw-normal">BOOKED AMOUNT</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                <tr>
-                                  <td className="text-muted">
-                                    {agentData.agencyCode}
-                                  </td>
-                                  <td className="text-muted">{agentData.name}</td>
-                                  <td className="text-muted">
-                                    {agentData.contactNo1}
-                                  </td>
-                                  <td className="text-muted">
-                                    {agentData.contactNo2}
-                                  </td>
-                                  <td className="text-muted">{agentData.email}</td>
-                                  <td className="text-muted">{agentData.address}</td>
-                                  <td className="text-muted">{agentData.balance}</td>
-                                  <td className="text-muted">
-                                    <span 
-                                      className={`badge ${
-                                        agentData.agreementStatus === 'Active' 
-                                          ? 'bg-success' 
-                                          : 'bg-danger'
+                      <div className="card-header border-0 bg-white">
+                        <h5 className="mb-0 fw-bold">Agent Details</h5>
+                      </div>
+                      <div className="card-body">
+                        <div className="table-responsive">
+                          <table className="table text-center table-hover">
+                            <thead className="table-light">
+                              <tr>
+                                <th className="fw-normal">id</th>
+                                <th className="fw-normal">Name</th>
+                                <th className="fw-normal">Contact No 1.</th>
+                                <th className="fw-normal">Contact No 2.</th>
+                                <th className="fw-normal">Email</th>
+                                <th className="fw-normal">Address</th>
+                                <th className="fw-normal">BALANCE</th>
+                                <th className="fw-normal">Agreement</th>
+                                <th className="fw-normal">BOOKED AMOUNT</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="text-muted">
+                                  {agentData.agencyCode}
+                                </td>
+                                <td className="text-muted">{agentData.name}</td>
+                                <td className="text-muted">
+                                  {agentData.contactNo1}
+                                </td>
+                                <td className="text-muted">
+                                  {agentData.contactNo2}
+                                </td>
+                                <td className="text-muted">{agentData.email}</td>
+                                <td className="text-muted">{agentData.address}</td>
+                                <td className="text-muted">{agentData.balance}</td>
+                                <td className="text-muted">
+                                  <span
+                                    className={`badge ${agentData.agreementStatus === 'Active'
+                                      ? 'bg-success'
+                                      : 'bg-danger'
                                       }`}
-                                    >
-                                      {agentData.agreementStatus}
-                                    </span>
-                                  </td>
-                                  <td className="text-muted">
-                                    {agentData.bookedAmount}
-                                  </td>
-                                </tr>
-                              </tbody>
-                            </table>
-                          </div>
-                          {/* {agentData.logo && (
+                                  >
+                                    {agentData.agreementStatus}
+                                  </span>
+                                </td>
+                                <td className="text-muted">
+                                  {agentData.bookedAmount}
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                        {/* {agentData.logo && (
                             <div className="mt-3 text-center">
                               <img 
                                 src={`http://127.0.0.1:8000/${agentData.logo}`} 
@@ -688,7 +685,7 @@ const TicketDetail = () => {
                               />
                             </div>
                           )} */}
-                        </div>
+                      </div>
                       {/* </div> */}
                     </div>
                   </div>

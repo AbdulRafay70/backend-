@@ -113,7 +113,7 @@ try:
     else:
         sample_orgs = [1]
     for oid in sample_orgs:
-        url = f'https://api.saer.pk/api/tickets/?organization={oid}'
+        url = f'http://127.0.0.1:8000/api/tickets/?organization={oid}'
         try:
             r = requests.get(url, timeout=5)
             print(f'GET {url} -> status {r.status_code} content-type {r.headers.get("content-type")}')

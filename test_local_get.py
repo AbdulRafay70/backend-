@@ -1,5 +1,5 @@
 import requests
-url='https://api.saer.pk/api/umrah-packages/13/?organization=8'
+url='http://127.0.0.1:8000/api/umrah-packages/13/?organization=8'
 try:
     r=requests.get(url, timeout=5)
     print('status',r.status_code)

@@ -145,6 +145,11 @@ class UserViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         data = request.data.copy() if hasattr(request, 'data') else {}
 
+        # Remove password from data if it's empty/blank - this allows users to update
+        # without changing the password
+        if 'password' in data and not data['password']:
+            data.pop('password')
+
         serializer = self.get_serializer(instance, data=data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
@@ -339,6 +344,146 @@ class UploadPermissionsFileAPIView(APIView):
             },
             status=status.HTTP_201_CREATED,
         )
+
+
+class CurrentUserAPIView(APIView):
+    """
+    GET /api/users/me/
+    
+    Get the current authenticated user's information including their organizations or agencies.
+    """
+    from rest_framework.permissions import IsAuthenticated
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        user = request.user
+        data = {
+            'id': user.id,
+            'email': user.email,
+            'username': user.username,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'is_staff': user.is_staff,
+            'is_superuser': user.is_superuser,
+        }
+        
+        # Add user type from profile
+        try:
+            if hasattr(user, 'profile') and user.profile:
+                data['user_type'] = user.profile.type
+        except:
+            data['user_type'] = None
+        
+        # For admin panel users, return organizations
+        if user.is_staff:
+            try:
+                orgs = user.organizations.all()
+                data['organizations'] = [
+                    {'id': org.id, 'name': org.name, 'org_code': org.org_code} 
+                    for org in orgs
+                ]
+            except:
+                data['organizations'] = []
+        else:
+            # For agent panel users, return agencies
+            try:
+                agencies = user.agencies.all()
+                data['agencies'] = [
+                    {'id': agency.id, 'name': agency.name, 'agency_code': agency.agency_code}
+                    for agency in agencies
+                ]
+            except:
+                data['agencies'] = []
+        
+        return Response(data, status=status.HTTP_200_OK)
+
+
+class SwitchOrganizationAPIView(APIView):
+    """
+    POST /api/users/switch-organization/
+    
+    Switch the user's active organization context and return a new JWT token.
+    Request body: {"organization_id": 1} or {"agency_id": 1}
+    """
+    from rest_framework.permissions import IsAuthenticated
+    permission_classes = [IsAuthenticated]
+    
+    def post(self, request):
+        from rest_framework_simplejwt.tokens import RefreshToken
+        from organization.models import Organization, Agency
+        
+        user = request.user
+        organization_id = request.data.get('organization_id')
+        agency_id = request.data.get('agency_id')
+        
+        # Admin panel users switch organizations
+        if user.is_staff and organization_id:
+            try:
+                organization_id = int(organization_id)
+                # Verify user has access to this organization
+                if not user.organizations.filter(id=organization_id).exists():
+                    return Response(
+                        {"error": "You don't have access to this organization"},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+                
+                # Generate new token with updated organization context
+                refresh = RefreshToken.for_user(user)
+                refresh['organization_id'] = organization_id
+                
+                org = Organization.objects.get(id=organization_id)
+                
+                return Response({
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
+                    "organization": {
+                        "id": org.id,
+                        "name": org.name,
+                        "org_code": org.org_code
+                    }
+                }, status=status.HTTP_200_OK)
+            except (ValueError, Organization.DoesNotExist):
+                return Response(
+                    {"error": "Invalid organization ID"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        # Agent panel users switch agencies
+        elif not user.is_staff and agency_id:
+            try:
+                agency_id = int(agency_id)
+                # Verify user has access to this agency
+                if not user.agencies.filter(id=agency_id).exists():
+                    return Response(
+                        {"error": "You don't have access to this agency"},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+                
+                # Generate new token with updated agency context
+                refresh = RefreshToken.for_user(user)
+                refresh['agency_id'] = agency_id
+                
+                agency = Agency.objects.get(id=agency_id)
+                
+                return Response({
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
+                    "agency": {
+                        "id": agency.id,
+                        "name": agency.name,
+                        "agency_code": agency.agency_code
+                    }
+                }, status=status.HTTP_200_OK)
+            except (ValueError, Agency.DoesNotExist):
+                return Response(
+                    {"error": "Invalid agency ID"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        else:
+            return Response(
+                {"error": "Please provide organization_id (for admin) or agency_id (for agents)"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
 
 class LogoutView(APIView):

@@ -70,69 +70,34 @@ class EmployeeAdmin(admin.ModelAdmin):
 		super().save_model(request, obj, form, change)
 
 
-# Do NOT register Organization model in the admin - hide the UI completely.
-# Organizations are created automatically when a User is added (see signals).
-try:
-	admin.site.unregister(Organization)
-except Exception:
-	# If Organization was not registered previously, ignore the error.
-	pass
-# Customize User admin to show organization info and provide an action
-try:
-	admin.site.unregister(User)
-except Exception:
-	pass
+# ===== Organization Admin =====
+# Register Organization model so it can be managed in Django admin
+@admin.register(Organization)
+class OrganizationAdmin(admin.ModelAdmin):
+	"""Organization management in Django admin"""
+	list_display = ('org_code', 'name', 'email', 'phone_number', 'address')
+	search_fields = ('org_code', 'name', 'email', 'phone_number')
+	readonly_fields = ('org_code',)
+	filter_horizontal = ('user',)
+	
+	fieldsets = (
+		('Auto-Generated Code', {
+			'fields': ('org_code',),
+			'description': 'This code is automatically generated. Format: ORG-0001'
+		}),
+		('Organization Information', {
+			'fields': ('name', 'email', 'phone_number', 'address')
+		}),
+		('Admin Users', {
+			'fields': ('user',),
+			'description': 'Link admin users to this organization'
+		}),
+	)
 
 
-class CustomUserAdmin(DefaultUserAdmin):
-	"""Extend the default User admin to show linked organization info."""
-
-    
-	def get_org_id(self, obj):
-		"""Return the first linked organization's numeric id or '-'"""
-		org = obj.organizations.order_by('id').first()
-		return org.id if org else "-"
-	get_org_id.short_description = "Organization ID"
-
-	def get_org_code(self, obj):
-		"""Return the first linked organization's org_code or '-'"""
-		org = obj.organizations.order_by('id').first()
-		return org.org_code if org else "-"
-	get_org_code.short_description = "Organization Code"
-
-	def get_org_contacts(self, obj):
-		# Show single organization's username/email and contact for clarity
-		org = obj.organizations.order_by('id').first()
-		if not org:
-			return "-"
-		# Use org.name as display username (fallback to org_code), show org email if present
-		username = org.name or org.org_code
-		email = org.email or "-"
-		contact = org.phone_number or "-"
-		return f"{username} ({email}) {contact}"
-	get_org_contacts.short_description = "Organization contacts"
-
-	# Place Organization ID and Organization Code first, then default user fields
-	list_display = ("get_org_id", "get_org_code") + DefaultUserAdmin.list_display + ("get_org_contacts",)
-
-	actions = ["ensure_organization"]
-
-	def ensure_organization(self, request, queryset):
-		"""Admin action: create Organization for selected users if missing."""
-		if create_org_for_user is None:
-			self.message_user(request, "Organization creation helper not available.")
-			return
-		created = 0
-		for user in queryset:
-			if not user.organizations.exists():
-				org = create_org_for_user(user)
-				if org:
-					created += 1
-		self.message_user(request, f"Organizations created: {created}")
-	ensure_organization.short_description = "Ensure Organization exists for selected users"
-
-
-admin.site.register(User, CustomUserAdmin)
+# REMOVED: Duplicate User admin that was showing organization columns
+# The correct User admin is defined in users/admin.py
+# Lines 73-135 removed to prevent duplicate registration and unwanted organization columns
 # Register OrganizationLink
 @admin.register(OrganizationLink)
 class OrganizationLinkAdmin(admin.ModelAdmin):

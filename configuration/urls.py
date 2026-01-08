@@ -4,6 +4,11 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+from users.serializers import CustomTokenObtainPairSerializer
+
+# Custom Token View using our custom serializer for email-based login
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
@@ -14,13 +19,15 @@ from django.conf.urls.static import static
 from django.urls import re_path
 from .media_views import serve_media_with_fallback
 from django.views.generic import RedirectView   # ✅ added import
+from organization.parent_options_view import ParentOptionsView
 
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api-auth/", include("rest_framework.urls")),
-    path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("api/token/", CustomTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("api/parent-options/", ParentOptionsView.as_view(), name="parent_options"),
 
     # ✅ Redirect homepage to Swagger UI
     path("", RedirectView.as_view(url="/api/schema/swagger-ui/", permanent=False)),

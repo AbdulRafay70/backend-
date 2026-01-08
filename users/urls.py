@@ -29,4 +29,14 @@ urlpatterns = [
         views.LogoutView.as_view(),
         name="logout",
     ),
+    path(
+        "api/users/me/",
+        views.CurrentUserAPIView.as_view(),
+        name="current_user",
+    ),
+    path(
+        "api/users/switch-organization/",
+        views.SwitchOrganizationAPIView.as_view(),
+        name="switch_organization",
+    ),
 ]

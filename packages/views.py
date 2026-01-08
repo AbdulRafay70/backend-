@@ -1000,6 +1000,20 @@ class ZiaratPriceViewSet(ModelViewSet):
 class BookingExpiryViewSet(ModelViewSet):
     serializer_class = BookingExpirySerializer
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name='organization',
+                type=int,
+                location=OpenApiParameter.QUERY,
+                required=True,
+                description='Organization ID to filter booking expiry settings'
+            )
+        ]
+    )
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+
     def get_queryset(self):
         organization_id = self.request.query_params.get("organization")
         if not organization_id:

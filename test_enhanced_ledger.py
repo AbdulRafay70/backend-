@@ -208,31 +208,31 @@ def show_sample_queries():
     
     print("""
 # 1️⃣ Get Organization Ledger (all transactions for org and its branches)
-curl -X GET "https://api.saer.pk/api/ledger/organization/11/" \\
+curl -X GET "http://127.0.0.1:8000/api/ledger/organization/11/" \\
   -H "Authorization: Token YOUR_TOKEN_HERE"
 
 # 2️⃣ Get Branch Ledger (branch transactions)
-curl -X GET "https://api.saer.pk/api/ledger/branch/5/" \\
+curl -X GET "http://127.0.0.1:8000/api/ledger/branch/5/" \\
   -H "Authorization: Token YOUR_TOKEN_HERE"
 
 # 3️⃣ Get Agency Ledger (agent transactions)
-curl -X GET "https://api.saer.pk/api/ledger/agency/25/" \\
+curl -X GET "http://127.0.0.1:8000/api/ledger/agency/25/" \\
   -H "Authorization: Token YOUR_TOKEN_HERE"
 
 # 4️⃣ Get Area Agency Ledger (area agent transactions)
-curl -X GET "https://api.saer.pk/api/ledger/area-agency/8/" \\
+curl -X GET "http://127.0.0.1:8000/api/ledger/area-agency/8/" \\
   -H "Authorization: Token YOUR_TOKEN_HERE"
 
 # 5️⃣ Get Org-to-Org Ledger (receivable/payable between two orgs)
-curl -X GET "https://api.saer.pk/api/ledger/org-to-org/11/15/" \\
+curl -X GET "http://127.0.0.1:8000/api/ledger/org-to-org/11/15/" \\
   -H "Authorization: Token YOUR_TOKEN_HERE"
 
 # Get all ledger entries (with filters)
-curl -X GET "https://api.saer.pk/api/ledger/?service_type=umrah&transaction_type=debit" \\
+curl -X GET "http://127.0.0.1:8000/api/ledger/?service_type=umrah&transaction_type=debit" \\
   -H "Authorization: Token YOUR_TOKEN_HERE"
 
 # Get single ledger entry
-curl -X GET "https://api.saer.pk/api/ledger/1/" \\
+curl -X GET "http://127.0.0.1:8000/api/ledger/1/" \\
   -H "Authorization: Token YOUR_TOKEN_HERE"
 """)
 

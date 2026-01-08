@@ -44,7 +44,7 @@ for package in packages:
     print(f"Package ID: {package.id}")
     
     # Get current hotel_details
-    url = f'https://api.saer.pk/api/umrah-packages/{package.id}/'
+    url = f'http://127.0.0.1:8000/api/umrah-packages/{package.id}/'
     headers = {
         'Authorization': f'Bearer {access_token}',
         'Content-Type': 'application/json',

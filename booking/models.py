@@ -108,6 +108,18 @@ class Booking(models.Model):
     total_visa_amount = models.FloatField(default=0)
     total_amount = models.FloatField(default=0)
     
+    # Discount fields
+    total_discount = models.FloatField(default=0, blank=True, null=True, help_text="Total discount amount applied to this booking")
+    discount_group = models.ForeignKey(
+        'booking.DiscountGroup',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='bookings',
+        help_text='Discount group that was applied to this booking'
+    )
+    discount_notes = models.TextField(blank=True, null=True, help_text="Details about the discount applied (e.g., 'Ahsan\'s Group - Group Ticket Discount')")
+    
     total_hotel_amount_pkr = models.FloatField(default=0, blank=True, null=True)
     total_hotel_amount_sar = models.FloatField(default=0, blank=True, null=True)
 
@@ -174,6 +186,17 @@ class Booking(models.Model):
     ]
     booking_type = models.CharField(max_length=20, choices=BOOKING_TYPE_CHOICES, default="TICKET")
     is_full_package = models.BooleanField(default=False)
+    
+    # Payment method tracking for credit payments
+    PAYMENT_METHOD_CHOICES = [
+        ('cash', 'Cash'),
+        ('bank_transfer', 'Bank Transfer'),
+        ('cheque', 'Cheque'),
+        ('credit', 'Credit'),
+        ('other', 'Other'),
+    ]
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, blank=True, null=True)
+    
     # Public booking flags and metadata
     is_public_booking = models.BooleanField(default=False)
     created_by_user_type = models.CharField(max_length=30, blank=True, null=True)
@@ -614,14 +637,17 @@ class Booking(models.Model):
             self.total_visa_amount = float(visa_sum_pkr)  # Keep total_visa_amount as PKR for consistency
             
             # Calculate total amount in PKR (use PKR-converted values for all components)
-            self.total_amount = (
-                Decimal(str(self.total_ticket_amount_pkr or self.total_ticket_amount or 0)) +
-                Decimal(str(self.total_hotel_amount_pkr or 0)) +
-                Decimal(str(self.total_transport_amount_pkr or 0)) +
-                Decimal(str(self.total_visa_amount_pkr or self.total_visa_amount or 0)) +
-                Decimal(str(self.total_food_amount_pkr or 0)) +
-                Decimal(str(self.total_ziyarat_amount_pkr or 0))
-            )
+            # SKIP recalculation if a discount has been applied (total_discount > 0)
+            if not self.total_discount or float(self.total_discount) <= 0:
+                self.total_amount = (
+                    Decimal(str(self.total_ticket_amount_pkr or self.total_ticket_amount or 0)) +
+                    Decimal(str(self.total_hotel_amount_pkr or 0)) +
+                    Decimal(str(self.total_transport_amount_pkr or 0)) +
+                    Decimal(str(self.total_visa_amount_pkr or self.total_visa_amount or 0)) +
+                    Decimal(str(self.total_food_amount_pkr or 0)) +
+                    Decimal(str(self.total_ziyarat_amount_pkr or 0))
+                )
+            # else: Keep the existing total_amount (which has the discount applied)
             
             # Save the updated amounts
             super().save(update_fields=[

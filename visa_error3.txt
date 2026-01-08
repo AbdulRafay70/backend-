@@ -1,0 +1,149 @@
+﻿python : E:\New 
+folder\backend\.venv\Lib\site-packages\rest_framework_simplejwt\__init__.py:1: 
+UserWarning: pkg_resources is deprecated as an API. See 
+https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is 
+slated for removal as early as 2025-11-30. Refrain from using this package or pin to 
+Setuptools<81.
+At line:1 char:1
++ python populate_visa_and_others.py 2>&1 | Out-File -FilePath visa_err ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (E:\New folder\b... Setuptools<81.:String) 
+    [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  from pkg_resources import DistributionNotFound, get_distribution
+E:\New folder\backend\.venv\Lib\site-packages\django\db\models\base.py:366: 
+RuntimeWarning: Model 'tickets.hotelcategory' was already registered. Reloading models 
+is not advised as it can lead to inconsistencies, most notably with related models.
+  new_class._meta.apps.register_model(new_class._meta.app_label, new_class)
+================================================================================
+VISA AND OTHER DATA POPULATION
+================================================================================
+
+[OK] Using organization: saer.pk (Code: ORG-0001, ID: 1)
+
+--------------------------------------------------------------------------------
+STEP 1: RIYAL EXCHANGE RATE
+--------------------------------------------------------------------------------
+  Updated: Riyal Rate = 74.5 PKR
+
+--------------------------------------------------------------------------------
+STEP 2: VISA TYPES
+--------------------------------------------------------------------------------
+  Exists: Umrah Visa
+  Exists: Visit Visa
+  Exists: Tourist Visa
+
+--------------------------------------------------------------------------------
+STEP 3: VISA PRICING (OnlyVisaPrice)
+--------------------------------------------------------------------------------
+  Updated: Normal
+    Adult: Sell=8000, Buy=6000
+    Child: Sell=6000, Buy=4500
+    Infant: Sell=4000, Buy=3000
+  Updated: Urgent
+    Adult: Sell=12000, Buy=9000
+    Child: Sell=9000, Buy=6750
+    Infant: Sell=6000, Buy=4500
+  Updated: Super Urgent
+    Adult: Sell=15000, Buy=11000
+    Child: Sell=11000, Buy=8250
+    Infant: Sell=7500, Buy=5625
+
+--------------------------------------------------------------------------------
+STEP 4: FOOD PRICING
+--------------------------------------------------------------------------------
+  Updated: Breakfast
+    Adult: Sell=500, Buy=350
+  Updated: Lunch
+    Adult: Sell=800, Buy=600
+  Updated: Dinner
+    Adult: Sell=800, Buy=600
+  Updated: Full Board (3 Meals)
+    Adult: Sell=2000, Buy=1500
+
+--------------------------------------------------------------------------------
+STEP 5: ZIYARAT PRICING
+--------------------------------------------------------------------------------
+  Updated: Makkah Ziyarat
+    Adult: Sell=3000, Buy=2200
+  Updated: Madinah Ziyarat
+    Adult: Sell=2500, Buy=1800
+  Updated: Combined Ziyarat (Makkah + Madinah)
+    Adult: Sell=5000, Buy=3800
+
+--------------------------------------------------------------------------------
+STEP 6: TRANSPORT SECTORS
+--------------------------------------------------------------------------------
+Traceback (most recent call last):
+  File "E:\New folder\backend\populate_visa_and_others.py", line 349, in <module>
+    sector, created = TransportSectorPrice.objects.update_or_create(
+                      ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        organization=org,
+        ^^^^^^^^^^^^^^^^^
+    ...<10 lines>...
+        }
+        ^
+    )
+    ^
+  File "E:\New folder\backend\.venv\Lib\site-packages\django\db\models\manager.py", 
+line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "E:\New folder\backend\.venv\Lib\site-packages\django\db\models\query.py", line 
+949, in update_or_create
+    obj, created = self.select_for_update().get_or_create(defaults, **kwargs)
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "E:\New folder\backend\.venv\Lib\site-packages\django\db\models\query.py", line 
+916, in get_or_create
+    return self.get(**kwargs), False
+           ~~~~~~~~^^^^^^^^^^
+  File "E:\New folder\backend\.venv\Lib\site-packages\django\db\models\query.py", line 
+623, in get
+    clone = self._chain() if self.query.combinator else self.filter(*args, **kwargs)
+                                                        ~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "E:\New folder\backend\.venv\Lib\site-packages\django\db\models\query.py", line 
+1436, in filter
+    return self._filter_or_exclude(False, args, kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "E:\New folder\backend\.venv\Lib\site-packages\django\db\models\query.py", line 
+1454, in _filter_or_exclude
+    clone._filter_or_exclude_inplace(negate, args, kwargs)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\New folder\backend\.venv\Lib\site-packages\django\db\models\query.py", line 
+1461, in _filter_or_exclude_inplace
+    self._query.add_q(Q(*args, **kwargs))
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "E:\New folder\backend\.venv\Lib\site-packages\django\db\models\sql\query.py", 
+line 1502, in add_q
+    clause, _ = self._add_q(q_object, self.used_aliases)
+                ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\New folder\backend\.venv\Lib\site-packages\django\db\models\sql\query.py", 
+line 1533, in _add_q
+    child_clause, needed_inner = self.build_filter(
+                                 ~~~~~~~~~~~~~~~~~^
+        child,
+        ^^^^^^
+    ...<6 lines>...
+        summarize=summarize,
+        ^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "E:\New folder\backend\.venv\Lib\site-packages\django\db\models\sql\query.py", 
+line 1383, in build_filter
+    lookups, parts, reffed_expression = self.solve_lookup_type(arg, summarize)
+                                        ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "E:\New folder\backend\.venv\Lib\site-packages\django\db\models\sql\query.py", 
+line 1193, in solve_lookup_type
+    _, field, _, lookup_parts = self.names_to_path(lookup_splitted, self.get_meta())
+                                ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "E:\New folder\backend\.venv\Lib\site-packages\django\db\models\sql\query.py", 
+line 1681, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'from_city' into field. 
+Choices are: adault_price, adult_purchase_price, adult_selling_price, booking_items, 
+child_price, child_purchase_price, child_selling_price, id, infant_price, 
+infant_purchase_price, infant_selling_price, is_visa, name, only_transport_charge, 
+organization, organization_id, reference, umrahpackagetransportdetails, vehicle_type

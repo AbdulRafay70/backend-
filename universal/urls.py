@@ -9,6 +9,8 @@ router.register(r'registration-rules', views.RegistrationRuleViewSet, basename='
 app_name = "universal"
 
 urlpatterns = [
+    # Add root path to handle /api/universal/ POST requests (for backward compatibility)
+    path("", views.UniversalRegisterView.as_view(), name="register_root"),
     path("register/", views.UniversalRegisterView.as_view(), name="register"),
     path("list/", views.UniversalListView.as_view(), name="list"),
     path("available-parents/", views.AvailableParentsView.as_view(), name="available-parents"),

@@ -186,6 +186,7 @@ class Agency(models.Model):
     # New fields for API 8
     credit_limit = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     credit_limit_days = models.IntegerField(null=True, blank=True)
+    credit_used = models.DecimalField(max_digits=12, decimal_places=2, default=0, help_text="Amount of credit currently used")
 
     AGENCY_TYPE_CHOICES = [
         ("Area Agency", "Area Agency"),
@@ -200,6 +201,16 @@ class Agency(models.Model):
     assign_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name="managed_agencies")
     # optional commission account identifier for this agency
     commission_id = models.CharField(max_length=64, null=True, blank=True)
+    
+    # Discount group assigned to this agency
+    discount_group = models.ForeignKey(
+        'booking.DiscountGroup',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='agencies',
+        help_text='Discount group assigned to this agency for automatic discount application'
+    )
 
     def save(self, *args, **kwargs):
         # Auto-generate agency_code if not set

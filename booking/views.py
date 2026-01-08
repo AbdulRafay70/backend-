@@ -338,6 +338,60 @@ class BookingViewSet(viewsets.ModelViewSet):
             qs = qs.filter(booking_number=booking_number)
     
         return qs
+    
+    def update(self, request, *args, **kwargs):
+        """Override update to handle discount application"""
+        # Get the instance
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        
+        # Check if this is a discount update
+        if 'total_discount' in request.data and 'total_amount' in request.data:
+            # Build list of fields to update
+            update_fields = []
+            
+            # Manually update the discount fields
+            instance.total_discount = request.data.get('total_discount')
+            update_fields.append('total_discount')
+            
+            instance.discount_notes = request.data.get('discount_notes', '')
+            update_fields.append('discount_notes')
+            
+            instance.total_amount = request.data.get('total_amount')
+            update_fields.append('total_amount')
+            
+            instance.total_ticket_amount = request.data.get('total_ticket_amount', instance.total_ticket_amount)
+            update_fields.append('total_ticket_amount')
+            
+            # Update discount_group if provided
+            if 'discount_group' in request.data:
+                instance.discount_group_id = request.data.get('discount_group')
+                update_fields.append('discount_group')
+            
+            # Update other fields
+            if 'status' in request.data:
+                instance.status = request.data.get('status')
+                update_fields.append('status')
+            if 'payment_method' in request.data:
+                instance.payment_method = request.data.get('payment_method')
+                update_fields.append('payment_method')
+            
+            # Save ONLY the specified fields to prevent recalculation
+            instance.save(update_fields=update_fields)
+            
+            # Serialize and return
+            serializer = self.get_serializer(instance)
+            return Response(serializer.data)
+        
+        # Handle status-only updates (e.g., confirming booking without discount)
+        if 'status' in request.data and len(request.data) == 1:
+            instance.status = request.data.get('status')
+            instance.save(update_fields=['status'])
+            serializer = self.get_serializer(instance)
+            return Response(serializer.data)
+        
+        # For other updates, use default behavior
+        return super().update(request, *args, **kwargs)
 
 
 
@@ -738,12 +792,68 @@ class PublicBookingViewSet(viewsets.ReadOnlyModelViewSet):
         Confirm a public booking by updating its status to 'Confirmed'.
         
         POST/PATCH /api/public/bookings/{id}/confirm/
-        """
-        booking = self.get_object()
         
-        # Update status to Confirmed
-        booking.status = 'Confirmed'
-        booking.save()
+        Body parameters:
+        - payment_method: 'cash' or 'credit' (default: 'cash')
+        """
+        from django.db import transaction
+        from organization.models import Agency
+        
+        booking = self.get_object()
+        payment_method = request.data.get('payment_method', 'cash')
+        
+        # If payment method is credit, validate and deduct from agency credit
+        if payment_method == 'credit':
+            # Get the agency from booking
+            if not booking.agency_id:
+                return Response(
+                    {'detail': 'No agency associated with this booking'},
+                    status=400
+                )
+            
+            try:
+                agency = Agency.objects.get(id=booking.agency_id)
+            except Agency.DoesNotExist:
+                return Response(
+                    {'detail': 'Agency not found'},
+                    status=400
+                )
+            
+            # Check if agency has credit limit
+            if not agency.credit_limit or agency.credit_limit <= 0:
+                return Response(
+                    {'detail': 'Agency does not have credit limit enabled'},
+                    status=400
+                )
+            
+            # Calculate available credit
+            credit_used = agency.credit_used or 0
+            available_credit = agency.credit_limit - credit_used
+            booking_amount = booking.total_amount or 0
+            
+            # Validate sufficient credit
+            if available_credit < booking_amount:
+                return Response(
+                    {
+                        'detail': f'Insufficient credit. Available: {available_credit}, Required: {booking_amount}'
+                    },
+                    status=400
+                )
+            
+            # Use transaction to ensure atomicity
+            with transaction.atomic():
+                # Update agency credit usage
+                agency.credit_used = credit_used + booking_amount
+                agency.save(update_fields=['credit_used'])
+                
+                # Update booking status and payment method
+                booking.status = 'Confirmed'
+                booking.payment_status = 'Credit'
+                booking.save(update_fields=['status', 'payment_status'])
+        else:
+            # Cash payment - just confirm booking
+            booking.status = 'Confirmed'
+            booking.save(update_fields=['status'])
         
         # Return updated booking
         serializer = self.get_serializer(booking)

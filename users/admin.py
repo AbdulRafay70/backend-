@@ -11,14 +11,26 @@ admin.site.unregister(Group)
 
 @admin.register(User)
 class CustomUserAdmin(BaseUserAdmin):
-    """Custom User admin with renamed display"""
+    """Custom User admin with clean display - no organization details"""
+    
+    # Display only user-related fields, not organization details
+    list_display = ('username', 'email', 'first_name', 'last_name', 'get_user_type', 'is_staff', 'is_active')
+    list_filter = ('is_staff', 'is_superuser', 'is_active', 'groups')
+    search_fields = ('username', 'first_name', 'last_name', 'email')
+    ordering = ('-is_staff', 'username')  # Sort by user type (Admins first), then username
+    
+    def get_user_type(self, obj):
+        """Display user type based on is_staff status"""
+        if obj.is_staff:
+            return "Admin"
+        else:
+            return "Agent"
+    get_user_type.short_description = "User Type"
+    get_user_type.admin_order_field = 'is_staff'  # Allow sorting by this column
     
     class Meta:
         verbose_name = "Admin"
         verbose_name_plural = "Admins"
-    
-    # Keep all the default UserAdmin functionality
-    pass
 
 
 # Re-register Group with custom name

@@ -68,7 +68,7 @@ for t in Ticket.objects.all().order_by('id'):
         trips = []
         for d in t.trip_details.all().order_by('departure_date_time'):
             trips.append({
-                'id': d.id,OST https://api.saer.pk/api/tickets/?organization=8 400 (Bad Request)
+                'id': d.id,OST http://127.0.0.1:8000/api/tickets/?organization=8 400 (Bad Request)
 dispatchXhrRequest @ xhr.js:195
 xhr @ xhr.js:15
 dispatchRequest @ dispatchRequest.js:51
@@ -98,7 +98,7 @@ batchedUpdates$1 @ react-dom-client.development.js:3262
 dispatchEventForPluginEventSystem @ react-dom-client.development.js:16572
 dispatchEvent @ react-dom-client.development.js:20658
 dispatchDiscreteEvent @ react-dom-client.development.js:20626
-AddTicket.jsx:425   POST https://api.saer.pk/api/tickets/?organization=8 400 (Bad Request)
+AddTicket.jsx:425   POST http://127.0.0.1:8000/api/tickets/?organization=8 400 (Bad Request)
 dispatchXhrRequest @ xhr.js:195
 xhr @ xhr.js:15
 dispatchRequest @ dispatchRequest.js:51

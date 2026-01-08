@@ -96,6 +96,65 @@ class UniversalRegisterView(generics.CreateAPIView):
     # Previously required authentication which caused 401 for unauthenticated users.
     permission_classes = (AllowAny,)
 
+    def create(self, request, *args, **kwargs):
+        """
+        Two-path registration:
+        - Authenticated staff users: Save directly to Organization/Branch/Agency tables (approved)
+        - Unauthenticated users: Save to UniversalRegistration for approval
+        """
+        entity_type = request.data.get('type')
+        
+        # Check if user is authenticated and is staff
+        is_admin = request.user and request.user.is_authenticated and request.user.is_staff
+        
+        if is_admin:
+            # Admin user - save directly to production tables
+            from .direct_serializers import (
+                DirectOrganizationSerializer,
+                DirectBranchSerializer,
+                DirectAgencySerializer
+            )
+            
+            if entity_type == 'organization':
+                serializer = DirectOrganizationSerializer(data=request.data)
+            elif entity_type == 'branch':
+                serializer = DirectBranchSerializer(data=request.data)
+            elif entity_type == 'agent':  # Agency
+                serializer = DirectAgencySerializer(data=request.data)
+            else:
+                return Response(
+                    {"message": "Invalid entity type"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            serializer.is_valid(raise_exception=True)
+            instance = serializer.save()
+            
+            return Response(
+                {
+                    "message": f"{entity_type.capitalize()} created successfully and is now active",
+                    "data": serializer.data,
+                },
+                status=status.HTTP_201_CREATED
+            )
+        else:
+            # External user - save to UniversalRegistration for approval
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            # Re-serialize the saved instance so file/image fields return URLs
+            instance = serializer.instance
+            out_serializer = self.get_serializer(instance)
+            headers = self.get_success_headers(out_serializer.data)
+            return Response(
+                {
+                    "message": f"{serializer.validated_data.get('type', 'Entity').capitalize()} registration submitted for approval",
+                    "data": out_serializer.data,
+                },
+                status=status.HTTP_201_CREATED,
+                headers=headers,
+            )
+    
     def perform_create(self, serializer):
         # Generate atomic prefixed ID using utils
         t = serializer.validated_data.get("type")
@@ -105,24 +164,6 @@ class UniversalRegisterView(generics.CreateAPIView):
             generated_id = generate_prefixed_id(t)
 
         serializer.save(id=generated_id)
-
-    def create(self, request, *args, **kwargs):
-        # Override to match the response contract: message + data
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        self.perform_create(serializer)
-        # Re-serialize the saved instance so file/image fields return URLs
-        instance = serializer.instance
-        out_serializer = self.get_serializer(instance)
-        headers = self.get_success_headers(out_serializer.data)
-        return Response(
-            {
-                "message": f"{serializer.validated_data.get('type', 'Entity').capitalize()} registered successfully",
-                "data": out_serializer.data,
-            },
-            status=status.HTTP_201_CREATED,
-            headers=headers,
-        )
 
 
 @extend_schema(

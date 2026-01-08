@@ -340,7 +340,8 @@ class FoodPrice(models.Model):
     infant_selling_price = models.FloatField(default=0)
     infant_purchase_price = models.FloatField(default=0)
     def __str__(self):
-        return f"({self.city.name})"
+        city_name = self.city.name if self.city else 'No City'
+        return f"{self.title} ({city_name})"
 
 class ZiaratPrice(models.Model):
     """
@@ -379,7 +380,8 @@ class ZiaratPrice(models.Model):
     infant_selling_price = models.FloatField(default=0)
     infant_purchase_price = models.FloatField(default=0)
     def __str__(self):
-        return f"{self.ziarat_title} ({self.city.name})"
+        city_name = self.city.name if self.city else 'No City'
+        return f"{self.ziarat_title} ({city_name})"
 
 class BookingExpiry(models.Model):
     """
@@ -391,6 +393,8 @@ class BookingExpiry(models.Model):
     )
     umrah_expiry_time = models.IntegerField(default=0)  # Time in minutes
     ticket_expiry_time = models.IntegerField(default=0)  # Time in minutes
+    customer_expiry_time = models.IntegerField(default=0)  # Time in minutes (for public/customer bookings)
+    custom_umrah_expiry_time = models.IntegerField(default=0)  # Time in minutes (for custom Umrah packages)
 
 
 class UmrahPackage(models.Model):
