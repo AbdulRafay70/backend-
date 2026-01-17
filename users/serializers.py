@@ -201,10 +201,17 @@ class PermissionExtensionSerializer(serializers.ModelSerializer):
 
 class PermissionSerializer(serializers.ModelSerializer):
     extended = PermissionExtensionSerializer()
+    content_type = serializers.SerializerMethodField()
 
     class Meta:
         model = Permission
         fields = "__all__"
+
+    def get_content_type(self, obj):
+        """Return content_type as 'app_label | model' string for frontend categorization"""
+        if obj.content_type:
+            return f"{obj.content_type.app_label} | {obj.content_type.model}"
+        return "uncategorized | uncategorized"
 
     def create(self, validated_data):
         extended_data = validated_data.pop("extended", None)

@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, viewsets
+from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth.models import User, Group, Permission
 from django.db.models import Q
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -10,10 +11,40 @@ from .serializers import (
     UserSerializer,
 )
 from .models import PermissionExtension
+from .permissions import PermissionByAction
 
 
 class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated, PermissionByAction]
+    
+    # Map actions to required permissions
+    permission_map = {
+        'list': 'auth.view_user',
+        'retrieve': 'auth.view_user',
+        'create': 'auth.add_user',
+        'update': 'auth.change_user',
+        'partial_update': 'auth.change_user',
+        'destroy': 'auth.delete_user',
+    }
+
+    def check_permissions(self, request):
+        """
+        Override to allow users to view/update their own profile without special permissions.
+        """
+        # For retrieve and update actions, check if user is accessing their own profile
+        if self.action in ['retrieve', 'update', 'partial_update']:
+            # Get the user ID from the URL
+            try:
+                user_id = self.kwargs.get('pk')
+                if user_id and str(request.user.id) == str(user_id):
+                    # User is accessing their own profile, allow it
+                    return
+            except:
+                pass
+        
+        # For all other cases, use the default permission check
+        super().check_permissions(request)
 
     # Allow creating a user while providing organization via query param
     # e.g. POST /api/users/?organization=8
@@ -220,6 +251,17 @@ class UserViewSet(viewsets.ModelViewSet):
 
 class GroupViewSet(viewsets.ModelViewSet):
     serializer_class = GroupSerializer
+    permission_classes = [IsAuthenticated, PermissionByAction]
+    
+    # Map actions to required permissions
+    permission_map = {
+        'list': 'auth.view_group',
+        'retrieve': 'auth.view_group',
+        'create': 'auth.add_group',
+        'update': 'auth.change_group',
+        'partial_update': 'auth.change_group',
+        'destroy': 'auth.delete_group',
+    }
 
     def get_queryset(self):
         organization_id = self.request.query_params.get("organization_id", None)
@@ -241,6 +283,17 @@ class GroupViewSet(viewsets.ModelViewSet):
 
 class PermissionViewSet(viewsets.ModelViewSet):
     serializer_class = PermissionSerializer
+    permission_classes = [IsAuthenticated, PermissionByAction]
+    
+    # Map actions to required permissions
+    permission_map = {
+        'list': 'auth.view_permission',
+        'retrieve': 'auth.view_permission',
+        'create': 'auth.add_permission',
+        'update': 'auth.change_permission',
+        'partial_update': 'auth.change_permission',
+        'destroy': 'auth.delete_permission',
+    }
 
     def get_queryset(self):
         queryset = Permission.objects.all().select_related("extended")

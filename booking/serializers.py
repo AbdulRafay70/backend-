@@ -625,6 +625,23 @@ class BookingHotelDetailsSerializer(serializers.ModelSerializer):
         """Get room type name"""
         return obj.room_type if obj.room_type else "N/A"
 
+    def to_representation(self, instance):
+        """Override to include nested hotel and city objects"""
+        data = super().to_representation(instance)
+        
+        # Include full hotel object with city if hotel exists
+        if instance.hotel:
+            data['hotel'] = {
+                'id': instance.hotel.id,
+                'name': instance.hotel.name,
+                'city': {
+                    'id': instance.hotel.city.id if instance.hotel.city else None,
+                    'name': instance.hotel.city.name if instance.hotel.city else None,
+                } if instance.hotel.city else None,
+            }
+        
+        return data    
+
 class BookingTransportSectorSerializer(serializers.ModelSerializer):
     class Meta:
         model = BookingTransportSector
@@ -1098,12 +1115,7 @@ class BookingSerializer(serializers.ModelSerializer):
     branch_id = serializers.PrimaryKeyRelatedField(
         queryset=Branch.objects.all(), source="branch", write_only=True
     )
-    # umrah_package returns just the ID on read, accepts ID on write
-    umrah_package = serializers.PrimaryKeyRelatedField(
-        queryset=UmrahPackage.objects.all(),
-        required=False,
-        allow_null=True
-    )
+    umrah_package = UmrahPackageSerializer(read_only=True)
     umrah_package_id = serializers.PrimaryKeyRelatedField(
         queryset=UmrahPackage.objects.all(),
         source="umrah_package",
@@ -1530,37 +1542,19 @@ class BookingSerializer(serializers.ModelSerializer):
         total_pkr_sum = 0
         total_riyal_sum = 0
         for hd in hotel_data:
-            check_in = hd.get("check_in_date")
-            check_out = hd.get("check_out_date")
+            check_in = hd["check_in_date"]
+            check_out = hd["check_out_date"]
             
             # Parse dates if they're strings
-            from datetime import datetime, date, timedelta
-            
-            # Handle missing or empty dates
-            if not check_in or check_in == "":
-                check_in = None
-            elif isinstance(check_in, str):
+            from datetime import datetime, date
+            if isinstance(check_in, str):
                 check_in = datetime.strptime(check_in, "%Y-%m-%d").date()
-                
-            if not check_out or check_out == "":
-                check_out = None
-            elif isinstance(check_out, str):
+            if isinstance(check_out, str):
                 check_out = datetime.strptime(check_out, "%Y-%m-%d").date()
 
-            # Calculate nights - use number_of_nights from frontend if dates are missing
-            if check_in and check_out:
-                nights = (check_out - check_in).days
-                if nights < 0:
-                    nights = 0
-            else:
-                # Use number_of_nights from frontend
-                nights = hd.get("number_of_nights", 0)
-                # If we have check_in but not check_out, calculate check_out
-                if check_in and not check_out and nights > 0:
-                    check_out = check_in + timedelta(days=nights)
-                # If we have check_out but not check_in, calculate check_in
-                elif check_out and not check_in and nights > 0:
-                    check_in = check_out - timedelta(days=nights)  
+            nights = (check_out - check_in).days
+            if nights < 0:
+                nights = 0  
 
             price = hd.get("price", 0)
             quantity = hd.get("quantity", 1)
@@ -1959,52 +1953,6 @@ class PaymentSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(errors)
 
         return data
-    
-    def update(self, instance, validated_data):
-        """Custom update to allow total_amount and discount_group updates when discount is applied"""
-        print("🔍 BookingSerializer.update() called!")
-        print(f"🔍 validated_data keys: {validated_data.keys()}")
-        
-        # Extract and REMOVE discount-related fields from validated_data BEFORE parent update
-        total_amount_override = None
-        discount_group_override = None
-        total_ticket_amount_override = None
-        
-        if 'total_discount' in validated_data or 'discount_notes' in validated_data:
-            print("✅ Discount fields detected, extracting overrides...")
-            # POP these fields so parent update doesn't process them
-            if 'total_amount' in validated_data:
-                total_amount_override = validated_data.pop('total_amount')
-                print(f"✅ total_amount_override (popped): {total_amount_override}")
-            if 'discount_group' in validated_data:
-                discount_group_override = validated_data.pop('discount_group')
-                print(f"✅ discount_group_override (popped): {discount_group_override}")
-            if 'total_ticket_amount' in validated_data:
-                total_ticket_amount_override = validated_data.pop('total_ticket_amount')
-                print(f"✅ total_ticket_amount_override (popped): {total_ticket_amount_override}")
-        
-        # Call parent update with modified validated_data (without our override fields)
-        instance = super().update(instance, validated_data)
-        print(f"🔍 After parent update - total_amount: {instance.total_amount}")
-        
-        # Now set our overrides directly on the instance
-        if total_amount_override is not None or discount_group_override is not None or total_ticket_amount_override is not None:
-            print("✅ Applying overrides...")
-            if total_amount_override is not None:
-                instance.total_amount = total_amount_override
-                print(f"✅ Set total_amount to: {total_amount_override}")
-            if discount_group_override is not None:
-                instance.discount_group_id = discount_group_override
-                print(f"✅ Set discount_group_id to: {discount_group_override}")
-            if total_ticket_amount_override is not None:
-                instance.total_ticket_amount = total_ticket_amount_override
-                print(f"✅ Set total_ticket_amount to: {total_ticket_amount_override}")
-            
-            # Save again to persist our overrides
-            instance.save()
-            print(f"✅ Saved! Final total_amount: {instance.total_amount}")
-        
-        return instance
         
 class SectorSerializer(serializers.ModelSerializer):
     # Expose city codes instead of numeric FK ids so frontends can
@@ -2541,14 +2489,7 @@ class DiscountGroupSerializer(serializers.ModelSerializer):
         except Exception:
             pass
 
-        # Handle hotel_night_discounts entries - DELETE old ones and CREATE new ones
-        # This ensures updates work correctly
-        try:
-            # Delete all existing hotel discounts for this group
-            instance.discounts.filter(things="hotel").delete()
-        except Exception:
-            pass
-
+        # Handle hotel_night_discounts entries similarly to create()
         room_map = {
             "quint_per_night_discount": "quint",
             "quad_per_night_discount": "quad",
@@ -2579,7 +2520,29 @@ class DiscountGroupSerializer(serializers.ModelSerializer):
                 if val in (None, [], ""):
                     continue
 
-                # Create new discount record
+                existing_found = False
+                try:
+                    candidates = Discount.objects.filter(discount_group=instance, things="hotel", room_type=room_type)
+                    target_set = set(hotels)
+                    for c in candidates:
+                        try:
+                            c_ids = set(c.discounted_hotels.values_list('id', flat=True))
+                        except Exception:
+                            c_ids = set()
+                        if c_ids == target_set:
+                            try:
+                                if (c.per_night_discount is None and val is None) or (str(c.per_night_discount) == str(val)):
+                                    existing_found = True
+                                    break
+                            except Exception:
+                                existing_found = True
+                                break
+                except Exception:
+                    existing_found = False
+
+                if existing_found:
+                    continue
+
                 try:
                     disc = Discount.objects.create(
                         discount_group=instance,
@@ -2905,53 +2868,6 @@ class IntegratedBookingSerializer(serializers.ModelSerializer):
             'status': obj.status.lower() if obj.status else 'pending',
             'transaction_id': None,
         }
-    
-    def update(self, instance, validated_data):
-        """Custom update to allow total_amount and discount_group updates when discount is applied"""
-        print("🔍 IntegratedBookingSerializer.update() called!")
-        print(f"🔍 validated_data keys: {validated_data.keys()}")
-        print(f"🔍 total_discount in validated_data: {'total_discount' in validated_data}")
-        print(f"🔍 total_amount in validated_data: {'total_amount' in validated_data}")
-        
-        # Extract discount-related fields before parent update
-        total_amount_override = None
-        discount_group_override = None
-        total_ticket_amount_override = None
-        
-        if 'total_discount' in validated_data or 'discount_notes' in validated_data:
-            print("✅ Discount fields detected, extracting overrides...")
-            if 'total_amount' in validated_data:
-                total_amount_override = validated_data.get('total_amount')
-                print(f"✅ total_amount_override: {total_amount_override}")
-            if 'discount_group' in validated_data:
-                discount_group_override = validated_data.get('discount_group')
-                print(f"✅ discount_group_override: {discount_group_override}")
-            if 'total_ticket_amount' in validated_data:
-                total_ticket_amount_override = validated_data.get('total_ticket_amount')
-                print(f"✅ total_ticket_amount_override: {total_ticket_amount_override}")
-        
-        # Call parent update first
-        instance = super().update(instance, validated_data)
-        print(f"🔍 After parent update - total_amount: {instance.total_amount}")
-        
-        # Now apply our overrides AFTER parent update
-        if total_amount_override is not None or discount_group_override is not None or total_ticket_amount_override is not None:
-            print("✅ Applying overrides...")
-            if total_amount_override is not None:
-                instance.total_amount = total_amount_override
-                print(f"✅ Set total_amount to: {total_amount_override}")
-            if discount_group_override is not None:
-                instance.discount_group_id = discount_group_override
-                print(f"✅ Set discount_group_id to: {discount_group_override}")
-            if total_ticket_amount_override is not None:
-                instance.total_ticket_amount = total_ticket_amount_override
-                print(f"✅ Set total_ticket_amount to: {total_ticket_amount_override}")
-            
-            # Save again to persist our overrides
-            instance.save()
-            print(f"✅ Saved! Final total_amount: {instance.total_amount}")
-        
-        return instance
     
     def to_representation(self, instance):
         """Customize output to match the exact format requested"""

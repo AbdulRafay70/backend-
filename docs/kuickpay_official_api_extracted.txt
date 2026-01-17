@@ -1,0 +1,429 @@
+         
+      
+kuickpay | kuickpay.com | info@kuickpay.com  
+ 
+ 
+ 
+1  
+ 
+ 
+A Kuickpay BPS Rest Based Integration (Middleware)  Solution  
+ 
+Version 3 .0 
+ 
+Prepared By: Moiz Pasha  
+ 
+  
+
+
+         
+      
+kuickpay | kuickpay.com | info@kuickpay.com  
+ 
+ 
+ 
+2 Date  Version  Authored By  Revision 
+Section  Description  
+Sep 10 202 2 1.0 Moiz Pasha  Initial Draft   
+Feb 12 202 4 2.0 Moiz Pasha  Updated  Top up and paid 
+inquiry added.  
+ 
+ 
+ 
+ 
+2. Introduction  
+Document consists of following two transactions, which are implemented through web 
+service.  
+1. Inquiry  
+2. Payment  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+         
+      
+kuickpay | kuickpay.com | info@kuickpay.com  
+ 
+ 
+ 
+3  
+Inquiry   
+This transaction is required to check the validity of the transaction. The Details of the 
+function are as under : 
+Input Parameters  
+Parameter   Description  Mandatory/Optional  Data Type / Max. 
+Length  Sample Data  
+username   To secure the 
+Web Service 
+access  M String (AlphaNumeric) 
+(20) Kuickpaytest  
+Password   To secure the 
+Web Service 
+access  M String (AlphaNumeric) 
+(20) Kuickpay@test12  
+consumerNumber   
+Kuickpay Inquiry 
+number  M String (Numeric) (18)  015209898740  
+Here 1st five digits 
+(01520) denotes 
+Kuickpay Prefix assigned 
+by Kuickpay to Institution  
+bankMnemonic   Bank Mnemonic  M String (AlphaNumeric) 
+(8) UBL 
+Reserved   
+Reserved field  O String (AlphaNumeric) 
+(200)  03000000000 | 
+abc@abc.com  
+Contact number, email, 
+etc. Separated with Pipe 
+(|) 
+  
+
+         
+      
+kuickpay | kuickpay.com | info@kuickpay.com  
+ 
+ 
+ 
+4 Note :  
+If Kuickpay Charges are being passed on to the end consumer , then these charges must  be 
+added into your both amounts . 
+ 
+Bill Inquiry  
+Request  
+URL:  ./api/ v1/BillInquiry  
+Method Type: POST  
+Headers:  
+Header[“username”] = “Test”  
+Header[“password”] = “@bcd”  
+ 
+Body:  
+  
+{   
+“consumer_number”: “0000812345”,  
+ “bank_mnemonic”:“KPY”,  
+ “reserved”: “something, special, string, can, be, send, into, it.”  
+} 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+         
+      
+kuickpay | kuickpay.com | info@kuickpay.com  
+ 
+ 
+ 
+5  
+For Success Case:  Unpaid Voucher  
+{  
+"response_Code": "00",  
+"consumer_Detail" : "MUHAMMAD FEROZ",  
+ "bill_status": "U",  
+"due_date": " 20241014 ", 
+ "amount_within_dueDate": " +0000000186900",  
+"amount_after_dueDate": "+0000000202500",  
+"email_address": "example@gmail.com",  
+"contact_number": " 03030303030",  
+"billing_month": " 2410 ", 
+ "date_paid”: “", 
+ "amount_paid”: "",  
+ "tran_auth_Id”: "",  
+“reserved”: “something, special, string, can, be,  blank. ”  
+} 
+ 
+For Success Case : Paid Voucher  
+{  
+"response_Code": "00",  
+"consumer_Detail" : "MUHAMMAD FEROZ",  
+ "bill_status": "P",  
+"due_date": " 20240925 ", 
+ "amount_within_dueDate": " +0000000186900",  
+"amount_after_dueDate": "+0000000202500",  
+"email_address": "example@gmail.com",  
+"contact_number": "03030303030",  
+"billing_month": " 2409 ", 
+ "date_paid”: 20 240910", 
+ "amount_paid”: "000000202500",  
+ "tran_auth_Id”: "202500",  
+“reserved”: “something, special, string, can, be, blank.”  
+} 
+
+         
+      
+kuickpay | kuickpay.com | info@kuickpay.com  
+ 
+ 
+ 
+6 For Error Case:  
+Http Status : 400, 404, 500 etc  
+ 
+ 
+Return String in following format  
+Parameter  Description  Mandatory
+/Optional  Data Type / Max. Length  
+Response_Code  ‘00’ in case of valid  inquiry  number that exists 
+in the system/database and status is active  
+ 
+‘01’ in case of invalid  inquiry  number that does 
+not exists  
+ 
+‘02’ in case of valid  inquiry  number that is  
+currently blocked  or dormant/inactive (i -e 
+transactions are not  
+allowed)  
+ 
+‘03’ Unknown  Error/Bad Transaction  
+ 
+‘04’ Invalid Data  
+ 
+‘05’ Processing Faile d M String (N umeric ) (2) 
+Consumer_Detail  This will contain the consumer  name / title of 
+voucher holder  M String (A lphaNumeric ) (30) 
+ 
+Left justified right  
+Padded with spaces  
+Bill_Status  ‘U’ in case of unpaid  voucher  or voucher  on 
+which  
+payment is allowed ,  
+ 
+‘P’ in case of paid voucher on which further  
+payment is no t allowed  
+ 
+‘B’ in case of blocked  Voucher  
+ 
+‘T’ For valid Top -up Voucher inquiry.  
+ M String(Alpha) (1)  
+
+         
+      
+kuickpay | kuickpay.com | info@kuickpay.com  
+ 
+ 
+ 
+7 Due_Date  
+ DueDate will be  provided in case of  Vouchers  M String (8) (yyyyMMdd)  
+Amount_Within_DueDate  Amount will be provided i n case of Vouchers . 
+ 
+If Kuickpay charges are to be passed on to the 
+consumer, include the Kuickpay charge s in the 
+amount.  M AN14  
+-Last 2digits minor units  
+- Left padded with zeros 
+e.g. Amount 120.00 Rs is 
+formatted as 
++0000000012000 
+Amount -120.00Rs is 
+formatted as -
+0000000012000  
+Amount_After_DueDa te Amount will be provided i n case of Vouchers . 
+If Kuickpay charges are to be passed on to the 
+consumer, include the Kuickpay charge in the 
+amount.  
+ 
+ M AN14  
+-Last2digits minor units  
+- Left padded with zeros 
+e.g. Amount 120.00 Rs is 
+formatted as 
++0000000012000 
+Amount -120.00 Rs is 
+formatted as -
+0000000012000  
+email_address  This will contain the consumer  email  of 
+voucher holder  M String (A lphaNumeric ) (30) 
+ 
+
+         
+      
+kuickpay | kuickpay.com | info@kuickpay.com  
+ 
+ 
+ 
+8 contact_number  This will contain the consumer  contact  numer 
+of voucher holder  M Numeric  field that starts 
+with either "92" or "03"  
+Billing_Month  
+ Billing Month will be  provided in case of  
+Vouchers.  M String  (4) 
+(yyMM ) 
+Date_Paid  
+ In case bill status is  ‘P’ else white space  should 
+be sent  according to specified  length  O String  (8) 
+(yyyyMMdd ) 
+Amount_Paid  
+ 
+ In case bill  status is  ‘P’ else white spaces  
+should be sent  according to the  specified 
+length  
+ O String (Numeric) (12) 
+- Last 2 digits  
+minor units - Left padded 
+with zeros e.g. Amount 
+120.00 Rs is formatted as 
+000000012000  
+Tran_Auth_Id  In case bill status is  ‘P’ else  white space  should 
+be send  according to specified  length  O String (Numeric) (6) 
+e.g. 698242  
+Reserved  Reserved field  O String (AlphaNumeric) (200)  
+ 
+Pipe (|) separated data: 
+Mobile number, email  
+ 
+Left justified right  
+Padded with spaces  
+ 
+ 
+ 
+
+         
+      
+kuickpay | kuickpay.com | info@kuickpay.com  
+ 
+ 
+ 
+9  
+Payment  
+The Bill Payment Service will be used to post the transaction into kuickpay system. The 
+details of the function are as under:  
+Input Parameters  
+Parameter  Description  Mandatory
+/Optional  Data Type / Max. Length  
+userName  To secure the Web Service access  M String (AlphaNumeric) (20) 
+password  To secure the Web Service access  M String (AlphaNumeric) (20) 
+consumer_number  Kuickpay inquiry number  M String (Numeric) (18 ) 
+tran_auth_id  Trans. Authorization ID  M String  (Numeric) (6) 
+e.g. 698243  
+A unique ID within the same 
+Date. Can be repeated on next 
+date change  
+transaction_amoun
+t Transaction Amount  M String (Numeric) e.g. Amount  
+120 R upee s 
+ 
+tran_date  Transaction Date  M String  (Numeric) (8) 
+YYYYMMDD  
+tran_time  Transaction Time  M String  (Numeric) (6) 
+HHMMSS  
+    
+bank_mnemonic  Bank Mnemonic  M String (AlphaNumeric) (8)  
+Reserved  Reserved field  O String (AlphaNumeric) (200)  
+ 
+ 
+ 
+ 
+ 
+
+         
+      
+kuickpay | kuickpay.com | info@kuickpay.com  
+ 
+ 
+ 
+10  
+Bill Payment  
+Request  
+URL:  ../api/ v1 /BillPayment  
+Method Type: POST  
+Headers : 
+Header[“username”] = “Test”  
+Header[“password”] = “@bcd”  
+ 
+Body:   
+{   
+“consumer_number”: “0000812345”,  
+“tran_auth_id” : “112233”,  
+ “transaction_amount”: “120” ,  
+“tran_date” : “20180911”,  
+“tran_time” : “121366”,  
+“bank_mnemonic” : “KPY”,  
+ “reserved”: “something, special, string, can, be, send, into, it.”  
+} 
+Response  
+For Success Case : 
+{  
+"response_Code": "00",  
+"Identification_parameter" : " Moiz@innovarge.com ",  
+“reserved”: “something, special, string, can, be, send, into, it.”  
+} 
+
+         
+      
+kuickpay | kuickpay.com | info@kuickpay.com  
+ 
+ 
+ 
+11 Return String in following format  
+Parameter  Description  Mandatory  
+/Optional  Data Type / 
+Max. Length  
+Response_Code  ‘00’ in case of valid  
+Voucher number that exists in the system/database , status is 
+active  
+ 
+‘01’ in case of invalid  Voucher  number that does not exists  
+ 
+‘02’ in case of valid  Voucher  number that is  currently blocked or  
+dormant/inactive (i -e transactions are not  allowed)  
+ 
+‘03’ Unknown  
+Error/ Duplicate/ Bad Transaction  
+‘04’ Invalid Data  
+ 
+‘05’ Processing Failed  M String (N umeric ) 
+(2) 
+Identification  
+Parameter  Trans. Receipt ID  O String (N)(20)  
+Left padded with  
+zeros  
+Reserved  Reserved field  O String (200)  
+Left justified 
+right  
+Padded with 
+spaces  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+         
+      
+kuickpay | kuickpay.com | info@kuickpay.com  
+ 
+ 
+ 
+12  
+Response Codes  
+ 
+Transaction Type  Response Code  Description  
+Bill Inquiry  00 Successful Bill Inquiry  
+Bill Inquiry  01 Voucher Number does not exist  
+Bill Inquiry  02 Voucher Blocked or Inactive  
+Bill Inquiry  03 Unknown  Error/Bad Transaction  
+Bill Inquiry  04 Invalid Data  
+(e.g wrong userid, password)  
+Bill Inquiry  05 Service Fail  
+Bill Payment  00 Successful Bill Payment  
+Bill Payment  01 Voucher Number does not exist  
+Bill Payment  02 Voucher Blocked or Inactive  
+Bill Payment  03 Unknown  Error/Bad /Duplicate  
+Transaction  
+Bill Payment  04 Invalid Data  
+(e.g wrong userid, password)  
+Bill Payment  05 Service Fail  
+ 
+

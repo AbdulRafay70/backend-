@@ -75,8 +75,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "corsheaders.middleware.CorsMiddleware",
-    "debug_toolbar.middleware.DebugToolbarMiddle"
-    "ware",
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -208,15 +207,6 @@ SPECTACULAR_SETTINGS = {
     ],
 }
 
-# ----------------------------------------------------
-# Kuickpay (third-party payment gateway) configuration
-# ----------------------------------------------------
-KUICKPAY_CONFIG = {
-    'BASE_URL': 'http://localhost:8000/pay',
-    'USERNAME': 'rafay',
-    'PASSWORD': '12345',
-    'TIMEOUT': 10,
-}
 # ----------------------------------------------------
 # CORS & INTERNAL IPs
 # ----------------------------------------------------

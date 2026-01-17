@@ -22,9 +22,9 @@ from organization.models import Organization
 
 def create_admin_user():
     ORG_ID = 11
-    USERNAME = 'admin'
+    USERNAME = 'admin@gmail.com'
     PASSWORD = 'admin123'
-    EMAIL = 'admin@saer.pk'
+    EMAIL = 'admin@gmail.com'
     
     print('\n' + '='*70)
     print('CREATING ADMIN USER FOR ORGANIZATION 11')

@@ -1,0 +1,484 @@
+{
+    "info": {
+        "name": "SAER.PK - Kuickpay APIs",
+        "description": "Test SAER.PK's Kuickpay integration endpoints\n\nThese are YOUR Django APIs that your frontend calls.\nThey internally proxy requests to Kuickpay's service.\n\nBase URL: https://api.saer.pk (or http://localhost:8000 for local testing)",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "_postman_id": "saer-kuickpay-apis",
+        "version": "1.0.0"
+    },
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{jwt_token}}",
+                "type": "string"
+            }
+        ]
+    },
+    "item": [
+        {
+            "name": "Authentication",
+            "item": [
+                {
+                    "name": "Login - Get JWT Token",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "if (pm.response.code === 200) {",
+                                    "    var jsonData = pm.response.json();",
+                                    "    pm.collectionVariables.set(\"jwt_token\", jsonData.access);",
+                                    "    console.log(\"Token saved:\", jsonData.access);",
+                                    "}"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"abdulrafay@gmail.com\",\n  \"password\": \"hyd12233\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/token/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "token",
+                                ""
+                            ]
+                        },
+                        "description": "Get JWT access token for authentication.\n\nThe token will be automatically saved to the collection variable `jwt_token` and used in subsequent requests."
+                    },
+                    "response": [
+                        {
+                            "name": "Success",
+                            "originalRequest": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"email\": \"abdulrafay@gmail.com\",\n  \"password\": \"hyd12233\"\n}"
+                                },
+                                "url": {
+                                    "raw": "http://localhost:8000/api/token/",
+                                    "protocol": "http",
+                                    "host": [
+                                        "localhost"
+                                    ],
+                                    "port": "8000",
+                                    "path": [
+                                        "api",
+                                        "token",
+                                        ""
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"access\": \"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...\",\n  \"refresh\": \"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...\"\n}"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Kuickpay Integration",
+            "item": [
+                {
+                    "name": "Bill Inquiry",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwt_token}}",
+                                "type": "text"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{base_url}}/api/kuickpay/bill-inquiry/?consumer_number=095716373739&bank_mnemonic=KPY&reserved=",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "kuickpay",
+                                "bill-inquiry",
+                                ""
+                            ],
+                            "query": [
+                                {
+                                    "key": "consumer_number",
+                                    "value": "095716373739",
+                                    "description": "Consumer/utility account number (18 digits)"
+                                },
+                                {
+                                    "key": "bank_mnemonic",
+                                    "value": "KPY",
+                                    "description": "Bank identifier"
+                                },
+                                {
+                                    "key": "reserved",
+                                    "value": "",
+                                    "description": "Optional reserved field"
+                                }
+                            ]
+                        },
+                        "description": "Query bill information from Kuickpay.\n\n**Authentication:** Required (JWT Bearer token)\n\n**Query Parameters:**\n- `consumer_number` (required): Consumer account number\n- `bank_mnemonic` (required): Bank identifier (e.g., 'KPY')\n- `reserved` (optional): Reserved field\n\n**Expected Response (from Kuickpay):**\n```json\n{\n  \"response_Code\": \"00\",\n  \"consumer_Detail\": \"CUSTOMER NAME\",\n  \"bill_status\": \"U\",\n  \"due_date\": \"20241014\",\n  \"amount_within_dueDate\": \"+0000000186900\",\n  \"amount_after_dueDate\": \"+0000000202500\",\n  \"email_address\": \"example@gmail.com\",\n  \"contact_number\": \"03030303030\",\n  \"billing_month\": \"2410\",\n  \"date_paid\": \"\",\n  \"amount_paid\": \"\",\n  \"tran_auth_Id\": \"\",\n  \"reserved\": \"\"\n}\n```\n\n**Response Codes:**\n- '00' = Success\n- '01' = Invalid consumer number\n- '02' = Blocked/Inactive\n- '03' = Unknown error\n- '04' = Invalid data\n- '05' = Service failed\n\n**Bill Status:**\n- 'U' = Unpaid (payment allowed)\n- 'P' = Paid (no further payment)\n- 'B' = Blocked\n- 'T' = Top-up voucher"
+                    },
+                    "response": [
+                        {
+                            "name": "Success - Unpaid Bill",
+                            "originalRequest": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "http://localhost:8000/api/kuickpay/bill-inquiry/?consumer_number=095716373739&bank_mnemonic=KPY",
+                                    "protocol": "http",
+                                    "host": [
+                                        "localhost"
+                                    ],
+                                    "port": "8000",
+                                    "path": [
+                                        "api",
+                                        "kuickpay",
+                                        "bill-inquiry",
+                                        ""
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "consumer_number",
+                                            "value": "095716373739"
+                                        },
+                                        {
+                                            "key": "bank_mnemonic",
+                                            "value": "KPY"
+                                        }
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"response_Code\": \"00\",\n  \"consumer_Detail\": \"MUHAMMAD FEROZ\",\n  \"bill_status\": \"U\",\n  \"due_date\": \"20241014\",\n  \"amount_within_dueDate\": \"+0000000186900\",\n  \"amount_after_dueDate\": \"+0000000202500\",\n  \"email_address\": \"example@gmail.com\",\n  \"contact_number\": \"03030303030\",\n  \"billing_month\": \"2410\",\n  \"date_paid\": \"\",\n  \"amount_paid\": \"\",\n  \"tran_auth_Id\": \"\",\n  \"reserved\": \"\"\n}"
+                        },
+                        {
+                            "name": "Error - Missing Parameters",
+                            "originalRequest": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "http://localhost:8000/api/kuickpay/bill-inquiry/",
+                                    "protocol": "http",
+                                    "host": [
+                                        "localhost"
+                                    ],
+                                    "port": "8000",
+                                    "path": [
+                                        "api",
+                                        "kuickpay",
+                                        "bill-inquiry",
+                                        ""
+                                    ]
+                                }
+                            },
+                            "status": "Bad Request",
+                            "code": 400,
+                            "_postman_previewlanguage": "json",
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"error\": \"consumer_number and bank_mnemonic are required\"\n}"
+                        },
+                        {
+                            "name": "Error - Kuickpay Connection Failed",
+                            "originalRequest": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "http://localhost:8000/api/kuickpay/bill-inquiry/?consumer_number=095716373739&bank_mnemonic=KPY",
+                                    "protocol": "http",
+                                    "host": [
+                                        "localhost"
+                                    ],
+                                    "port": "8000",
+                                    "path": [
+                                        "api",
+                                        "kuickpay",
+                                        "bill-inquiry",
+                                        ""
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "consumer_number",
+                                            "value": "095716373739"
+                                        },
+                                        {
+                                            "key": "bank_mnemonic",
+                                            "value": "KPY"
+                                        }
+                                    ]
+                                }
+                            },
+                            "status": "Internal Server Error",
+                            "code": 500,
+                            "_postman_previewlanguage": "json",
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"error\": \"Kuickpay request failed: HTTPConnectionPool(host='localhost', port=8000): Max retries exceeded\"\n}"
+                        }
+                    ]
+                },
+                {
+                    "name": "Bill Payment",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Authorization",
+                                "value": "Bearer {{jwt_token}}",
+                                "type": "text"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json",
+                                "type": "text"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"consumer_number\": \"0000812345\",\n  \"tran_auth_id\": \"AUTH123456\",\n  \"transaction_amount\": \"1869.00\",\n  \"tran_date\": \"20241215\",\n  \"tran_time\": \"143022\",\n  \"bank_mnemonic\": \"KPY\",\n  \"reserved\": \"\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{base_url}}/api/kuickpay/bill-payment/",
+                            "host": [
+                                "{{base_url}}"
+                            ],
+                            "path": [
+                                "api",
+                                "kuickpay",
+                                "bill-payment",
+                                ""
+                            ]
+                        },
+                        "description": "Process bill payment through Kuickpay.\n\n**Authentication:** Required (JWT Bearer token)\n\n**Request Body:**\n- `consumer_number` (required): Consumer account number (18 digits)\n- `tran_auth_id` (required): Transaction authorization ID (6 digits)\n- `transaction_amount` (required): Amount as decimal string (e.g., \"1869.00\")\n  - Backend automatically converts to AN14 format: \"+0000000186900\"\n- `tran_date` (required): Transaction date (YYYYMMDD)\n- `tran_time` (required): Transaction time (HHMMSS)\n- `bank_mnemonic` (required): Bank identifier\n- `reserved` (optional): Reserved field\n\n**Expected Response (from Kuickpay):**\n```json\n{\n  \"response_Code\": \"00\",\n  \"Identification_parameter\": \"receipt_id_or_email\",\n  \"reserved\": \"\"\n}\n```\n\n**Response Codes:**\n- '00' = Success\n- '01' = Invalid voucher number\n- '02' = Blocked/Inactive\n- '03' = Duplicate/Bad transaction\n- '04' = Invalid data\n- '05' = Service failed"
+                    },
+                    "response": [
+                        {
+                            "name": "Success",
+                            "originalRequest": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"consumer_number\": \"0000812345\",\n  \"tran_auth_id\": \"AUTH123456\",\n  \"transaction_amount\": \"1869.00\",\n  \"tran_date\": \"20241215\",\n  \"tran_time\": \"143022\",\n  \"bank_mnemonic\": \"KPY\",\n  \"reserved\": \"\"\n}"
+                                },
+                                "url": {
+                                    "raw": "http://localhost:8000/api/kuickpay/bill-payment/",
+                                    "protocol": "http",
+                                    "host": [
+                                        "localhost"
+                                    ],
+                                    "port": "8000",
+                                    "path": [
+                                        "api",
+                                        "kuickpay",
+                                        "bill-payment",
+                                        ""
+                                    ]
+                                }
+                            },
+                            "status": "OK",
+                            "code": 200,
+                            "_postman_previewlanguage": "json",
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"response_Code\": \"00\",\n  \"Identification_parameter\": \"Moiz@innovarge.com\",\n  \"reserved\": \"\"\n}"
+                        },
+                        {
+                            "name": "Error - Missing Fields",
+                            "originalRequest": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"consumer_number\": \"0000812345\"\n}"
+                                },
+                                "url": {
+                                    "raw": "http://localhost:8000/api/kuickpay/bill-payment/",
+                                    "protocol": "http",
+                                    "host": [
+                                        "localhost"
+                                    ],
+                                    "port": "8000",
+                                    "path": [
+                                        "api",
+                                        "kuickpay",
+                                        "bill-payment",
+                                        ""
+                                    ]
+                                }
+                            },
+                            "status": "Bad Request",
+                            "code": 400,
+                            "_postman_previewlanguage": "json",
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"error\": \"Missing required fields: tran_auth_id, transaction_amount, tran_date, tran_time, bank_mnemonic\"\n}"
+                        },
+                        {
+                            "name": "Error - Invalid Amount",
+                            "originalRequest": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    }
+                                ],
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n  \"consumer_number\": \"0000812345\",\n  \"tran_auth_id\": \"AUTH123456\",\n  \"transaction_amount\": \"invalid\",\n  \"tran_date\": \"20241215\",\n  \"tran_time\": \"143022\",\n  \"bank_mnemonic\": \"KPY\",\n  \"reserved\": \"\"\n}"
+                                },
+                                "url": {
+                                    "raw": "http://localhost:8000/api/kuickpay/bill-payment/",
+                                    "protocol": "http",
+                                    "host": [
+                                        "localhost"
+                                    ],
+                                    "port": "8000",
+                                    "path": [
+                                        "api",
+                                        "kuickpay",
+                                        "bill-payment",
+                                        ""
+                                    ]
+                                }
+                            },
+                            "status": "Bad Request",
+                            "code": 400,
+                            "_postman_previewlanguage": "json",
+                            "header": [
+                                {
+                                    "key": "Content-Type",
+                                    "value": "application/json"
+                                }
+                            ],
+                            "body": "{\n  \"error\": \"Invalid transaction_amount format: invalid literal for Decimal()\"\n}"
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "variable": [
+        {
+            "key": "base_url",
+            "value": "https://api.saer.pk",
+            "type": "string",
+            "description": "Base URL for SAER.PK API (use http://localhost:8000 for local testing)"
+        },
+        {
+            "key": "jwt_token",
+            "value": "",
+            "type": "string",
+            "description": "JWT access token (automatically set after login)"
+        }
+    ]
+}
