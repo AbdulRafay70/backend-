@@ -353,6 +353,7 @@ class OrganizationViewSet(viewsets.ModelViewSet):
       `User` accounts to the newly created organization.
     """
     serializer_class = OrganizationSerializer
+    queryset = Organization.objects.all()
     permission_classes = [IsAuthenticated, PermissionByAction]
     
     # RBAC Permission Map
