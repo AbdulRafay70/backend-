@@ -7,7 +7,7 @@ class BlogSectionSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = models.BlogSection
-        fields = ("id", "order", "section_type", "content")
+        fields = ("id", "order", "section_type", "content", "section_styles")
 
 
 class BlogSerializer(serializers.ModelSerializer):
@@ -27,7 +27,7 @@ class BlogSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.Blog
         # include comments_count so list endpoints can show totals without extra queries on the client
-        fields = ("id", "title", "slug", "summary", "status", "published_at", "reading_time_minutes", "cover_image", "meta", "sections", "likes_count", "comments_count", "author_details")
+        fields = ("id", "title", "slug", "summary", "language", "status", "published_at", "reading_time_minutes", "cover_image", "custom_styles", "meta", "sections", "likes_count", "comments_count", "author_details")
 
     def validate(self, attrs):
         # normalize meta.tags and meta.hashtags if present
@@ -99,7 +99,8 @@ class BlogSerializer(serializers.ModelSerializer):
                     blog=blog, 
                     order=s.get("order", 0), 
                     section_type=s.get("section_type"), 
-                    content=s.get("content", {})
+                    content=s.get("content", {}),
+                    section_styles=s.get("section_styles", {})
                 ) for s in sections_data
             ]
             models.BlogSection.objects.bulk_create(sections_objs)
@@ -120,7 +121,8 @@ class BlogSerializer(serializers.ModelSerializer):
                     blog=instance, 
                     order=s.get("order", 0), 
                     section_type=s.get("section_type"), 
-                    content=s.get("content", {})
+                    content=s.get("content", {}),
+                    section_styles=s.get("section_styles", {})
                 ) for s in sections_data
             ]
             models.BlogSection.objects.bulk_create(sections_objs)
@@ -246,7 +248,8 @@ class BlogLikeSerializer(serializers.ModelSerializer):
 class LeadFormSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.LeadForm
-        fields = ("id", "name", "slug", "form_unique_id", "form_page_url", "description", "schema", "form_settings", "active")
+        fields = ("id", "name", "slug", "form_unique_id", "form_page_url", "description", "schema", "form_settings", "active", "is_linked_with_blog", "linked_blog_id", "display_position", "created_at", "updated_at")
+        read_only_fields = ("form_unique_id", "created_at", "updated_at")
 
 
 class FormSubmissionSerializer(serializers.ModelSerializer):

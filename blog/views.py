@@ -163,10 +163,25 @@ class BlogCommentViewSet(viewsets.ModelViewSet):
             serializer.save()
 
 
-class LeadFormViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = models.LeadForm.objects.filter(active=True)
+class LeadFormViewSet(viewsets.ModelViewSet):
+    queryset = models.LeadForm.objects.all()
     serializer_class = serializers.LeadFormSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated, PermissionByAction]
+    permission_map = {
+        'list': 'blog.view_form_admin',
+        'retrieve': 'blog.view_form_admin',
+        'create': 'blog.add_form_admin',
+        'update': 'blog.change_form_admin',
+        'partial_update': 'blog.change_form_admin',
+        'destroy': 'blog.delete_form_admin',
+    }
+
+    def get_queryset(self):
+        # For list/retrieve, show all forms if user is staff, otherwise only active ones
+        if self.action in ['list', 'retrieve']:
+            if self.request.user.is_staff:
+                return models.LeadForm.objects.all()
+        return models.LeadForm.objects.filter(active=True)
 
     @action(detail=True, methods=["post"], url_path="submit", permission_classes=[permissions.AllowAny], throttle_classes=[throttling.AnonRateThrottle, throttling.UserRateThrottle])
     def submit(self, request, pk=None):

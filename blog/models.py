@@ -12,6 +12,12 @@ class Blog(models.Model):
         ("published", "Published"),
         ("archived", "Archived"),
     ]
+    
+    LANGUAGE_CHOICES = [
+        ("en", "English"),
+        ("ur", "Urdu"),
+        ("ar", "Arabic"),
+    ]
 
     organization = models.ForeignKey(
         "organization.Organization",
@@ -23,6 +29,7 @@ class Blog(models.Model):
     title = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, db_index=True)
     summary = models.TextField(blank=True)
+    language = models.CharField(max_length=5, choices=LANGUAGE_CHOICES, default="en")
     status = models.CharField(max_length=16, choices=STATUS_CHOICES, default="draft")
     is_featured = models.BooleanField(default=False)
     published_at = models.DateTimeField(null=True, blank=True)
@@ -33,6 +40,34 @@ class Blog(models.Model):
     # media files are served under MEDIA_URL (configuration.settings MEDIA_URL/ROOT exist)
     cover_image = models.ImageField(upload_to='blog/covers/', max_length=512, null=True, blank=True)
     reading_time_minutes = models.PositiveIntegerField(null=True, blank=True)
+    
+    # Custom styling configuration
+    custom_styles = models.JSONField(default=dict, blank=True)
+    # Structure:
+    # {
+    #   "colors": {
+    #     "primary": "#3498db",
+    #     "secondary": "#2ecc71",
+    #     "accent": "#e74c3c",
+    #     "background": "#ffffff",
+    #     "text": "#333333",
+    #     "link": "#3498db"
+    #   },
+    #   "typography": {
+    #     "headingFont": "Playfair Display",
+    #     "bodyFont": "Open Sans",
+    #     "fontSize": {"h1": "2.5rem", "h2": "2rem", "body": "1rem"},
+    #     "lineHeight": "1.6",
+    #     "fontWeight": {"heading": "700", "body": "400"}
+    #   },
+    #   "layout": {
+    #     "containerWidth": "1200px",
+    #     "sectionSpacing": "3rem",
+    #     "contentAlignment": "left"
+    #   },
+    #   "customCSS": ""
+    # }
+    
     meta = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -75,6 +110,19 @@ class BlogSection(models.Model):
     order = models.PositiveSmallIntegerField(default=0, db_index=True)
     section_type = models.CharField(max_length=32, choices=SECTION_TYPES)
     content = models.JSONField(default=dict)
+    
+    # Section-specific styling
+    section_styles = models.JSONField(default=dict, blank=True)
+    # Structure:
+    # {
+    #   "background": "#f8f9fa",
+    #   "padding": "2rem",
+    #   "margin": "1rem 0",
+    #   "borderRadius": "8px",
+    #   "shadow": "0 2px 4px rgba(0,0,0,0.1)",
+    #   "textAlign": "left"
+    # }
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -139,6 +187,21 @@ class LeadForm(models.Model):
     schema = models.JSONField(default=dict)
     form_settings = models.JSONField(default=dict, blank=True)
     active = models.BooleanField(default=True)
+    
+    # Blog linking fields
+    is_linked_with_blog = models.BooleanField(default=False)
+    linked_blog_id = models.IntegerField(null=True, blank=True)
+    display_position = models.CharField(
+        max_length=50,
+        default='end_of_blog',
+        choices=[
+            ('end_of_blog', 'End of Blog'),
+            ('sidebar', 'Sidebar'),
+            ('popup', 'Popup Modal'),
+            ('standalone', 'Standalone Page'),
+        ]
+    )
+    
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -315,7 +315,7 @@ class HotelAvailabilityAPIView(APIView):
                 room_type=room.room_type,
                 check_in_date__lte=date_to,
                 check_out_date__gte=date_from
-            ).select_related('booking').prefetch_related('booking__pax_details')
+            ).select_related('booking').prefetch_related('booking__person_details')
             
             if booking_details.exists():
                 booking_detail = booking_details.first()

@@ -187,6 +187,8 @@ REST_FRAMEWORK = {
         "public_booking": "10/min",
         # default anonymous throttle if applied globally
         "anon": "100/min",
+        # user throttle for authenticated users
+        "user": "1000/hour",
     },
 }
 
