@@ -3,7 +3,7 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter, OrderingFilter
 from drf_spectacular.utils import extend_schema, OpenApiParameter, extend_schema_view, OpenApiExample
@@ -55,6 +55,8 @@ from rest_framework import generics
 from .serializers import PublicUmrahPackageListSerializer, PublicUmrahPackageDetailSerializer
 from django.utils.text import slugify
 from decimal import Decimal
+from users.permissions import PermissionByAction
+
 
 class VisaViewSet(ModelViewSet):
     """
@@ -81,6 +83,17 @@ class VisaViewSet(ModelViewSet):
     - created_at, issue_date, expiry_date, price
     """
     serializer_class = VisaSerializer
+    permission_classes = [IsAuthenticated, PermissionByAction]
+    
+    # RBAC Permission Map
+    permission_map = {
+        'list': 'auth.view_package_admin',
+        'retrieve': 'auth.view_package_admin',
+        'create': 'auth.add_package_admin',
+        'update': 'auth.edit_package_admin',
+        'partial_update': 'auth.edit_package_admin',
+        'destroy': 'auth.delete_package_admin',
+    }
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['visa_id', 'service_provider', 'notes']
     ordering_fields = ['created_at', 'issue_date', 'expiry_date', 'price']
@@ -498,6 +511,17 @@ class PackageViewSet(ModelViewSet):
     - created_at, price_per_person, max_capacity
     """
     serializer_class = UmrahPackageSerializer
+    permission_classes = [IsAuthenticated, PermissionByAction]
+    
+    # RBAC Permission Map
+    permission_map = {
+        'list': 'auth.view_package_admin',
+        'retrieve': 'auth.view_package_admin',
+        'create': 'auth.add_package_admin',
+        'update': 'auth.edit_package_admin',
+        'partial_update': 'auth.edit_package_admin',
+        'destroy': 'auth.delete_package_admin',
+    }
     filter_backends = [SearchFilter, OrderingFilter]
     search_fields = ['package_code', 'title', 'description']
     ordering_fields = ['created_at', 'price_per_person', 'max_capacity']
@@ -1069,6 +1093,17 @@ class BookingExpiryViewSet(ModelViewSet):
 @extend_schema(exclude=True)
 class UmrahPackageViewSet(ModelViewSet):
     serializer_class = UmrahPackageSerializer
+    permission_classes = [IsAuthenticated, PermissionByAction]
+    
+    # RBAC Permission Map
+    permission_map = {
+        'list': ['packages.view_package_admin', 'packages.view_package_agent'],
+        'retrieve': ['packages.view_package_admin', 'packages.view_package_agent'],
+        'create': ['packages.add_package_admin', 'packages.book_package_agent'],
+        'update': 'packages.edit_package_admin',
+        'partial_update': 'packages.edit_package_admin',
+        'destroy': 'packages.delete_package_admin',
+    }
 
     def perform_create(self, serializer):
         """Set organization from query param (or request data) and set created_by."""

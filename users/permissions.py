@@ -112,6 +112,12 @@ class PermissionByAction(permissions.BasePermission):
         
         # Check if user has the permission
         if request.user and request.user.is_authenticated:
-            return request.user.has_perm(required_permission)
+            # Support both single permission and list of permissions (OR logic)
+            if isinstance(required_permission, list):
+                # If it's a list, check if user has ANY of the permissions
+                return any(request.user.has_perm(perm) for perm in required_permission)
+            else:
+                # Single permission string
+                return request.user.has_perm(required_permission)
         
         return False

@@ -18,14 +18,14 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated, PermissionByAction]
     
-    # Map actions to required permissions
+    # Map actions to required permissions (using custom permission codenames)
     permission_map = {
-        'list': 'auth.view_user',
-        'retrieve': 'auth.view_user',
-        'create': 'auth.add_user',
-        'update': 'auth.change_user',
-        'partial_update': 'auth.change_user',
-        'destroy': 'auth.delete_user',
+        'list': 'auth.view_users_admin',
+        'retrieve': 'auth.view_users_admin',
+        'create': 'auth.add_users_admin',
+        'update': 'auth.edit_users_admin',
+        'partial_update': 'auth.edit_users_admin',
+        'destroy': 'auth.delete_users_admin',
     }
 
     def check_permissions(self, request):
@@ -253,15 +253,67 @@ class GroupViewSet(viewsets.ModelViewSet):
     serializer_class = GroupSerializer
     permission_classes = [IsAuthenticated, PermissionByAction]
     
-    # Map actions to required permissions
+    # Map actions to required permissions (using correct permission codenames)
     permission_map = {
-        'list': 'auth.view_group',
-        'retrieve': 'auth.view_group',
-        'create': 'auth.add_group',
-        'update': 'auth.change_group',
-        'partial_update': 'auth.change_group',
-        'destroy': 'auth.delete_group',
+        'list': 'auth.view_groups_admin',
+        'retrieve': 'auth.view_groups_admin',
+        'create': 'auth.add_groups_admin',
+        'update': 'auth.edit_groups_admin',
+        'partial_update': 'auth.edit_groups_admin',
+        'destroy': 'auth.delete_groups_admin',
     }
+
+    def check_permissions(self, request):
+        """
+        Override permission check for PATCH/PUT to allow users with
+        assign_permissions_to_groups_admin to update group permissions
+        """
+        # Superusers bypass all checks
+        if request.user.is_superuser:
+            return
+        
+        # For update/partial_update actions with permissions field
+        if self.action in ['update', 'partial_update'] and 'permissions' in request.data:
+            portal = 'admin' if request.user.is_staff else 'agent'
+            assign_perm = f'auth.assign_permissions_to_groups_{portal}'
+            
+            # Check if user has assign permission
+            if request.user.has_perm(assign_perm):
+                # Validate user can only assign permissions they have
+                if self._validate_permission_assignment(request):
+                    return  # Permission granted
+                else:
+                    from rest_framework.exceptions import PermissionDenied
+                    raise PermissionDenied("You can only assign permissions that you yourself have")
+        
+        # For all other cases, use default permission check
+        super().check_permissions(request)
+    
+    def _validate_permission_assignment(self, request):
+        """
+        Validate that user is only assigning permissions they themselves have
+        """
+        try:
+            requested_perm_ids = request.data.get('permissions', [])
+            
+            # Get all permission IDs the user has (from their groups)
+            user_permission_ids = set()
+            for group in request.user.groups.all():
+                for perm in group.permissions.all():
+                    user_permission_ids.add(perm.id)
+            
+            # Check if all requested permissions are in user's permission set
+            for perm_id in requested_perm_ids:
+                if perm_id not in user_permission_ids:
+                    # User trying to assign a permission they don't have
+                    print(f"User {request.user.email} tried to assign permission ID {perm_id} which they don't have")
+                    return False
+            
+            return True
+            
+        except Exception as e:
+            print(f"Error validating permission assignment: {e}")
+            return False
 
     def get_queryset(self):
         organization_id = self.request.query_params.get("organization_id", None)
@@ -295,14 +347,52 @@ class PermissionViewSet(viewsets.ModelViewSet):
         'destroy': 'auth.delete_permission',
     }
 
+    def check_permissions(self, request):
+        """
+        Override to allow users with assign_permissions_to_groups_admin
+        to view permissions (read-only) so they can assign them to groups
+        """
+        # Superusers bypass all checks
+        if request.user.is_superuser:
+            return
+        
+        # For list/retrieve (read-only), allow if user has group assignment permission
+        if self.action in ['list', 'retrieve']:
+            portal = 'admin' if request.user.is_staff else 'agent'
+            assign_perm = f'auth.assign_permissions_to_groups_{portal}'
+            
+            if request.user.has_perm(assign_perm):
+                return  # Allow viewing permissions
+        
+        # For all other cases, use default permission check
+        super().check_permissions(request)
+
     def get_queryset(self):
-        queryset = Permission.objects.all().select_related("extended")
+        """
+        Return only custom admin and agent permissions.
+        Filters out Django's default model permissions (add, change, delete, view).
+        Only shows permissions ending with '_admin' or '_agent', plus the login permissions.
+        """
+        from django.db.models import Q
+        
+        # Get all permissions, but filter to only show custom _admin and _agent permissions
+        # Also include the login permissions (admin_portal_access and agent_portal_access)
+        queryset = Permission.objects.filter(
+            Q(codename__endswith='_admin') | 
+            Q(codename__endswith='_agent') |
+            Q(codename='admin_portal_access') |  # Include admin login permission
+            Q(codename='agent_portal_access')    # Include agent login permission
+        ).select_related("extended")
+        
+        # Apply additional filters if provided
         content_type_id = self.request.query_params.get("content_type")
         page_type = self.request.query_params.get("page_type")
+        
         if page_type:
             queryset = queryset.filter(extended__type=page_type)
         if content_type_id:
             queryset = queryset.filter(content_type_id=content_type_id)
+        
         return queryset
 
 

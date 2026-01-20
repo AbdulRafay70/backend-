@@ -8,7 +8,9 @@ from django.utils import timezone
 from . import models, serializers
 from .permissions import IsStaffOrReadOnly, IsAuthorOrStaff
 from django.db import DatabaseError, OperationalError
+from users.permissions import PermissionByAction
 import logging
+
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +24,18 @@ class IsStaffOrReadOnly(permissions.BasePermission):
 
 class BlogViewSet(viewsets.ModelViewSet):
     queryset = models.Blog.objects.all()
-    permission_classes = [IsStaffOrReadOnly]
+    permission_classes = [permissions.IsAuthenticated, PermissionByAction]
+    
+    # RBAC Permission Map
+    permission_map = {
+        'list': 'blog.view_blog_admin',
+        'retrieve': 'blog.view_blog_admin',
+        'create': 'blog.add_blog_admin',
+        'update': 'blog.edit_blog_admin',
+        'partial_update': 'blog.edit_blog_admin',
+        'destroy': 'blog.delete_blog_admin',
+    }
+    
     # allow multipart form uploads (files) alongside JSON
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]

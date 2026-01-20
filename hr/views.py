@@ -8,6 +8,8 @@ from . import models, serializers
 from django.db import transaction
 from django.db.models import Count, Q, Sum, Avg
 import pytz
+from users.permissions import PermissionByAction
+
 
 
 @extend_schema(tags=['HR'], description='CRUD operations for employees')

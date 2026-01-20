@@ -859,7 +859,7 @@ class BookingTicketDetails(models.Model):
     booking = models.ForeignKey(
         Booking, on_delete=models.CASCADE, related_name="ticket_details"
     )
-    ticket = models.ForeignKey("tickets.Ticket", on_delete=models.PROTECT, null=True, blank=True)
+    ticket = models.ForeignKey("tickets.Ticket", on_delete=models.SET_NULL, null=True, blank=True)
     is_meal_included = models.BooleanField(default=False)
     is_refundable = models.BooleanField(default=False)
     pnr = models.CharField(max_length=100)
@@ -958,6 +958,14 @@ class BookingTicketTicketTripDetails(models.Model):
         City, on_delete=models.CASCADE, related_name="booking_arrival_city"
     )
     trip_type = models.CharField(max_length=50)
+    
+    # Flight information fields
+    flight_number = models.CharField(max_length=20, blank=True, null=True)
+    airline_code = models.CharField(max_length=10, blank=True, null=True)
+    
+    # City code fields for display
+    departure_city_code = models.CharField(max_length=10, blank=True, null=True)
+    arrival_city_code = models.CharField(max_length=10, blank=True, null=True)
 
 
 class BookingTicketStopoverDetails(models.Model):
@@ -1030,7 +1038,28 @@ class BookingPersonDetail(models.Model):
     visa_riyal_rate = models.FloatField(default=0, blank=True, null=True)  # Riyal exchange rate at booking time
     ticket_included = models.BooleanField(default=True)
 
+class PassengerActivityStatus(models.Model):
+    passenger = models.ForeignKey(BookingPersonDetail, on_delete=models.CASCADE, related_name='activity_status_records')
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    activity = GenericForeignKey('content_type', 'object_id')
+    status = models.CharField(max_length=20, default='Pending')
 
+    class Meta:
+        unique_together = ('passenger', 'content_type', 'object_id')
+        verbose_name = "Passenger Activity Status"
+        verbose_name_plural = "Passenger Activity Statuses"
+
+    def __str__(self):
+        return f"{self.passenger.first_name} - {self.activity} - {self.status}"
+    # ticket_voucher_number = models.CharField(max_length=20, blank=True, null=True)
+    # ticker_brn= models.CharField(max_length=20, blank=True, null=True)
+    # food_voucher_number = models.CharField(max_length=20, blank=True, null=True)
+    # food_brn = models.CharField(max_length=20, blank=True, null=True)
+    # ziyarat_voucher_number = models.CharField(max_length=20, blank=True, null=True)
+    # ziyarat_brn = models.CharField(max_length=20, blank=True, null=True)
+    # transport_voucher_number = models.CharField(max_length=20, blank=True, null=True)
+    # transport_brn = models.CharField(max_length=20, blank=True, null=True)
 
 class BookingPersonContactDetails(models.Model):
     person = models.ForeignKey(

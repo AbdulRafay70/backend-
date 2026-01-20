@@ -1,5 +1,5 @@
 from django.urls import path, include
-from .views import OrganizationViewSet, BranchViewSet,AgencyViewSet, OrganizationLinkViewSet, AgencyProfileView, ResellRequestViewSet
+from .views import OrganizationViewSet, BranchViewSet,AgencyViewSet, OrganizationLinkViewSet, AgencyProfileView, ResellRequestViewSet, EmployeeViewSet
 from .views import RuleCreateView, RuleListView, RuleUpdateView, RuleDeleteView
 from .views import WalkInCreateView, WalkInListView, WalkInUpdateStatusView, WalkInSummaryView
 from rest_framework import routers
@@ -9,6 +9,7 @@ router = routers.DefaultRouter()
 router.register(r"organizations", OrganizationViewSet, basename="organizations")
 router.register(r"branches", BranchViewSet, basename="branches")
 router.register(r"agencies", AgencyViewSet, basename="agencies")
+router.register(r"employees", EmployeeViewSet, basename="employees")
 router.register(r"organization-links", OrganizationLinkViewSet, basename="organization-links")
 router.register(r"resell-requests", ResellRequestViewSet, basename="resell-requests")
 

@@ -362,8 +362,20 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         # Call parent validation (this triggers authentication)
         data = super().validate(attrs)
         
-        # Add user details to response
+        # Check if user has portal access permission (admin or agent)
+        # Superusers always have access
         user = self.user
+        if not user.is_superuser:
+            # Check if user has either admin_portal_access or agent_portal_access permission
+            has_admin_access = user.has_perm('auth.admin_portal_access')
+            has_agent_access = user.has_perm('auth.agent_portal_access')
+            
+            if not (has_admin_access or has_agent_access):
+                raise serializers.ValidationError({
+                    'detail': 'You do not have permission to access the portal. Please contact your administrator.'
+                })
+        
+        # Add user details to response
         data['user'] = {
             'id': user.id,
             'email': user.email,

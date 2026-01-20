@@ -626,6 +626,21 @@ class ResellRequestViewSet(viewsets.ModelViewSet):
 
 
 class AgencyViewSet(viewsets.ModelViewSet):
+    # RBAC Permission Engine
+        from users.permissions import PermissionByAction
+        from rest_framework.permissions import IsAuthenticated
+
+        permission_classes = [IsAuthenticated, PermissionByAction]
+
+        permission_map = {
+            'list': 'auth.view_agency_admin',
+            'retrieve': 'auth.view_agency_admin',
+            'create': 'auth.add_agency_admin',
+            'update': 'auth.edit_agency_admin',
+            'partial_update': 'auth.edit_agency_admin',
+            'destroy': 'auth.delete_agency_admin',
+        }
+
     """API for managing Agencies"""
     serializer_class = AgencySerializer
 

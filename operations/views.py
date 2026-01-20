@@ -46,6 +46,8 @@ from rest_framework.permissions import IsAdminUser
 from rest_framework.views import APIView
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse, OpenApiParameter, OpenApiTypes
 from booking.models import Booking, BookingPersonDetail, VehicleType
+from users.permissions import PermissionByAction
+
 
 
 @extend_schema_view(

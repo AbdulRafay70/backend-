@@ -15,6 +15,8 @@ from django.db.models import Q
 
 # drf-spectacular helpers (add OpenAPI meta for custom endpoints)
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
+from users.permissions import PermissionByAction
+
 
 # ledger models (optional integration)
 try:

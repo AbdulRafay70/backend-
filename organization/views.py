@@ -1,11 +1,12 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
+from users.permissions import PermissionByAction
 from django.db.models import Q
 from rest_framework.views import APIView
 
-from .models import Organization, Branch, Agency, OrganizationLink, AgencyProfile
+from .models import Organization, Branch, Agency, OrganizationLink, AgencyProfile, Employee
 from .serializers import (
     OrganizationSerializer,
     BranchSerializer,
@@ -13,6 +14,7 @@ from .serializers import (
     OrganizationLinkSerializer,
     AgencyProfileSerializer,
     ResellRequestSerializer,
+    EmployeeSerializer,
 )
 from .models import ResellRequest
 from .models import Rule
@@ -351,14 +353,17 @@ class OrganizationViewSet(viewsets.ModelViewSet):
       `User` accounts to the newly created organization.
     """
     serializer_class = OrganizationSerializer
-    permission_classes = [IsAuthenticated, IsAdminUser]
-
-    def get_queryset(self):
-        user_id = self.request.query_params.get("user_id")
-        query_filters = Q()
-        if user_id:
-            query_filters &= Q(user=user_id)
-        return Organization.objects.filter(query_filters)
+    permission_classes = [IsAuthenticated, PermissionByAction]
+    
+    # RBAC Permission Map
+    permission_map = {
+        'list': 'organization.view_organization_admin',
+        'retrieve': 'organization.view_organization_admin',
+        'create': 'organization.add_organization_admin',
+        'update': 'organization.edit_organization_admin',
+        'partial_update': 'organization.edit_organization_admin',
+        'destroy': 'organization.delete_organization_admin',
+    }
 
     def create(self, request, *args, **kwargs):
         """Create an Organization (admin-only).
@@ -808,6 +813,33 @@ class AgencyViewSet(viewsets.ModelViewSet):
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+
+class EmployeeViewSet(viewsets.ModelViewSet):
+    """API for managing Employees"""
+    serializer_class = EmployeeSerializer
+    
+    def get_queryset(self):
+        agency_id = self.request.query_params.get("agency_id")
+        branch_id = self.request.query_params.get("branch_id")
+        organization_id = self.request.query_params.get("organization_id")
+        
+        # Start with all employees
+        queryset = Employee.objects.all()
+        
+        # Filter by agency if provided
+        if agency_id:
+            queryset = queryset.filter(agency_id=agency_id)
+        
+        # Filter by branch if provided (through agency)
+        if branch_id:
+            queryset = queryset.filter(agency__branch_id=branch_id)
+        
+        # Filter by organization if provided (through agency -> branch)
+        if organization_id:
+            queryset = queryset.filter(agency__branch__organization_id=organization_id)
+        
+        return queryset.select_related("agency", "agency__branch", "agency__branch__organization", "user")
 
 
 class AgencyProfileView(APIView):

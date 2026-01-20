@@ -27,6 +27,13 @@ urlpatterns = [
     path("api-auth/", include("rest_framework.urls")),
     path("api/token/", CustomTokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    
+    # Permission Engine endpoints
+    path("api/current-user/", include([
+        path("", lambda request: __import__('users.views_permissions', fromlist=['current_user']).current_user(request), name="current-user"),
+        path("permissions/", lambda request: __import__('users.views_permissions', fromlist=['current_user_permissions']).current_user_permissions(request), name="current-user-permissions"),
+    ])),
+    
     path("api/parent-options/", ParentOptionsView.as_view(), name="parent_options"),
 
     # ✅ Redirect homepage to Swagger UI

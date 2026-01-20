@@ -5,6 +5,7 @@ import json
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
+from users.permissions import PermissionByAction
 from django.db.models import Q
 from drf_spectacular.utils import extend_schema, OpenApiParameter, extend_schema_view, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
@@ -21,6 +22,8 @@ from .serializers import (
 )
 from django.utils import timezone
 from users.models import GroupExtension
+from users.permissions import PermissionByAction
+
 
 
 @extend_schema_view(
@@ -126,7 +129,20 @@ from users.models import GroupExtension
 class TicketViewSet(ModelViewSet):
     # default serializer (used for create/retrieve/update)
     serializer_class = TicketSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermissionByAction]
+    
+    # RBAC Permission Map
+    # Allow viewing tickets if user has ticket permissions OR package permissions
+    # (since creating packages requires selecting tickets)
+    # Also allow agents to view tickets
+    permission_map = {
+        'list': ['tickets.view_ticket_admin', 'packages.view_package_admin', 'packages.add_package_admin', 'tickets.view_ticket_agent'],
+        'retrieve': ['tickets.view_ticket_admin', 'packages.view_package_admin', 'packages.add_package_admin', 'tickets.view_ticket_agent'],
+        'create': 'tickets.add_ticket_admin',
+        'update': 'tickets.edit_ticket_admin',
+        'partial_update': 'tickets.edit_ticket_admin',
+        'destroy': 'tickets.delete_ticket_admin',
+    }
 
     def get_serializer_class(self):
         # Use a compact serializer for list responses to return the trimmed schema
@@ -260,7 +276,21 @@ class TicketViewSet(ModelViewSet):
 
 class HotelsViewSet(ModelViewSet):
     serializer_class = HotelsSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermissionByAction]
+    
+    # RBAC Permission Map
+    # Allow viewing hotels if user has hotel permissions OR package permissions
+    # (since creating packages requires selecting hotels)
+    # Also allow agents to view hotels
+    permission_map = {
+        'list': ['tickets.view_hotel_admin', 'packages.view_package_admin', 'packages.add_package_admin', 'tickets.view_hotel_agent'],
+        'retrieve': ['tickets.view_hotel_admin', 'packages.view_package_admin', 'packages.add_package_admin', 'tickets.view_hotel_agent'],
+        'create': 'tickets.add_hotel_admin',
+        'update': 'tickets.edit_hotel_admin',
+        'partial_update': 'tickets.edit_hotel_admin',
+        'destroy': 'tickets.delete_hotel_admin',
+    }
+    
     # Accept multipart/form-data for file uploads in create/update
     parser_classes = [MultiPartParser, FormParser, JSONParser]
 
@@ -499,7 +529,17 @@ class HotelsViewSet(ModelViewSet):
 
 class HotelRoomsViewSet(ModelViewSet):
     serializer_class = HotelRoomsSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, PermissionByAction]
+    
+    # RBAC Permission Map
+    permission_map = {
+        'list': 'auth.view_hotel_rooms_admin',
+        'retrieve': 'auth.view_hotel_rooms_admin',
+        'create': 'auth.add_hotel_rooms_admin',
+        'update': 'auth.edit_hotel_rooms_admin',
+        'partial_update': 'auth.edit_hotel_rooms_admin',
+        'destroy': 'auth.delete_hotel_rooms_admin',
+    }
 
     def get_queryset(self):
         from organization.models import OrganizationLink

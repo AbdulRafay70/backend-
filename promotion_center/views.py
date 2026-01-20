@@ -9,6 +9,8 @@ from io import TextIOWrapper
 
 from .models import PromotionContact, normalize_phone
 from .serializers import PromotionContactSerializer, PromotionContactImportResultSerializer
+from users.permissions import PermissionByAction
+
 
 
 class PromotionContactViewSet(viewsets.ModelViewSet):

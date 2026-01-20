@@ -1,0 +1,11 @@
+"""
+Add these URL patterns to your urls.py
+
+from users.views_permissions import current_user_permissions, current_user
+
+urlpatterns = [
+    # ... existing patterns
+    path('api/current-user/', current_user, name='current-user'),
+    path('api/current-user/permissions/', current_user_permissions, name='current-user-permissions'),
+]
+"""

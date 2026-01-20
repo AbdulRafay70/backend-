@@ -918,6 +918,21 @@ class CustomUmrahPackageViewSet(ModelViewSet):
         return queryset
 
 class SetVisaTypeViewSet(ModelViewSet):
+    # RBAC Permission Engine
+        from users.permissions import PermissionByAction
+        from rest_framework.permissions import IsAuthenticated
+
+        permission_classes = [IsAuthenticated, PermissionByAction]
+
+        permission_map = {
+            'list': 'auth.view_set_visa_type_admin',
+            'retrieve': 'auth.view_set_visa_type_admin',
+            'create': 'auth.add_set_visa_type_admin',
+            'update': 'auth.edit_set_visa_type_admin',
+            'partial_update': 'auth.edit_set_visa_type_admin',
+            'destroy': 'auth.delete_set_visa_type_admin',
+        }
+
     serializer_class = SetVisaTypeSerializer
 
     def get_queryset(self):

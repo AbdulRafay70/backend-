@@ -1955,6 +1955,21 @@ class DiscountGroupViewSet(viewsets.ModelViewSet):
     queryset = DiscountGroup.objects.all().prefetch_related("discounts")
     serializer_class = DiscountGroupSerializer
 class MarkupViewSet(viewsets.ModelViewSet):
+    # RBAC Permission Engine
+        from users.permissions import PermissionByAction
+        from rest_framework.permissions import IsAuthenticated
+
+        permission_classes = [IsAuthenticated, PermissionByAction]
+
+        permission_map = {
+            'list': 'auth.view_markup_admin',
+            'retrieve': 'auth.view_markup_admin',
+            'create': 'auth.add_markup_admin',
+            'update': 'auth.edit_markup_admin',
+            'partial_update': 'auth.edit_markup_admin',
+            'destroy': 'auth.delete_markup_admin',
+        }
+
     queryset = Markup.objects.all().order_by("-created_at")
     serializer_class = MarkupSerializer
 

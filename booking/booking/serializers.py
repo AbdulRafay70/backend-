@@ -121,7 +121,11 @@ class PublicTicketSerializer(serializers.ModelSerializer):
                     'arrival_date_time': t.arrival_date_time,
                     'departure_city': getattr(t.departure_city, 'name', None) if getattr(t, 'departure_city', None) else None,
                     'arrival_city': getattr(t.arrival_city, 'name', None) if getattr(t, 'arrival_city', None) else None,
+                    'departure_city_code': t.departure_city_code,
+                    'arrival_city_code': t.arrival_city_code,
                     'trip_type': t.trip_type,
+                    'flight_number': t.flight_number,
+                    'airline_code': t.airline_code,
                 })
         except Exception:
             pass
@@ -348,7 +352,11 @@ class PublicPaymentCreateSerializer(serializers.Serializer):
 class BookingTicketTripDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = BookingTicketTicketTripDetails
-        fields = "__all__"
+        fields = [
+            'id', 'ticket', 'departure_date_time', 'arrival_date_time',
+            'departure_city', 'arrival_city', 'trip_type', 'flight_number',
+            'airline_code', 'departure_city_code', 'arrival_city_code'
+        ]
         extra_kwargs = {"ticket": {"read_only": True}}
 
 

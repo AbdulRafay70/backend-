@@ -2671,6 +2671,21 @@ class AirportOperationViewSet(viewsets.ModelViewSet):
     destroy=extend_schema(summary="Delete Ziyarat Operation", description="Delete a ziyarat operation"),
 )
 class ZiyaratOperationViewSet(viewsets.ModelViewSet):
+    # RBAC Permission Engine
+        from users.permissions import PermissionByAction
+        from rest_framework.permissions import IsAuthenticated
+
+        permission_classes = [IsAuthenticated, PermissionByAction]
+
+        permission_map = {
+            'list': 'auth.view_ziyarat_operation_admin',
+            'retrieve': 'auth.view_ziyarat_operation_admin',
+            'create': 'auth.add_ziyarat_operation_admin',
+            'update': 'auth.edit_ziyarat_operation_admin',
+            'partial_update': 'auth.edit_ziyarat_operation_admin',
+            'destroy': 'auth.delete_ziyarat_operation_admin',
+        }
+
     """
     ViewSet for Ziyarat Operations.
     

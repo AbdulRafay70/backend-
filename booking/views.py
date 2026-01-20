@@ -1624,10 +1624,10 @@ class PublicBookingStatusAPIView(APIView):
         if not booking:
             return Response({"detail": "Not found."}, status=status.HTTP_404_NOT_FOUND)
 
-        # check expiry
-        from django.utils import timezone
-        if booking.expiry_time and booking.expiry_time < timezone.now():
-            return Response({"detail": "Booking expired."}, status=status.HTTP_404_NOT_FOUND)
+        # Expiry check disabled for public vouchers - approved bookings should always be viewable
+        # from django.utils import timezone
+        # if booking.expiry_time and booking.expiry_time < timezone.now():
+        #     return Response({"detail": "Booking expired."}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = BookingSerializer(booking, context={"request": request})
         return Response(serializer.data)
@@ -2501,6 +2501,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 from django.contrib.admin.views.decorators import staff_member_required
 from tickets.models import Ticket
+from users.permissions import PermissionByAction
 
 @staff_member_required
 @require_GET

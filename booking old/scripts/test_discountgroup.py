@@ -1,3 +1,0 @@
-"""
-Script removed per request.
-"""

@@ -320,6 +320,8 @@ class UniversalDeleteView(APIView):
 from rest_framework import viewsets
 from .models import RegistrationRule
 from .serializers import RegistrationRuleSerializer
+from users.permissions import PermissionByAction
+
 
 class RegistrationRuleViewSet(viewsets.ModelViewSet):
     queryset = RegistrationRule.objects.all().order_by('-created_at')

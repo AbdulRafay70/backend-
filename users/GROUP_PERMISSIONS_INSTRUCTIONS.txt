@@ -1,0 +1,37 @@
+"""
+INSTRUCTIONS: Add these permission classes to your Group ViewSet
+
+1. Find your Group ViewSet (likely in users/views.py or similar)
+
+2. Import the custom permissions:
+   from users.group_permissions import CanAssignGroupPermissions, CanManageGroups
+
+3. Update your GroupViewSet to use these permissions:
+
+   class GroupViewSet(viewsets.ModelViewSet):
+       queryset = Group.objects.all()
+       serializer_class = GroupSerializer
+       
+       def get_permissions(self):
+           # Use custom permission classes
+           if self.action in ['update', 'partial_update']:
+               # For updates, check both manage and assign permissions
+               return [CanManageGroups() | CanAssignGroupPermissions()]
+           else:
+               # For other actions, use standard manage permissions
+               return [CanManageGroups()]
+
+4. This will allow users with 'assign_permissions_to_groups_admin' to assign
+   permissions to groups, but ONLY permissions they themselves have.
+
+5. Superusers bypass all checks and can assign any permission.
+
+EXAMPLE:
+--------
+User A has permissions: [view_blog_admin, add_blog_admin, assign_permissions_to_groups_admin]
+
+✅ User A CAN assign: view_blog_admin, add_blog_admin to a group
+❌ User A CANNOT assign: view_hotel_admin (they don't have it)
+
+This prevents privilege escalation!
+"""

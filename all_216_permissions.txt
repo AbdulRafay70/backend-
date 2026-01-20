@@ -1,0 +1,284 @@
+================================================================================
+ALL CUSTOM PERMISSIONS (Admin + Agent)
+================================================================================
+
+📋 ADMIN PERMISSIONS (202 total)
+================================================================================
+
+
+📦 auth.group (66 permissions):
+  - add_bank_account_admin | Can add bank account in admin portal
+  - add_commission_add_group_admin | Can add commission add group in admin portal
+  - add_commission_assign_value_admin | Can add commission assign value in admin portal
+  - add_create_link_org_admin | Can add create link org in admin portal
+  - add_create_resell_request_admin | Can add create resell request in admin portal
+  - add_discount_groups_admin | Can add discount groups in admin portal
+  - add_expense_management_admin | Can add expense management in admin portal
+  - add_groups_admin | Can add groups in admin portal
+  - add_manual_posting_admin | Can add manual posting in admin portal
+  - add_markup_add_group_admin | Can add markup add group in admin portal
+  - add_markup_assign_value_admin | Can add markup assign value in admin portal
+  - add_payments_finance_admin | Can add payments in admin portal
+  - add_remarks_pending_payments_admin | Can add remarks to pending payments in admin portal
+  - approve_payments_admin | Can approve payments in admin portal
+  - assign_commission_to_discount_groups_admin | Can assign commission to discount groups in admin portal
+  - assign_groups_admin | Can assign groups in admin portal
+  - assign_permissions_to_groups_admin | Can assign permissions to groups in admin portal
+  - delete_bank_account_admin | Can delete bank account in admin portal
+  - delete_commission_add_group_admin | Can delete commission add group in admin portal
+  - delete_commission_assign_value_admin | Can delete commission assign value in admin portal
+  - delete_create_link_org_admin | Can delete create link org in admin portal
+  - delete_create_resell_request_admin | Can delete create resell request in admin portal
+  - delete_discount_groups_admin | Can delete discount groups in admin portal
+  - delete_expense_management_admin | Can delete expense management in admin portal
+  - delete_groups_admin | Can delete groups in admin portal
+  - delete_manual_posting_admin | Can delete manual posting in admin portal
+  - delete_markup_add_group_admin | Can delete markup add group in admin portal
+  - delete_markup_assign_value_admin | Can delete markup assign value in admin portal
+  - edit_bank_account_admin | Can edit bank account in admin portal
+  - edit_commission_add_group_admin | Can edit commission add group in admin portal
+  - edit_commission_assign_value_admin | Can edit commission assign value in admin portal
+  - edit_create_link_org_admin | Can edit create link org in admin portal
+  - edit_create_resell_request_admin | Can edit create resell request in admin portal
+  - edit_discount_groups_admin | Can edit discount groups in admin portal
+  - edit_expense_management_admin | Can edit expense management in admin portal
+  - edit_groups_admin | Can edit groups in admin portal
+  - edit_manual_posting_admin | Can edit manual posting in admin portal
+  - edit_markup_add_group_admin | Can edit markup add group in admin portal
+  - edit_markup_assign_value_admin | Can edit markup assign value in admin portal
+  - reject_payments_admin | Can reject payments in admin portal
+  - update_order_delivery_admin | Can update order delivery in admin portal
+  - view_agent_bookings_admin | Can view agent bookings in admin portal
+  - view_audit_trail_admin | Can view audit trail in admin portal
+  - view_balance_sheet_admin | Can view balance sheet in admin portal
+  - view_bank_account_admin | Can view bank account in admin portal
+  - view_booking_history_admin | Can view booking history in admin portal
+  - view_branch_bookings_admin | Can view branch bookings in admin portal
+  - view_commission_add_group_admin | Can view commission add group in admin portal
+  - view_commission_assign_value_admin | Can view commission assign value in admin portal
+  - view_create_link_org_admin | Can view create link org in admin portal
+  - view_create_resell_request_admin | Can view create resell request in admin portal
+  - view_discount_groups_admin | Can view discount groups in admin portal
+  - view_employee_bookings_admin | Can view employee bookings in admin portal
+  - view_expense_management_admin | Can view expense management in admin portal
+  - view_financial_ledger_admin | Can view financial ledger in admin portal
+  - view_groups_admin | Can view groups in admin portal
+  - view_ledger_admin | Can view ledger in admin portal
+  - view_manual_posting_admin | Can view manual posting in admin portal
+  - view_markup_add_group_admin | Can view markup add group in admin portal
+  - view_markup_assign_value_admin | Can view markup assign value in admin portal
+  - view_order_delivery_admin | Can view order delivery in admin portal
+  - view_org_bookings_admin | Can view organization bookings in admin portal
+  - view_pending_payments_admin | Can view pending payments in admin portal
+  - view_profit_loss_reports_admin | Can view profit & loss reports in admin portal
+  - view_recent_transactions_admin | Can view recent transactions in admin portal
+  - view_tax_reports_fbr_admin | Can view tax reports (FBR) in admin portal
+
+📦 auth.user (40 permissions):
+  - add_admin_admin | Can add admin in admin portal
+  - add_agent_admin | Can add agent in admin portal
+  - add_approvals_admin | Can add approvals in admin portal
+  - add_area_agent_admin | Can add area agent in admin portal
+  - add_attendance_admin | Can add attendance in admin portal
+  - add_branch_users_admin | Can add branch users in admin portal
+  - add_employee_admin | Can add employee in admin portal
+  - add_employees_admin | Can add employees in admin portal
+  - add_movements_admin | Can add movements in admin portal
+  - add_punctuality_admin | Can add punctuality in admin portal
+  - add_super_admin_admin | Can add super admin in admin portal
+  - delete_admin_admin | Can delete admin in admin portal
+  - delete_agent_admin | Can delete agent in admin portal
+  - delete_approvals_admin | Can delete approvals in admin portal
+  - delete_area_agent_admin | Can delete area agent in admin portal
+  - delete_attendance_admin | Can delete attendance in admin portal
+  - delete_branch_users_admin | Can delete branch users in admin portal
+  - delete_employee_admin | Can delete employee in admin portal
+  - delete_employees_admin | Can delete employees in admin portal
+  - delete_movements_admin | Can delete movements in admin portal
+  - delete_punctuality_admin | Can delete punctuality in admin portal
+  - delete_super_admin_admin | Can delete super admin in admin portal
+  - edit_admin_admin | Can edit admin in admin portal
+  - edit_agent_admin | Can edit agent in admin portal
+  - edit_approvals_admin | Can edit approvals in admin portal
+  - edit_area_agent_admin | Can edit area agent in admin portal
+  - edit_attendance_admin | Can edit attendance in admin portal
+  - edit_branch_users_admin | Can edit branch users in admin portal
+  - edit_employee_admin | Can edit employee in admin portal
+  - edit_employees_admin | Can edit employees in admin portal
+  - edit_movements_admin | Can edit movements in admin portal
+  - edit_punctuality_admin | Can edit punctuality in admin portal
+  - edit_super_admin_admin | Can edit super admin in admin portal
+  - view_add_users_admin | Can view add users in admin portal
+  - view_approvals_admin | Can view approvals in admin portal
+  - view_attendance_admin | Can view attendance in admin portal
+  - view_employees_admin | Can view employees in admin portal
+  - view_movements_admin | Can view movements in admin portal
+  - view_punctuality_admin | Can view punctuality in admin portal
+  - view_users_admin | Can view users in admin portal
+
+📦 blog.blog (4 permissions):
+  - add_blog_admin | Can add blogs in admin portal
+  - delete_blog_admin | Can delete blogs in admin portal
+  - edit_blog_admin | Can edit blogs in admin portal
+  - view_blog_admin | Can view blogs in admin portal
+
+📦 blog.formsubmission (4 permissions):
+  - add_form_admin | Can add forms in admin portal
+  - delete_form_admin | Can delete forms in admin portal
+  - edit_form_admin | Can edit forms in admin portal
+  - view_form_admin | Can view forms in admin portal
+
+📦 booking.booking (12 permissions):
+  - update_airport_operations_admin | Can update airport in admin portal
+  - update_food_operations_admin | Can update food in admin portal
+  - update_hotel_checkin_admin | Can update hotel check-in/check-out in admin portal
+  - update_pax_details_admin | Can update pax details in admin portal
+  - update_transport_operations_admin | Can update transport in admin portal
+  - update_ziyarat_operations_admin | Can update ziyarat in admin portal
+  - view_airport_operations_admin | Can view airport in admin portal
+  - view_food_operations_admin | Can view food in admin portal
+  - view_hotel_checkin_admin | Can view hotel check-in/check-out in admin portal
+  - view_pax_details_admin | Can view pax details in admin portal
+  - view_transport_operations_admin | Can view transport in admin portal
+  - view_ziyarat_operations_admin | Can view ziyarat in admin portal
+
+📦 customers.customer (8 permissions):
+  - add_customer_database_admin | Can add customer database in admin portal
+  - add_walking_customer_admin | Can add walking customer in admin portal
+  - delete_customer_database_admin | Can delete customer database in admin portal
+  - delete_walking_customer_admin | Can delete walking customer in admin portal
+  - edit_customer_database_admin | Can edit customer database in admin portal
+  - edit_walking_customer_admin | Can edit walking customer in admin portal
+  - view_customer_database_admin | Can view customer database in admin portal
+  - view_walking_customer_admin | Can view walking customer in admin portal
+
+📦 hr.movementlog (9 permissions):
+  - add_hr_commission_admin | Can add commission in admin portal
+  - add_hr_payments_admin | Can add payments in admin portal
+  - delete_hr_commission_admin | Can delete commission in admin portal
+  - delete_hr_payments_admin | Can delete payments in admin portal
+  - edit_hr_commission_admin | Can edit commission in admin portal
+  - edit_hr_payments_admin | Can edit payments in admin portal
+  - view_hr_commission_admin | Can view commission in admin portal
+  - view_hr_payments_admin | Can view payments in admin portal
+  - view_pax_all_passengers_admin | Can view all passengers in admin portal
+
+📦 leads.lead (15 permissions):
+  - add_leads_admin | Can add leads in admin portal
+  - add_loan_admin | Can add loan in admin portal
+  - add_passport_leads_admin | Can add passport leads in admin portal
+  - add_tasks_admin | Can add tasks in admin portal
+  - delete_passport_leads_admin | Can delete passport leads in admin portal
+  - edit_leads_admin | Can edit leads in admin portal
+  - edit_loan_admin | Can edit loan in admin portal
+  - edit_passport_leads_admin | Can edit passport leads in admin portal
+  - edit_tasks_admin | Can edit tasks in admin portal
+  - view_closed_leads_admin | Can view closed leads in admin portal
+  - view_instant_admin | Can view instant in admin portal
+  - view_leads_admin | Can view leads in admin portal
+  - view_loan_admin | Can view loan in admin portal
+  - view_passport_leads_admin | Can view passport leads in admin portal
+  - view_tasks_admin | Can view tasks in admin portal
+
+📦 organization.agency (5 permissions):
+  - add_agency_admin | Can add agency in admin portal
+  - assign_agency_admin | Can assign agency in admin portal
+  - delete_agency_admin | Can delete agency in admin portal
+  - edit_agency_admin | Can edit agency in admin portal
+  - view_agency_admin | Can view agency in admin portal
+
+📦 organization.branch (5 permissions):
+  - add_branch_admin | Can add branch in admin portal
+  - assign_branches_admin | Can assign branches in admin portal
+  - delete_branch_admin | Can delete branch in admin portal
+  - edit_branch_admin | Can edit branch in admin portal
+  - view_branch_admin | Can view branch in admin portal
+
+📦 organization.organization (5 permissions):
+  - add_organization_admin | Can add organization in admin portal
+  - assign_organization_admin | Can assign organization in admin portal
+  - delete_organization_admin | Can delete organization in admin portal
+  - edit_organization_admin | Can edit organization in admin portal
+  - view_organization_admin | Can view organization in admin portal
+
+📦 organization.rule (4 permissions):
+  - add_rule_admin | Can add rules in admin portal
+  - delete_rule_admin | Can delete rules in admin portal
+  - edit_rule_admin | Can edit rules in admin portal
+  - view_rule_admin | Can view rules in admin portal
+
+📦 packages.umrahpackage (4 permissions):
+  - add_package_admin | Can add packages in admin portal
+  - delete_package_admin | Can delete packages in admin portal
+  - edit_package_admin | Can edit packages in admin portal
+  - view_package_admin | Can view packages in admin portal
+
+📦 tickets.hotels (16 permissions):
+  - add_availability_admin | Can add hotel availability in admin portal
+  - add_floor_management_admin | Can add hotel floor management in admin portal
+  - add_hotel_admin | Can add hotels in admin portal
+  - add_outsourcing_admin | Can add hotel outsourcing in admin portal
+  - delete_availability_admin | Can delete hotel availability in admin portal
+  - delete_floor_management_admin | Can delete hotel floor management in admin portal
+  - delete_hotel_admin | Can delete hotels in admin portal
+  - delete_outsourcing_admin | Can delete hotel outsourcing in admin portal
+  - edit_availability_admin | Can edit hotel availability in admin portal
+  - edit_floor_management_admin | Can edit hotel floor management in admin portal
+  - edit_hotel_admin | Can edit hotels in admin portal
+  - edit_outsourcing_admin | Can edit hotel outsourcing in admin portal
+  - view_availability_admin | Can view hotel availability in admin portal
+  - view_floor_management_admin | Can view hotel floor management in admin portal
+  - view_hotel_admin | Can view hotels in admin portal
+  - view_outsourcing_admin | Can view hotel outsourcing in admin portal
+
+📦 tickets.ticket (4 permissions):
+  - add_ticket_admin | Can add tickets in admin portal
+  - delete_ticket_admin | Can delete tickets in admin portal
+  - edit_ticket_admin | Can edit tickets in admin portal
+  - view_ticket_admin | Can view tickets in admin portal
+
+📦 users.customuser (1 permissions):
+  - view_finance_ledger_admin | Can view finance ledger in admin portal
+
+================================================================================
+Total Admin Permissions: 202
+================================================================================
+
+
+👤 AGENT PERMISSIONS (12 total)
+================================================================================
+
+
+📦 auth.group (7 permissions):
+  - add_bank_account_agent | Can add bank account in agent portal
+  - add_deposit_payment_agent | Can add deposit payment in agent portal
+  - delete_bank_account_agent | Can delete bank account in agent portal
+  - edit_bank_account_agent | Can edit bank account in agent portal
+  - view_bank_account_agent | Can view bank account in agent portal
+  - view_booking_history_agent | Can view booking history in agent portal
+  - view_ledger_agent | Can view ledger in agent portal
+
+📦 hr.movementlog (1 permissions):
+  - view_pax_movement_agent | Can view pax movement in agent portal
+
+📦 packages.umrahpackage (2 permissions):
+  - book_package_agent | Can book packages in agent portal
+  - view_package_agent | Can view packages in agent portal
+
+📦 tickets.hotels (1 permissions):
+  - view_hotel_agent | Can view hotels in agent portal
+
+📦 tickets.ticket (1 permissions):
+  - view_ticket_agent | Can view tickets in agent portal
+
+================================================================================
+Total Agent Permissions: 12
+================================================================================
+
+
+📊 GRAND TOTAL
+================================================================================
+Admin Permissions: 202
+Agent Permissions: 12
+TOTAL PERMISSIONS: 214
+================================================================================
