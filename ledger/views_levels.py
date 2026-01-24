@@ -28,12 +28,10 @@ class OrganizationLedgerAPIView(APIView):
     def get(self, request, organization_id):
         organization = get_object_or_404(Organization, id=organization_id)
         
-        # Get all ledger entries for this organization and its branches
+        # Get all ledger entries for THIS organization only
+        # Each org sees only their side of inter-org transactions
         entries = LedgerEntry.objects.filter(
-            Q(organization=organization) |
-            Q(branch__organization=organization) |
-            Q(seller_organization=organization) |
-            Q(inventory_owner_organization=organization)
+            organization=organization
         ).select_related(
             'organization', 'branch', 'agency', 'area_agency',
             'seller_organization', 'inventory_owner_organization',
@@ -152,8 +150,11 @@ class AgencyLedgerAPIView(APIView):
         agency = get_object_or_404(Agency, id=agency_id)
         
         # Get all ledger entries for this agency
+        # EXCLUDE inter-org entries (those are organization-level, not agent-level)
         entries = LedgerEntry.objects.filter(
-            agency=agency
+            agency=agency,
+            seller_organization__isnull=True,  # Exclude inter-org reseller entries
+            inventory_owner_organization__isnull=True  # Exclude inter-org owner entries
         ).select_related(
             'organization', 'branch', 'agency', 'area_agency',
             'seller_organization', 'inventory_owner_organization',

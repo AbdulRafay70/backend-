@@ -38,15 +38,33 @@ def _user_belongs_to_org(user, org_id):
         org_id_int = int(org_id)
     except Exception:
         return False
+    
+    # Super Admin can access any organization
     if user.is_superuser:
         return True
-    return any(o.id == org_id_int for o in user.organizations.all())
+    
+    if not user.is_authenticated:
+        return False
+
+    # Check direct org membership
+    if user.organizations.filter(id=org_id_int).exists():
+        return True
+        
+    # Check branch membership
+    if user.branches.filter(organization_id=org_id_int).exists():
+        return True
+        
+    # Check agency membership
+    if user.agencies.filter(branch__organization_id=org_id_int).exists():
+        return True
+        
+    return False
 
 
 class OrganizationLinkViewSet(viewsets.ModelViewSet):
     """
     Manage linking between organizations.
-    - Only Super Admins can create link requests.
+    - Only Super Admins can create link requests (bu    t restricted to their orgs).
     - Both organizations must accept for request_status to become True.
     - Either side can reject.
     """
@@ -55,18 +73,40 @@ class OrganizationLinkViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Allow filtering links by organization_id"""
+        """Allow filtering links by organization_id, strictly scoped to user's access"""
         from django.db import connection
-        # Force database connection refresh to avoid transaction isolation issues
+        from django.db.models import Q
+        # Force database connection refresh
         connection.close()
         
+        user = self.request.user
+        if not user.is_authenticated:
+            return OrganizationLink.objects.none()
+            
+        # Super Admin sees all links
+        if user.is_superuser:
+            queryset = OrganizationLink.objects.all().order_by("-created_at")
+        else:
+            # Get all org IDs the user belongs to (Direct + Branch + Agency)
+            user_org_ids = set()
+            user_org_ids.update(user.organizations.values_list('id', flat=True))
+            user_org_ids.update(user.branches.values_list('organization_id', flat=True))
+            user_org_ids.update(user.agencies.values_list('branch__organization_id', flat=True))
+            
+            # Base queryset: only show links involving user's organizations
+            queryset = OrganizationLink.objects.filter(
+                Q(main_organization_id__in=user_org_ids) |
+                Q(link_organization_id__in=user_org_ids)
+            ).order_by("-created_at")
+        
+        # Optional additional filter
         organization_id = self.request.query_params.get("organization_id")
-        queryset = OrganizationLink.objects.all().order_by("-created_at")
         if organization_id:
             queryset = queryset.filter(
                 Q(main_organization_id=organization_id) |
                 Q(link_organization_id=organization_id)
             )
+            
         return queryset
 
     def list(self, request, *args, **kwargs):
@@ -365,6 +405,33 @@ class OrganizationViewSet(viewsets.ModelViewSet):
         'partial_update': 'organization.edit_organization_admin',
         'destroy': 'organization.delete_organization_admin',
     }
+    
+    def get_queryset(self):
+        """Restrict visibility to assigned organizations only, but allow Super Admins to see all"""
+        user = self.request.user
+        if not user.is_authenticated:
+            return Organization.objects.none()
+            
+        # Super Admin sees all organizations (to allow linking any org)
+        if user.is_superuser:
+            return Organization.objects.all().order_by('id')
+            
+        # 1. Direct membership
+        direct_org_ids = user.organizations.values_list('id', flat=True)
+        
+        # 2. Via Branches
+        branch_org_ids = user.branches.values_list('organization_id', flat=True)
+        
+        # 3. Via Agencies
+        agency_org_ids = user.agencies.values_list('branch__organization_id', flat=True)
+        
+        # Combine all IDs
+        all_ids = set()
+        all_ids.update(direct_org_ids)
+        all_ids.update(branch_org_ids)
+        all_ids.update(agency_org_ids)
+        
+        return Organization.objects.filter(id__in=all_ids).distinct()
 
     def create(self, request, *args, **kwargs):
         """Create an Organization (admin-only).

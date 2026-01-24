@@ -98,6 +98,43 @@ class CommissionEarningUpdateStatusView(generics.UpdateAPIView):
     serializer_class = CommissionEarningSerializer
     permission_classes = [IsAuthenticated]
 
+    def perform_update(self, serializer):
+        instance = serializer.save()
+        
+        # Sync status to HR module (e.g. cancelled)
+        if instance.earned_by_type == 'employee':
+            try:
+                from hr.models import Commission as HrCommission
+                from django.contrib.auth import get_user_model
+                
+                # Resolve Booking Reference
+                booking_ref_str = str(instance.booking_id) if instance.booking_id else None
+                if instance.booking_id:
+                     try:
+                        # minimal import inside method to avoid circ deps if any
+                        from booking.models import Booking
+                        bk = Booking.objects.get(pk=instance.booking_id)
+                        if bk.booking_number:
+                            booking_ref_str = bk.booking_number
+                     except:
+                        pass
+                
+                if booking_ref_str:
+                     # Resolve Employee via User ID
+                     User = get_user_model()
+                     user_obj = User.objects.filter(pk=instance.earned_by_id).first()
+                     
+                     if user_obj and user_obj.email:
+                          # Update all matching HR commissions
+                          # If status is cancelled, we might want to just set it to cancelled
+                          HrCommission.objects.filter(
+                              booking_id=booking_ref_str, 
+                              employee__email=user_obj.email
+                          ).update(status=instance.status)
+                          print(f"[Commission Update] Synced HR Commission status to {instance.status} for {user_obj.email}")
+            except Exception as e:
+                print(f"[Commission Update] Failed to sync HR status: {e}")
+
 
 class CommissionEarningRedeemView(APIView):
     permission_classes = [IsAuthenticated]
@@ -120,9 +157,24 @@ class CommissionEarningRedeemView(APIView):
 
 
 class CommissionEarningListView(generics.ListAPIView):
-    queryset = CommissionEarning.objects.all().select_related("commission_rule")
+    # queryset = CommissionEarning.objects.all()
     serializer_class = CommissionEarningSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        qs = CommissionEarning.objects.all().order_by('-created_at')
+        user = self.request.user
+        
+        # Filter by explicitly owned commissions if requested
+        if self.request.query_params.get('my_only') == 'true':
+            return qs.filter(earned_by_id=user.id)
+
+        # Admins/Staff can see all
+        if user.is_superuser or user.is_staff:
+            return qs
+            
+        # Regular users (Agents, Employees on Agent Panel) only see their own
+        return qs.filter(earned_by_id=user.id)
 
 
 class CommissionReportSummaryView(APIView):

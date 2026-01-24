@@ -1,10 +1,14 @@
-from django.urls import path
-from . import views
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import ConsumerViewSet
+from .mock_kuickpay_views import MockKuickpayBillInquiryView, MockKuickpayBillPaymentView
 
-app_name = 'payments'
+router = DefaultRouter()
+router.register(r'consumers', ConsumerViewSet, basename='consumer')
 
 urlpatterns = [
-    # Kuickpay API endpoints (called BY Kuickpay)
-    path('api/kuickpay/bill-inquiry/', views.KuickpayBillInquiryAPIView.as_view(), name='kuickpay-bill-inquiry'),
-    path('api/kuickpay/bill-payment/', views.KuickpayBillPaymentAPIView.as_view(), name='kuickpay-bill-payment'),
+    path('', include(router.urls)),
+    # KuickPay Integration Endpoints (for testing)
+    path('kuickpay/bill-inquiry/', MockKuickpayBillInquiryView.as_view(), name='kuickpay-bill-inquiry'),
+    path('kuickpay/bill-payment/', MockKuickpayBillPaymentView.as_view(), name='kuickpay-bill-payment'),
 ]

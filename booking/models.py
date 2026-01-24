@@ -88,7 +88,12 @@ class Booking(models.Model):
         Branch, on_delete=models.CASCADE, related_name="bookings"
     )
     agency = models.ForeignKey(
-        Agency, on_delete=models.CASCADE, related_name="bookings"
+        Agency, on_delete=models.CASCADE, related_name="bookings", blank=True, null=True
+    )
+    # Employee field - bookings can belong to either Agency OR Employee
+    employee = models.ForeignKey(
+        'organization.Employee', on_delete=models.CASCADE, related_name="bookings", 
+        blank=True, null=True, help_text="Employee who made this booking (if applicable)"
     )
     confirmed_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, related_name="confirmed_bookings", blank=True, null=True
@@ -337,6 +342,11 @@ class Booking(models.Model):
                 # Build narration: "PNR - PAX Name - Travel Date - Trip Type"
                 narration = f"{pnr} - {pax_name} - {travel_date} - {ticket_type}"
                 transaction_type = 'Group Ticket'
+            elif self.booking_type in ['UMRAH', 'Umrah Package', 'PACKAGE']:
+                # For package bookings, clearly indicate sold package
+                pax_count = self.person_details.count()
+                narration = f"Sold {self.booking_type} package to {self.customer_name or 'N/A'} ({pax_count} pax) - {self.booking_number}"
+                transaction_type = 'booking_payment'
             else:
                 # For non-ticket bookings, use default narration
                 narration = f"Booking {self.booking_number} - {self.customer_name or 'N/A'}"
@@ -566,6 +576,8 @@ class Booking(models.Model):
         
         # generate public_ref on first save if missing
         is_new = self.pk is None
+        if is_new:
+            print(f"💰 FIRST SAVE - total_amount: {self.total_amount}, booking_type: {self.booking_type}")
         super().save(*args, **kwargs)
         
         # Auto-create ledger entry when status becomes 'Approved'
@@ -580,8 +592,98 @@ class Booking(models.Model):
             self.delete_ledger_entry()
             super().save(update_fields=['ledger_entry'])
         
+        if status_changed_to_approved and self.organization:
+            try:
+                from decimal import Decimal
+                from ledger.utils import create_interorg_ledger_entries
+                
+                # Check if this is a PACKAGE booking - check package ownership first
+                if hasattr(self, 'umrah_package') and self.umrah_package and hasattr(self.umrah_package, 'organization') and self.umrah_package.organization:
+                    package_owner_org = self.umrah_package.organization
+                    booking_org = self.organization
+                    
+                    if package_owner_org.id != booking_org.id:
+                        print(f"📦 Inter-org PACKAGE booking detected: Org {booking_org.id} reselling Org {package_owner_org.id}'s package")
+                        
+                        # Calculate total package amount
+                        package_amount = Decimal(str(self.total_amount or 0))
+                        
+                        if package_amount > 0:
+                            create_interorg_ledger_entries(
+                                booking=self,
+                                reseller_org_id=booking_org.id,
+                                owner_org_id=package_owner_org.id,
+                                amount=package_amount,
+                                service_type='package'
+                            )
+                            print(f"✅ Inter-org ledger entries created for package: PKR {package_amount}")
+                else:
+                    # Not a package booking, check individual components
+                    # Check hotels for inter-org reseller scenario
+                    for hotel_detail in self.hotel_details.all():
+                        if hotel_detail.hotel and hotel_detail.hotel.organization:
+                            hotel_owner_org = hotel_detail.hotel.organization
+                            booking_org = self.organization
+                            
+                            # Only create inter-org entries if organizations differ
+                            if hotel_owner_org.id != booking_org.id:
+                                print(f"🏨 Inter-org booking detected: Org {booking_org.id} booking Org {hotel_owner_org.id}'s hotel")
+                                
+                                # Calculate hotel amount for this specific hotel
+                                hotel_amount = Decimal(str(hotel_detail.total_in_pkr or hotel_detail.total_price or 0))
+                                
+                                if hotel_amount > 0:
+                                    create_interorg_ledger_entries(
+                                        booking=self,
+                                        reseller_org_id=booking_org.id,
+                                        owner_org_id=hotel_owner_org.id,
+                                        amount=hotel_amount,
+                                        service_type='hotel'
+                                    )
+                                    print(f"✅ Inter-org ledger entries created for hotel: PKR {hotel_amount}")
+                    
+                    # Check tickets for inter-org reseller scenario  
+                    for ticket_detail in self.ticket_details.all():
+                        if ticket_detail.ticket and ticket_detail.ticket.organization:
+                            ticket_owner_org = ticket_detail.ticket.organization
+                            booking_org = self.organization
+                            
+                            # Only create inter-org entries if organizations differ
+                            if ticket_owner_org.id != booking_org.id:
+                                print(f"✈️ Inter-org booking detected: Org {booking_org.id} booking Org {ticket_owner_org.id}'s ticket")
+                                
+                                # Calculate ticket amount
+                                adults = self.person_details.filter(age_group='Adult').count()
+                                children = self.person_details.filter(age_group='Child').count()
+                                infants = self.person_details.filter(age_group='Infant').count()
+                                
+                                ticket_amount = (
+                                    Decimal(str(ticket_detail.adult_price or 0)) * adults +
+                                    Decimal(str(ticket_detail.child_price or 0)) * children +
+                                    Decimal(str(ticket_detail.infant_price or 0)) * infants
+                                )
+                                
+                                if ticket_amount > 0:
+                                    create_interorg_ledger_entries(
+                                        booking=self,
+                                        reseller_org_id=booking_org.id,
+                                        owner_org_id=ticket_owner_org.id,
+                                        amount=ticket_amount,
+                                        service_type='ticket'
+                                    )
+                                    print(f"✅ Inter-org ledger entries created for ticket: PKR {ticket_amount}")
+                
+            except Exception as e:
+                # Log the error but don't block the booking save
+                print(f"⚠️ Error creating inter-org ledger entries: {str(e)}")
+                import traceback
+                traceback.print_exc()
+            
         # Recalculate amounts to ensure they're always correct
-        if self.pk:
+        # SKIP recalculation for UMRAH packages to preserve service charges
+        print(f"🔍 SAVE DEBUG - pk: {self.pk}, booking_type: '{self.booking_type}', skip: {self.booking_type in ['UMRAH', 'Umrah Package']}, total_amount BEFORE: {self.total_amount}")
+        if self.pk and self.booking_type not in ['UMRAH', 'Umrah Package']:
+            print(f"⚠️ RECALCULATING amounts for booking_type: {self.booking_type}")
             from django.db.models import Sum
             from decimal import Decimal
             
@@ -655,6 +757,8 @@ class Booking(models.Model):
                 'total_transport_amount', 'total_visa_amount', 
                 'total_visa_amount_pkr', 'total_visa_amount_sar', 'total_amount'
             ])
+        else:
+            print(f"✅ SKIPPED recalculation - total_amount AFTER: {self.total_amount}")
         
         # Generate invoice_no after first save (when we have an ID)
         if not self.invoice_no:

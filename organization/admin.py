@@ -15,12 +15,12 @@ except Exception:
 class EmployeeAdmin(admin.ModelAdmin):
 	"""
 	Employee management with separate database table.
-	Employee → Agency (Branch and Organization are auto-derived)
+	Employee → Branch → Organization
 	"""
-	list_display = ('employee_code', 'full_name', 'email', 'agency', 'get_branch', 'get_organization', 'status', 'position')
-	list_filter = ('status', 'position', 'agency__branch__organization', 'agency__branch', 'agency')
+	list_display = ('employee_code', 'full_name', 'email', 'branch', 'get_organization', 'status', 'position')
+	list_filter = ('status', 'position', 'branch__organization', 'branch')
 	search_fields = ('employee_code', 'first_name', 'last_name', 'email', 'phone_number')
-	readonly_fields = ('employee_code', 'date_joined', 'created_at', 'updated_at', 'get_branch', 'get_organization')
+	readonly_fields = ('employee_code', 'date_joined', 'created_at', 'updated_at', 'get_organization')
 	
 	fieldsets = (
 		('Auto-Generated Code', {
@@ -31,8 +31,8 @@ class EmployeeAdmin(admin.ModelAdmin):
 			'fields': ('first_name', 'last_name', 'email', 'phone_number', 'address', 'date_of_birth', 'profile_photo')
 		}),
 		('Employment Details', {
-			'fields': ('agency', 'get_branch', 'get_organization', 'position', 'department', 'status', 'date_joined'),
-			'description': 'Link employee to Agency only. Branch and Organization are automatically derived from the Agency.'
+			'fields': ('branch', 'get_organization', 'position', 'department', 'status', 'date_joined'),
+			'description': 'Link employee to Branch. Organization is automatically derived from the Branch.'
 		}),
 		('Compensation', {
 			'fields': ('salary', 'commission_rate'),
@@ -48,17 +48,10 @@ class EmployeeAdmin(admin.ModelAdmin):
 		}),
 	)
 	
-	def get_branch(self, obj):
-		"""Display the branch (derived from agency)"""
-		if obj.agency and obj.agency.branch:
-			return f"{obj.agency.branch.name} ({obj.agency.branch.branch_code})"
-		return "N/A"
-	get_branch.short_description = "Branch (Auto)"
-	
 	def get_organization(self, obj):
-		"""Display the organization (derived from agency → branch)"""
-		if obj.agency and obj.agency.branch and obj.agency.branch.organization:
-			org = obj.agency.branch.organization
+		"""Display the organization (derived from branch)"""
+		if obj.branch and obj.branch.organization:
+			org = obj.branch.organization
 			return f"{org.name} ({org.org_code})"
 		return "N/A"
 	get_organization.short_description = "Organization (Auto)"
@@ -140,10 +133,8 @@ class BranchAdmin(admin.ModelAdmin):
 	)
 	
 	def get_employee_count(self, obj):
-		"""Show number of employees through Agency chain"""
-		count = 0
-		for agency in obj.agencies.all():
-			count += agency.employees.count()
+		"""Show number of employees directly linked to this branch"""
+		count = obj.branch_employees.count()
 		return f"{count} employee(s)"
 	get_employee_count.short_description = "Employees"
 

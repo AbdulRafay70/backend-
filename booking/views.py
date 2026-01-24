@@ -187,7 +187,13 @@ class BookingViewSet(viewsets.ModelViewSet):
         instance ensures nested `ticket_details` and `person_details`
         (and other related lists) are included in the response.
         """
-        serializer = self.get_serializer(data=request.data)
+        # Clean the data - convert empty/invalid agency_id to None for employees
+        data = request.data.copy()
+        agency_id = data.get('agency_id')
+        if agency_id in [None, '', '0', 0, 'null', 'undefined']:
+            data['agency_id'] = None
+        
+        serializer = self.get_serializer(data=data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         instance = serializer.instance
@@ -195,14 +201,53 @@ class BookingViewSet(viewsets.ModelViewSet):
         out_serializer = self.get_serializer(instance)
         headers = self.get_success_headers(out_serializer.data)
         return Response(out_serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+    
+    def perform_create(self, serializer):
+        """Override perform_create to set employee field for employee users"""
+        print(f"[BOOKING CREATE] User: {self.request.user.username}")
+        
+        # Check if user is an employee
+        try:
+            from organization.models import Employee
+            employee = Employee.objects.get(user=self.request.user)
+            print(f"[BOOKING CREATE] Found Employee record: {employee.full_name}")
+            # Set employee field and clear agency field
+            serializer.save(employee=employee, agency=None, user=self.request.user)
+            print(f"[BOOKING CREATE] Saved booking with employee={employee.id}, agency=None, user={self.request.user.id} ({self.request.user.username})")
+        except Employee.DoesNotExist:
+            # Check if user profile indicates they are an employee
+            try:
+                from users.models import UserProfile
+                profile = UserProfile.objects.get(user=self.request.user)
+                if profile.type == 'employee':
+                    print(f"[BOOKING CREATE] User is employee type but no Employee record exists")
+                    # User is marked as employee but Employee record doesn't exist
+                    # Save without agency to prevent data leakage
+                    serializer.save(agency=None, employee=None, user=self.request.user)
+                    print(f"[BOOKING CREATE] Saved booking with agency=None, employee=None, user={self.request.user.id} ({self.request.user.username})")
+                else:
+                    print(f"[BOOKING CREATE] User is {profile.type} - saving normally")
+                    # Regular user (agent, admin, etc.) - save normally
+                    serializer.save(user=self.request.user)
+            except:
+                print(f"[BOOKING CREATE] No profile found - saving normally")
+                # No profile or other error - save normally
+                serializer.save(user=self.request.user)
+    
     @action(detail=False, methods=["get"], url_path="unpaid/(?P<organization_id>[^/.]+)")
     def get_unpaid_orders(self, request, organization_id=None):
+        """
+        Get all bookings with pending/unpaid amounts for an organization.
+        Includes bookings with any status that have pending_payment > 0.
+        """
         from django.utils import timezone
         now = timezone.now()
         unpaid_bookings = (
             Booking.objects.filter(
                 organization_id=organization_id,
-                status="unpaid",
+                # Don't filter by status - show all bookings with pending amounts
+                # Exclude completed/cancelled bookings
+                status__in=["Pending", "Approved", "unpaid", "confirmed"],
                 expiry_time__gte=now
             )
             .annotate(
@@ -221,6 +266,14 @@ class BookingViewSet(viewsets.ModelViewSet):
         results = []
         for booking in unpaid_bookings:
             person = booking.person_details.first()
+            
+            # Get agency information
+            agency_name = "N/A"
+            agency_code = "N/A"
+            if booking.agency:
+                agency_name = booking.agency.name
+                agency_code = booking.agency.agency_code if hasattr(booking.agency, 'agency_code') else "N/A"
+            
             results.append({
                 "booking_id": booking.id,
                 "booking_no": booking.booking_number,
@@ -231,6 +284,8 @@ class BookingViewSet(viewsets.ModelViewSet):
                 "pending_payment": booking.pending_payment_sum,
                 "expiry_time": booking.expiry_time,
                 "agent_id": getattr(booking, "user_id", None),
+                "agency_name": agency_name,
+                "agency_code": agency_code,
                 "status": booking.status,
                 "call_status": getattr(booking, "call_status", False),
                 "client_note": getattr(booking, "client_note", None),
@@ -333,17 +388,91 @@ class BookingViewSet(viewsets.ModelViewSet):
             )
             .order_by("-date")
         )
+        
+        # Check if user is an employee - filter to show only their bookings
+        print(f"[BOOKING FILTER] User: {self.request.user.username}, ID: {self.request.user.id}, is_staff: {self.request.user.is_staff}, is_superuser: {self.request.user.is_superuser}")
+        
+        # Check if user is an employee first to prevent staff/admin override
+        is_employee_user = False
+        try:
+            from users.models import UserProfile
+            if UserProfile.objects.filter(user=self.request.user, type='employee').exists():
+                is_employee_user = True
+        except:
+            pass
+
+        # Superadmin and staff can see all bookings (unless they are employees)
+        if (self.request.user.is_superuser or self.request.user.is_staff) and not is_employee_user:
+            print(f"[BOOKING FILTER] User is superadmin/staff - showing all bookings")
+            # Don't filter, show all bookings in the organization
+        else:
+            # Regular users - apply role-based filtering
+            try:
+                from organization.models import Employee
+                employee = Employee.objects.get(user=self.request.user)
+                print(f"[BOOKING FILTER] Found Employee record: {employee.full_name}")
+                # Employee users only see their own bookings
+                qs = qs.filter(employee=employee)
+                print(f"[BOOKING FILTER] Filtered to employee bookings: {qs.count()} bookings")
+            except Employee.DoesNotExist:
+                print(f"[BOOKING FILTER] No Employee record found for user")
+                # Check if user profile indicates they are an employee
+                try:
+                    from users.models import UserProfile
+                    profile = UserProfile.objects.get(user=self.request.user)
+                    print(f"[BOOKING FILTER] Profile type: {profile.type}")
+                    if profile.type == 'employee':
+                        # Employee user - show bookings created by this user (filter by user_id)
+                        print(f"[BOOKING FILTER] Filtering by user_id for employee")
+                        qs = qs.filter(user=self.request.user)
+                        print(f"[BOOKING FILTER] Employee bookings by user: {qs.count()}")
+                    else:
+                        print(f"[BOOKING FILTER] User is {profile.type} - showing agency bookings only")
+                        # For agents: filter by their specific agency
+                        try:
+                            from organization.models import Agency
+                            # Get the agency associated with this user
+                            agency = Agency.objects.filter(user=self.request.user).first()
+                            if agency:
+                                print(f"[BOOKING FILTER] Found agency: {agency.name} (ID: {agency.id})")
+                                qs = qs.filter(agency=agency)
+                                print(f"[BOOKING FILTER] Filtered to agency bookings: {qs.count()}")
+                            else:
+                                print(f"[BOOKING FILTER] No agency found for user, excluding employee bookings")
+                                # Fallback: exclude employee bookings
+                                qs = qs.exclude(agency__isnull=True)
+                        except Exception as e:
+                            print(f"[BOOKING FILTER] Error filtering by agency: {e}")
+                            # Fallback: exclude employee bookings
+                            qs = qs.exclude(agency__isnull=True)
+                except Exception as e:
+                    print(f"[BOOKING FILTER] Error checking profile: {e}")
+                    # User is not an employee, show organization bookings (excluding employee bookings)
+                    # Exclude bookings with no agency (those are employee bookings)
+                    qs = qs.exclude(agency__isnull=True)
+        
         booking_number = self.request.query_params.get("booking_number")
         if booking_number:
             qs = qs.filter(booking_number=booking_number)
+
+        organization_id = self.request.query_params.get("organization")
+        if organization_id:
+            print(f"[BOOKING FILTER] Filtering by organization ID: {organization_id}")
+            qs = qs.filter(organization_id=organization_id)
+            print(f"[BOOKING FILTER] After organization filter count: {qs.count()}")
     
+        print(f"[BOOKING FILTER] Final queryset count: {qs.count()}")
         return qs
     
     def update(self, request, *args, **kwargs):
         """Override update to handle discount application"""
+        print(f"[BOOKING UPDATE] Request data: {request.data}")
+        
         # Get the instance
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
+        
+        print(f"[BOOKING UPDATE] Instance ID: {instance.id}, Agency: {instance.agency_id}")
         
         # Check if this is a discount update
         if 'total_discount' in request.data and 'total_amount' in request.data:
@@ -375,6 +504,7 @@ class BookingViewSet(viewsets.ModelViewSet):
             if 'payment_method' in request.data:
                 instance.payment_method = request.data.get('payment_method')
                 update_fields.append('payment_method')
+            # Note: is_paid field removed - it doesn't exist on Booking model
             
             # Save ONLY the specified fields to prevent recalculation
             instance.save(update_fields=update_fields)

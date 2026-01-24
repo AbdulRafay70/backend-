@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     "finance",  # Finance & Reports Module
     "operations",  # Hotel, Transport, Food, Airport, Ziyarat Operations
     "commissions",
+    "service_charges",  # Service Charges Management
     "area_leads",
     "leads",
     "logs",
@@ -66,6 +67,7 @@ INSTALLED_APPS = [
     "passport_leads",  # Passport Leads & Follow-up Management
     "customers",  # Customer Auto-Collection & Lead Management
     "forms",  # Dynamic Forms for Lead Generation
+    "payments",  # KuickPay Payment Management
 ]
 
 # ----------------------------------------------------

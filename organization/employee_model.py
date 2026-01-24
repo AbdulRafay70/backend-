@@ -1,6 +1,6 @@
 """
 Employee model - separate from User model
-Employees are linked to Agency → Branch → Organization chain
+Employees are linked to Branch → Organization chain (NOT through Agency)
 """
 from django.db import models
 from django.contrib.auth.models import User
@@ -10,7 +10,8 @@ from .models import Agency, Branch, Organization
 class Employee(models.Model):
     """
     Employee model - separate table for employee management
-    Links: Employee → Agency → Branch → Organization
+    Links: Employee → Branch → Organization
+    Employees are independent entities with their own bookings/ledger
     """
     
     # Link to Django User for authentication
@@ -25,9 +26,9 @@ class Employee(models.Model):
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     address = models.TextField(blank=True, null=True)
     
-    # Employment Details
-    agency = models.ForeignKey(Agency, on_delete=models.CASCADE, related_name='employees', 
-                               help_text="Agency this employee belongs to")
+    # Employment Details - Employee belongs to BRANCH (not Agency)
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE, related_name='employees', 
+                               help_text="Branch this employee belongs to")
     date_joined = models.DateField(auto_now_add=True)
     date_of_birth = models.DateField(null=True, blank=True)
     
@@ -66,7 +67,7 @@ class Employee(models.Model):
         indexes = [
             models.Index(fields=['employee_code']),
             models.Index(fields=['email']),
-            models.Index(fields=['agency']),
+            models.Index(fields=['branch']),
             models.Index(fields=['status']),
         ]
     
@@ -86,11 +87,6 @@ class Employee(models.Model):
         return f"{self.first_name} {self.last_name}"
     
     @property
-    def branch(self):
-        """Get the branch through agency"""
-        return self.agency.branch if self.agency else None
-    
-    @property
     def organization(self):
-        """Get the organization through agency → branch"""
-        return self.agency.branch.organization if self.agency and self.agency.branch else None
+        """Get the organization through branch"""
+        return self.branch.organization if self.branch else None

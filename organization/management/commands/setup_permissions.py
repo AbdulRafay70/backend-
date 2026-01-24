@@ -13,7 +13,7 @@ class Command(BaseCommand):
         # Step 1: Delete all existing permissions
         deleted_count = Permission.objects.all().count()
         Permission.objects.all().delete()
-        self.stdout.write(self.style.SUCCESS(f'✅ Deleted {deleted_count} existing permissions'))
+        self.stdout.write(self.style.SUCCESS(f'[OK] Deleted {deleted_count} existing permissions'))
         
         # Step 2: Create the new permission
         # We'll use Organization as the content type since it's a core model
@@ -28,11 +28,11 @@ class Command(BaseCommand):
         )
         
         if created:
-            self.stdout.write(self.style.SUCCESS(f'✅ Created new permission: "{permission.name}" (codename: {permission.codename})'))
+            self.stdout.write(self.style.SUCCESS(f'[OK] Created new permission: "{permission.name}" (codename: {permission.codename})'))
         else:
-            self.stdout.write(self.style.WARNING(f'⚠️  Permission already exists: "{permission.name}"'))
+            self.stdout.write(self.style.WARNING(f'[INFO] Permission already exists: "{permission.name}"'))
         
-        self.stdout.write(self.style.SUCCESS('\n✨ Permission setup complete!'))
+        self.stdout.write(self.style.SUCCESS('\n[DONE] Permission setup complete!'))
         self.stdout.write(self.style.SUCCESS(f'Permission ID: {permission.id}'))
         self.stdout.write(self.style.SUCCESS(f'Permission Name: {permission.name}'))
         self.stdout.write(self.style.SUCCESS(f'Permission Codename: {permission.codename}'))

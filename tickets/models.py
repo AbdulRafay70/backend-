@@ -99,6 +99,9 @@ class Ticket(models.Model):
     child_purchase_price = models.FloatField(default=0, help_text="Purchase price for child ticket")
     infant_purchase_price = models.FloatField(default=0, help_text="Purchase price for infant ticket")
     
+    # History tracking
+    history = models.JSONField(default=list, blank=True, help_text="List of historical changes to ticket timing")
+    
     # Trip Type and Stay
     is_umrah_seat = models.BooleanField(default=False)
     trip_type = models.CharField(max_length=50)
@@ -518,6 +521,83 @@ class RoomDetails(models.Model):
     class Meta:
         verbose_name = "Room Detail"
         verbose_name_plural = "Room Details"
+
+
+class HotelBooking(models.Model):
+    """
+    Model to store hotel room bookings with date ranges.
+    Allows multiple bookings on the same bed for different date periods.
+    """
+    
+    GENDER_CHOICES = [
+        ('Mr', 'Mr'),
+        ('Mrs', 'Mrs'),
+        ('Child', 'Child'),
+    ]
+    
+    DOCUMENT_CHOICES = [
+        ('CNIC', 'CNIC'),
+        ('Passport', 'Passport'),
+    ]
+    
+    hotel = models.ForeignKey(Hotels, on_delete=models.CASCADE, related_name="bookings")
+    room = models.ForeignKey(HotelRooms, on_delete=models.CASCADE, related_name="bookings")
+    bed = models.ForeignKey(RoomDetails, on_delete=models.CASCADE, related_name="bookings")
+    
+    # Guest Information
+    guest_first_name = models.CharField(max_length=100)
+    guest_last_name = models.CharField(max_length=100)
+    gender_type = models.CharField(max_length=10, choices=GENDER_CHOICES, default='Mr')
+    document_type = models.CharField(max_length=20, choices=DOCUMENT_CHOICES, default='CNIC')
+    document_number = models.CharField(max_length=50)
+    
+    # Booking Dates
+    checkin_date = models.DateField()
+    checkout_date = models.DateField()
+    
+    # Booking Reference
+    booking_reference = models.CharField(max_length=50, unique=True)
+    
+    # Agent Information (optional - only if booked by agent)
+    booked_by_agent = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True,
+        related_name='hotel_bookings_created',
+        help_text='Agent who created this booking'
+    )
+    agent_name = models.CharField(max_length=200, blank=True, null=True, help_text='Agent username or email')
+    agent_organization = models.CharField(max_length=200, blank=True, null=True, help_text='Agent organization name')
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.booking_reference} - {self.guest_first_name} {self.guest_last_name} ({self.checkin_date} to {self.checkout_date})"
+    
+    class Meta:
+        verbose_name = "Hotel Booking"
+        verbose_name_plural = "Hotel Bookings"
+        ordering = ['-created_at']
+    
+    def save(self, *args, **kwargs):
+        # Generate booking reference if not set
+        if not self.booking_reference:
+            import uuid
+            self.booking_reference = f"BK-{str(uuid.uuid4())[:8].upper()}"
+        super().save(*args, **kwargs)
+    
+    @property
+    def guest_full_name(self):
+        """Return full guest name"""
+        return f"{self.gender_type} {self.guest_first_name} {self.guest_last_name}"
+    
+    @property
+    def duration_days(self):
+        """Calculate booking duration in days"""
+        return (self.checkout_date - self.checkin_date).days
 
 
 class HotelPhoto(models.Model):

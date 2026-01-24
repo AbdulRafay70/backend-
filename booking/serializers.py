@@ -764,12 +764,22 @@ class BookingPersonContactDetailsSerializer(serializers.ModelSerializer):
 class BookingTicketDetailsSerializer(serializers.ModelSerializer):
     """Serializer for BookingTicketDetails model."""
     trip_details = serializers.SerializerMethodField()
+    history = serializers.SerializerMethodField()
     
     class Meta:
         model = BookingTicketDetails
         fields = '__all__'
         extra_kwargs = {"booking": {"read_only": True}}
     
+    def get_history(self, obj):
+        """Get history from the related ticket."""
+        try:
+            if hasattr(obj, 'ticket') and obj.ticket and hasattr(obj.ticket, 'history'):
+                return obj.ticket.history
+        except Exception:
+            pass
+        return []
+
     def get_trip_details(self, obj):
         """Get trip details from the related ticket."""
         out = []
@@ -777,10 +787,12 @@ class BookingTicketDetailsSerializer(serializers.ModelSerializer):
             if hasattr(obj, 'ticket') and obj.ticket:
                 ticket = obj.ticket
                 for t in ticket.trip_details.all():
-                    # Get airline code from parent ticket
+                    # Get airline code and name from parent ticket
                     airline_code = None
+                    airline_name = "N/A"
                     if hasattr(ticket, 'airline') and ticket.airline:
                         airline_code = getattr(ticket.airline, 'code', None)
+                        airline_name = getattr(ticket.airline, 'name', "N/A")
                     
                     # Get city codes from City objects
                     dep_city_code = None
@@ -800,6 +812,7 @@ class BookingTicketDetailsSerializer(serializers.ModelSerializer):
                         'trip_type': t.trip_type,
                         'flight_number': getattr(t, 'flight_number', None),
                         'airline_code': airline_code,
+                        'airline': airline_name,
                     })
         except Exception as e:
             print(f"Error in get_trip_details: {e}")
@@ -1157,7 +1170,7 @@ class BookingSerializer(serializers.ModelSerializer):
         queryset=Organization.objects.all(), source="organization", write_only=True
     )
     branch_id = serializers.PrimaryKeyRelatedField(
-        queryset=Branch.objects.all(), source="branch", write_only=True
+        queryset=Branch.objects.all(), source="branch", write_only=True, required=False, allow_null=True
     )
     # umrah_package returns just the ID on read, accepts ID on write
     umrah_package = serializers.PrimaryKeyRelatedField(
@@ -1175,7 +1188,7 @@ class BookingSerializer(serializers.ModelSerializer):
     food_details = BookingFoodDetailsSerializer(many=True, required=False)
     ziyarat_details = BookingZiyaratDetailsSerializer(many=True, required=False)
     agency_id = serializers.PrimaryKeyRelatedField(
-        queryset=Agency.objects.all(), source="agency"
+        queryset=Agency.objects.all(), source="agency", required=False, allow_null=True
     )
     user_id = serializers.PrimaryKeyRelatedField(
         queryset=User.objects.all(), source="user"
@@ -1199,6 +1212,25 @@ class BookingSerializer(serializers.ModelSerializer):
     organization = OrganizationSerializer(read_only=True)
     branch = BranchSerializer(read_only=True)
     approved_by = UserSerializer(read_only=True, source='confirmed_by')
+    
+    # Expose the branch's commission_group_id for debugging/verification
+    branch_commission_group_id = serializers.SerializerMethodField()
+    
+    # Expose the agency's commission_id (commission group ID) for debugging/verification
+    agency_commission_id = serializers.SerializerMethodField()
+    
+    def get_branch_commission_group_id(self, obj):
+        """Return the commission_group_id of the booking's branch, or None if not assigned"""
+        if obj.branch and hasattr(obj.branch, 'commission_group'):
+            commission_group = obj.branch.commission_group
+            return commission_group.id if commission_group else None
+        return None
+    
+    def get_agency_commission_id(self, obj):
+        """Return the commission_id of the booking's agency, or None if not assigned"""
+        if obj.agency and hasattr(obj.agency, 'commission_id'):
+            return obj.agency.commission_id
+        return None
 
 
 
@@ -1227,8 +1259,10 @@ class BookingSerializer(serializers.ModelSerializer):
             # User and organization info
             'user',
             'agency',
+            'agency_commission_id',  # Shows which commission group is assigned to the agency (from commission_id field)
             'organization',
             'branch',
+            'branch_commission_group_id',  # Shows which commission group is assigned to the branch
             'approved_by',
             
             # Other booking fields
@@ -1805,15 +1839,19 @@ class BookingSerializer(serializers.ModelSerializer):
         booking.total_transport_amount_sar = total_transport_sar
         booking.total_ticket_amount_pkr = total_ticket_pkr
         
+        
         # Calculate grand total (including visa)
-        booking.total_amount = (
-            booking.total_hotel_amount_pkr +
-            booking.total_ticket_amount_pkr +
-            booking.total_transport_amount_pkr +
-            booking.total_food_amount_pkr +
-            booking.total_ziyarat_amount_pkr +
-            booking.total_visa_amount_pkr  # Add visa to total
-        )
+        # SKIP recalculation for UMRAH bookings to preserve service charges from frontend
+        if booking.booking_type not in ['UMRAH', 'Umrah Package']:
+            booking.total_amount = (
+                booking.total_hotel_amount_pkr +
+                booking.total_ticket_amount_pkr +
+                booking.total_transport_amount_pkr +
+                booking.total_food_amount_pkr +
+                booking.total_ziyarat_amount_pkr +
+                booking.total_visa_amount_pkr  # Add visa to total
+            )
+        # else: Keep the total_amount sent from frontend (includes service charge)
         booking.save()
 
         return booking

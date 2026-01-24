@@ -122,3 +122,48 @@ class LedgerEntrySerializer(serializers.ModelSerializer):
             'updated_at',
             'final_balance',  # Auto-calculated
         ]
+
+
+class InterOrgPaymentSerializer(serializers.ModelSerializer):
+    """
+    Serializer for inter-organizational payments.
+    """
+    from_organization_name = serializers.CharField(source='from_organization.name', read_only=True)
+    to_organization_name = serializers.CharField(source='to_organization.name', read_only=True)
+    created_by_name = serializers.CharField(source='created_by.username', read_only=True, allow_null=True)
+    approved_by_name = serializers.CharField(source='approved_by.username', read_only=True, allow_null=True)
+    
+    class Meta:
+        model = 'ledger.InterOrgPayment'  # Use string reference to avoid circular import
+        fields = [
+            'id',
+            'payment_number',
+            'from_organization',
+            'from_organization_name',
+            'to_organization',
+            'to_organization_name',
+            'amount',
+            'currency',
+            'payment_method',
+            'reference_number',
+            'payment_date',
+            'related_bookings',
+            'status',
+            'notes',
+            'attachment',
+            'ledger_entry',
+            'created_by',
+            'created_by_name',
+            'approved_by',
+            'approved_by_name',
+            'created_at',
+            'updated_at',
+            'approved_at',
+        ]
+        read_only_fields = ['payment_number', 'created_at', 'updated_at', 'ledger_entry']
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Import here to avoid circular dependency
+        from ledger.models import InterOrgPayment
+        self.Meta.model = InterOrgPayment

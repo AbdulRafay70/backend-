@@ -16,4 +16,5 @@ router.register(r'salary-payments', views.SalaryPaymentViewSet)
 
 urlpatterns = [
     path('api/hr/', include(router.urls)),
+    path('api/hr/employee-ledger/<int:employee_id>/', views.EmployeeLedgerView.as_view(), name='employee-ledger'),
 ]

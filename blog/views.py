@@ -36,6 +36,12 @@ class BlogViewSet(viewsets.ModelViewSet):
         'destroy': 'blog.delete_blog_admin',
     }
     
+    def get_permissions(self):
+        """Allow public access to list and retrieve, require auth for other actions"""
+        if self.action in ['list', 'retrieve']:
+            return [permissions.AllowAny()]
+        return super().get_permissions()
+    
     # allow multipart form uploads (files) alongside JSON
     parser_classes = [MultiPartParser, FormParser, JSONParser]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
@@ -175,6 +181,12 @@ class LeadFormViewSet(viewsets.ModelViewSet):
         'partial_update': 'blog.change_form_admin',
         'destroy': 'blog.delete_form_admin',
     }
+
+    def get_permissions(self):
+        """Allow public access to list and retrieve forms, require auth for other actions"""
+        if self.action in ['list', 'retrieve']:
+            return [permissions.AllowAny()]
+        return super().get_permissions()
 
     def get_queryset(self):
         # For list/retrieve, show all forms if user is staff, otherwise only active ones

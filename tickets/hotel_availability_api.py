@@ -5,7 +5,7 @@ from rest_framework import status
 from rest_framework.exceptions import PermissionDenied
 from django.db.models import Q, Count, Sum
 from django.utils import timezone
-from tickets.models import Hotels, HotelRooms, RoomDetails
+from tickets.models import Hotels, HotelRooms, RoomDetails, HotelBooking
 from booking.models import BookingHotelDetails, BookingPersonDetail
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
@@ -196,8 +196,29 @@ class HotelAvailabilityAPIView(APIView):
 
         # Check if user has access to this organization (unless superuser)
         if owner_org_id and not request.user.is_superuser:
-            user_organizations = request.user.organizations.values_list('id', flat=True)
-            if int(owner_org_id) not in user_organizations:
+            from organization.models import Organization, Branch, Agency
+            
+            # If the provided ID is an agency ID instead of org ID, resolve it to org ID
+            try:
+                agency = Agency.objects.filter(id=int(owner_org_id), user=request.user).first()
+                if agency and agency.branch and agency.branch.organization:
+                    actual_org_id = agency.branch.organization.id
+                    print(f"DEBUG hotel_availability_api - Resolved agency {owner_org_id} to organization {actual_org_id}")
+                    owner_org_id = actual_org_id
+            except (ValueError, AttributeError):
+                pass
+            
+            # Get user's accessible organizations (same logic as HotelsViewSet)
+            user_orgs = request.user.organizations.all()
+            user_branches = Branch.objects.filter(user=request.user)
+            branch_orgs = Organization.objects.filter(branches__in=user_branches)
+            user_agencies = Agency.objects.filter(user=request.user)
+            agency_orgs = Organization.objects.filter(branches__agencies__in=user_agencies)
+            
+            accessible_orgs = user_orgs | branch_orgs | agency_orgs
+            accessible_org_ids = list(accessible_orgs.values_list('id', flat=True))
+            
+            if int(owner_org_id) not in accessible_org_ids:
                 raise PermissionDenied("You don't have access to this organization.")
 
         # Fetch hotel filtered by organization (if provided)
@@ -263,18 +284,24 @@ class HotelAvailabilityAPIView(APIView):
             beds = room.details.all()
             total_beds_in_room = beds.count() or room.total_beds
             
-            # Check bed availability by status field (AVAILABLE, OCCUPIED, etc.)
-            # A bed is available if its status is 'AVAILABLE' and not assigned
-            available_beds = beds.filter(
-                status='AVAILABLE'
-            ).count()
+            # Check bed availability by querying HotelBooking for date overlaps
+            # A bed is occupied if it has a booking that overlaps with the requested date range
+            from datetime import datetime
             
-            # If no beds with status info, fallback to is_assigned field
-            if total_beds_in_room > 0 and available_beds == 0 and beds.filter(status='AVAILABLE').count() == 0:
-                # Check if using is_assigned instead
-                available_beds = beds.filter(is_assigned=False, status__in=['AVAILABLE', '']).count()
+            # Convert date strings to date objects
+            search_start = datetime.strptime(date_from, '%Y-%m-%d').date()
+            search_end = datetime.strptime(date_to, '%Y-%m-%d').date()
             
-            occupied_beds = total_beds_in_room - available_beds
+            # Count occupied beds (beds with bookings in the date range)
+            occupied_bed_ids = HotelBooking.objects.filter(
+                room=room,
+                # Check for date overlap: (existing_checkin < search_end) AND (existing_checkout > search_start)
+                checkin_date__lt=search_end,
+                checkout_date__gt=search_start
+            ).values_list('bed_id', flat=True).distinct()
+            
+            occupied_beds = len(occupied_bed_ids)
+            available_beds = total_beds_in_room - occupied_beds
             
             # Track totals
             total_available_beds += available_beds

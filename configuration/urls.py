@@ -48,12 +48,14 @@ urlpatterns = [
     path("", include("hr.urls")),  # HR App URLs
     path("", include("ledger.urls")),
     path("", include("finance.urls")),  # Finance & Reports Module
-    path("", include("payments.urls")),  # Kuickpay Payment Gateway
+    path("api/", include("payments.urls")),  # Kuickpay Payment Gateway
     path("api/operations/", include("operations.urls")),  # Operations Module
     path("api/leads/", include("leads.urls")),
     path("api/area-leads/", include("area_leads.urls")),
+    path("api/service-charges/", include("service_charges.urls")),
     path("api/logs/", include("logs.urls")),
     path("api/commissions/", include("commissions.urls")),
+    path("api/service-charges/", include("service_charges.urls")),  # Service Charges Management
     path("api/universal/", include("universal.urls")),
     path("api/blog/", include("blog.urls")),
     path("api/promotion-center/", include("promotion_center.urls")),

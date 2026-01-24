@@ -8,7 +8,8 @@ from .utils import generate_organization_id
 class Employee(models.Model):
     """
     Employee model - separate table for employee management
-    Links: Employee → Agency → Branch → Organization
+    Links: Employee → Branch → Organization
+    Employees are independent entities with their own bookings/ledger
     """
     
     # Link to Django User for authentication (optional)
@@ -24,9 +25,9 @@ class Employee(models.Model):
     phone_number = models.CharField(max_length=15, blank=True, null=True)
     address = models.TextField(blank=True, null=True)
     
-    # Employment Details - Only Agency link (Branch/Org are derived)
-    agency = models.ForeignKey('Agency', on_delete=models.CASCADE, related_name='employees', 
-                               help_text="Agency this employee belongs to")
+    # Employment Details - Employee belongs to BRANCH (not Agency)
+    branch = models.ForeignKey('Branch', on_delete=models.CASCADE, related_name='branch_employees', 
+                               help_text="Branch this employee belongs to")
     date_joined = models.DateField(auto_now_add=True)
     date_of_birth = models.DateField(null=True, blank=True)
     
@@ -78,7 +79,7 @@ class Employee(models.Model):
         indexes = [
             models.Index(fields=['employee_code']),
             models.Index(fields=['email']),
-            models.Index(fields=['agency']),
+            models.Index(fields=['branch']),
             models.Index(fields=['status']),
         ]
     
@@ -97,14 +98,9 @@ class Employee(models.Model):
         return f"{self.first_name} {self.last_name}"
     
     @property
-    def branch(self):
-        """Get the branch through agency"""
-        return self.agency.branch if self.agency else None
-    
-    @property
     def organization(self):
-        """Get the organization through agency → branch"""
-        return self.agency.branch.organization if self.agency and self.agency.branch else None
+        """Get the organization through branch"""
+        return self.branch.organization if self.branch else None
 
 
 # AgencyProfile model for agency relationship and work overview
@@ -158,6 +154,26 @@ class Branch(models.Model):
     address = models.TextField(blank=True, null=True)
     # optional commission account identifier for this branch
     commission_id = models.CharField(max_length=64, null=True, blank=True)
+    
+    # Service charge group assigned to this branch
+    service_charge_group = models.ForeignKey(
+        'service_charges.ServiceChargeRule',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='branches',
+        help_text='Service charge group assigned to this branch for automatic charge application'
+    )
+    
+    # Commission group assigned to this branch
+    commission_group = models.ForeignKey(
+        'commissions.CommissionRule',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='branches_with_commission',
+        help_text='Commission group assigned to this branch for automatic commission calculation'
+    )
 
     def save(self, *args, **kwargs):
         # Auto-generate branch_code if not set

@@ -280,7 +280,7 @@ class HotelFloorDetailAPIView(APIView):
         tags=['Hotels']
     )
     def delete(self, request, pk):
-        """Delete a floor"""
+        """Delete a floor and all its associated rooms"""
         try:
             floor = HotelFloor.objects.get(pk=pk)
         except HotelFloor.DoesNotExist:
@@ -289,18 +289,19 @@ class HotelFloorDetailAPIView(APIView):
                 'detail': f'Floor with id {pk} does not exist'
             }, status=status.HTTP_404_NOT_FOUND)
         
-        # Check if floor has any rooms
-        room_count = HotelRooms.objects.filter(hotel=floor.hotel, floor=floor.floor_no).count()
+        # Get count of rooms that will be deleted
+        rooms_on_floor = HotelRooms.objects.filter(hotel=floor.hotel, floor=floor.floor_no)
+        room_count = rooms_on_floor.count()
+        
+        # Delete all rooms on this floor first
         if room_count > 0:
-            return Response({
-                'error': 'Cannot delete floor with rooms',
-                'detail': f'This floor has {room_count} room(s). Please remove all rooms before deleting the floor.'
-            }, status=status.HTTP_400_BAD_REQUEST)
+            rooms_on_floor.delete()
         
         floor_no = floor.floor_no
         floor.delete()
         
         return Response({
             'message': 'Floor deleted successfully',
-            'floor_no': floor_no
+            'floor_no': floor_no,
+            'rooms_deleted': room_count
         }, status=status.HTTP_200_OK)

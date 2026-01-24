@@ -240,6 +240,26 @@ class LedgerEntry(models.Model):
         help_text="Total hotel nights for all hotels in booking"
     )
     
+    # NEW: Profit tracking fields (Income, Expense, Profit)
+    income_amount = models.DecimalField(
+        max_digits=18,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        help_text="Total income from selling prices (revenue)"
+    )
+    expense_amount = models.DecimalField(
+        max_digits=18,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        help_text="Total expense from purchase prices (cost of goods sold)"
+    )
+    profit = models.DecimalField(
+        max_digits=18,
+        decimal_places=2,
+        default=Decimal("0.00"),
+        help_text="Profit = Income - Expense"
+    )
+    
     # User tracking
     created_by = models.ForeignKey(
         User, 
@@ -414,3 +434,158 @@ class LedgerLine(models.Model):
 
     def __str__(self):
         return f"Line {self.id}: {self.account} - D:{self.debit} C:{self.credit} -> Bal:{self.balance_after}"
+
+
+class InterOrgPayment(models.Model):
+    """
+    Track payments between organizations for reseller transactions.
+    When Org 44 resells Org 11's inventory, this tracks the settlement payment.
+    """
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
+    ]
+    
+    PAYMENT_METHOD_CHOICES = [
+        ('bank_transfer', 'Bank Transfer'),
+        ('cash', 'Cash'),
+        ('cheque', 'Cheque'),
+        ('online', 'Online Payment'),
+        ('other', 'Other'),
+    ]
+    
+    # Unique payment identifier
+    payment_number = models.CharField(
+        max_length=50, 
+        unique=True,
+        help_text="Auto-generated: IOP-YYYYMMDD-XXXXX"
+    )
+    
+    # Organizations involved
+    from_organization = models.ForeignKey(
+        Organization, 
+        on_delete=models.PROTECT, 
+        related_name='interorg_payments_made',
+        help_text="Reseller organization making the payment (e.g., Org 44)"
+    )
+    to_organization = models.ForeignKey(
+        Organization, 
+        on_delete=models.PROTECT, 
+        related_name='interorg_payments_received',
+        help_text="Owner organization receiving the payment (e.g., Org 11)"
+    )
+    
+    # Payment details
+    amount = models.DecimalField(
+        max_digits=15, 
+        decimal_places=2,
+        help_text="Payment amount"
+    )
+    currency = models.CharField(
+        max_length=10, 
+        default='PKR',
+        help_text="Currency code"
+    )
+    
+    # Payment method and reference
+    payment_method = models.CharField(
+        max_length=50,
+        choices=PAYMENT_METHOD_CHOICES,
+        default='bank_transfer'
+    )
+    reference_number = models.CharField(
+        max_length=100, 
+        blank=True,
+        help_text="Bank transaction ID, cheque number, etc."
+    )
+    payment_date = models.DateField(help_text="Date when payment was made")
+    
+    # Related bookings
+    related_bookings = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="List of booking numbers this payment settles"
+    )
+    
+    # Status and approval
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='pending'
+    )
+    
+    # Notes and attachments
+    notes = models.TextField(blank=True, help_text="Additional notes about this payment")
+    attachment = models.FileField(
+        upload_to='interorg_payments/',
+        blank=True,
+        null=True,
+        help_text="Payment proof (receipt, screenshot, etc.)"
+    )
+    
+    # Ledger entry reference
+    ledger_entry = models.ForeignKey(
+        LedgerEntry,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='interorg_payments',
+        help_text="Auto-created ledger entry for this payment"
+    )
+    
+    # Audit fields
+    created_by = models.ForeignKey(
+        User, 
+        on_delete=models.SET_NULL, 
+        null=True,
+        related_name='created_interorg_payments'
+    )
+    approved_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='approved_interorg_payments'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    approved_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Inter-Org Payment"
+        verbose_name_plural = "Inter-Org Payments"
+        indexes = [
+            models.Index(fields=['payment_number']),
+            models.Index(fields=['from_organization', 'to_organization']),
+            models.Index(fields=['payment_date']),
+            models.Index(fields=['status']),
+        ]
+    
+    def __str__(self):
+        return f"{self.payment_number}: {self.from_organization} → {self.to_organization} ({self.amount} {self.currency})"
+    
+    def save(self, *args, **kwargs):
+        # Auto-generate payment number if not set
+        if not self.payment_number:
+            from datetime import datetime
+            date_str = datetime.now().strftime('%Y%m%d')
+            # Get last payment number for today
+            last_payment = InterOrgPayment.objects.filter(
+                payment_number__startswith=f'IOP-{date_str}'
+            ).order_by('-payment_number').first()
+            
+            if last_payment:
+                # Extract sequence number and increment
+                try:
+                    last_seq = int(last_payment.payment_number.split('-')[-1])
+                    new_seq = last_seq + 1
+                except:
+                    new_seq = 1
+            else:
+                new_seq = 1
+            
+            self.payment_number = f'IOP-{date_str}-{new_seq:05d}'
+        
+        super().save(*args, **kwargs)

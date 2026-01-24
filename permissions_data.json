@@ -1,0 +1,9716 @@
+[
+{
+  "model": "auth.permission",
+  "pk": 1328,
+  "fields": {
+    "name": "Can access admin portal",
+    "content_type": 4,
+    "codename": "admin_portal_access"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1329,
+  "fields": {
+    "name": "Can access agent portal",
+    "content_type": 4,
+    "codename": "agent_portal_access"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1330,
+  "fields": {
+    "name": "Can view packages in admin portal",
+    "content_type": 25,
+    "codename": "view_package_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1331,
+  "fields": {
+    "name": "Can add packages in admin portal",
+    "content_type": 25,
+    "codename": "add_package_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1332,
+  "fields": {
+    "name": "Can edit packages in admin portal",
+    "content_type": 25,
+    "codename": "edit_package_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1333,
+  "fields": {
+    "name": "Can delete packages in admin portal",
+    "content_type": 25,
+    "codename": "delete_package_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1334,
+  "fields": {
+    "name": "Can view packages in agent portal",
+    "content_type": 25,
+    "codename": "view_package_agent"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1335,
+  "fields": {
+    "name": "Can book packages in agent portal",
+    "content_type": 25,
+    "codename": "book_package_agent"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1336,
+  "fields": {
+    "name": "Can view tickets in admin portal",
+    "content_type": 23,
+    "codename": "view_ticket_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1337,
+  "fields": {
+    "name": "Can add tickets in admin portal",
+    "content_type": 23,
+    "codename": "add_ticket_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1338,
+  "fields": {
+    "name": "Can edit tickets in admin portal",
+    "content_type": 23,
+    "codename": "edit_ticket_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1339,
+  "fields": {
+    "name": "Can delete tickets in admin portal",
+    "content_type": 23,
+    "codename": "delete_ticket_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1342,
+  "fields": {
+    "name": "Can view hotels in admin portal",
+    "content_type": 24,
+    "codename": "view_hotel_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1343,
+  "fields": {
+    "name": "Can add hotels in admin portal",
+    "content_type": 24,
+    "codename": "add_hotel_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1344,
+  "fields": {
+    "name": "Can edit hotels in admin portal",
+    "content_type": 24,
+    "codename": "edit_hotel_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1345,
+  "fields": {
+    "name": "Can delete hotels in admin portal",
+    "content_type": 24,
+    "codename": "delete_hotel_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1348,
+  "fields": {
+    "name": "Can view hotel availability in admin portal",
+    "content_type": 24,
+    "codename": "view_availability_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1349,
+  "fields": {
+    "name": "Can add hotel availability in admin portal",
+    "content_type": 24,
+    "codename": "add_availability_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1350,
+  "fields": {
+    "name": "Can edit hotel availability in admin portal",
+    "content_type": 24,
+    "codename": "edit_availability_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1351,
+  "fields": {
+    "name": "Can delete hotel availability in admin portal",
+    "content_type": 24,
+    "codename": "delete_availability_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1352,
+  "fields": {
+    "name": "Can view hotel outsourcing in admin portal",
+    "content_type": 24,
+    "codename": "view_outsourcing_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1353,
+  "fields": {
+    "name": "Can add hotel outsourcing in admin portal",
+    "content_type": 24,
+    "codename": "add_outsourcing_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1354,
+  "fields": {
+    "name": "Can edit hotel outsourcing in admin portal",
+    "content_type": 24,
+    "codename": "edit_outsourcing_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1355,
+  "fields": {
+    "name": "Can delete hotel outsourcing in admin portal",
+    "content_type": 24,
+    "codename": "delete_outsourcing_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1356,
+  "fields": {
+    "name": "Can view hotel floor management in admin portal",
+    "content_type": 24,
+    "codename": "view_floor_management_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1357,
+  "fields": {
+    "name": "Can add hotel floor management in admin portal",
+    "content_type": 24,
+    "codename": "add_floor_management_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1358,
+  "fields": {
+    "name": "Can edit hotel floor management in admin portal",
+    "content_type": 24,
+    "codename": "edit_floor_management_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1359,
+  "fields": {
+    "name": "Can delete hotel floor management in admin portal",
+    "content_type": 24,
+    "codename": "delete_floor_management_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1360,
+  "fields": {
+    "name": "Can view blogs in admin portal",
+    "content_type": 97,
+    "codename": "view_blog_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1361,
+  "fields": {
+    "name": "Can add blogs in admin portal",
+    "content_type": 97,
+    "codename": "add_blog_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1362,
+  "fields": {
+    "name": "Can edit blogs in admin portal",
+    "content_type": 97,
+    "codename": "edit_blog_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1363,
+  "fields": {
+    "name": "Can delete blogs in admin portal",
+    "content_type": 97,
+    "codename": "delete_blog_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1364,
+  "fields": {
+    "name": "Can view forms in admin portal",
+    "content_type": 100,
+    "codename": "view_form_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1365,
+  "fields": {
+    "name": "Can add forms in admin portal",
+    "content_type": 100,
+    "codename": "add_form_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1366,
+  "fields": {
+    "name": "Can edit forms in admin portal",
+    "content_type": 100,
+    "codename": "edit_form_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1367,
+  "fields": {
+    "name": "Can delete forms in admin portal",
+    "content_type": 100,
+    "codename": "delete_form_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1368,
+  "fields": {
+    "name": "Can view rules in admin portal",
+    "content_type": 81,
+    "codename": "view_rule_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1369,
+  "fields": {
+    "name": "Can add rules in admin portal",
+    "content_type": 81,
+    "codename": "add_rule_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1370,
+  "fields": {
+    "name": "Can edit rules in admin portal",
+    "content_type": 81,
+    "codename": "edit_rule_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1371,
+  "fields": {
+    "name": "Can delete rules in admin portal",
+    "content_type": 81,
+    "codename": "delete_rule_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1385,
+  "fields": {
+    "name": "Can add employee in admin portal",
+    "content_type": 4,
+    "codename": "add_employee_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1389,
+  "fields": {
+    "name": "Can view hotel check-in/check-out in admin portal",
+    "content_type": 38,
+    "codename": "view_hotel_checkin_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1390,
+  "fields": {
+    "name": "Can update hotel check-in/check-out in admin portal",
+    "content_type": 38,
+    "codename": "update_hotel_checkin_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1391,
+  "fields": {
+    "name": "Can view ziyarat in admin portal",
+    "content_type": 38,
+    "codename": "view_ziyarat_operations_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1392,
+  "fields": {
+    "name": "Can update ziyarat in admin portal",
+    "content_type": 38,
+    "codename": "update_ziyarat_operations_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1393,
+  "fields": {
+    "name": "Can view transport in admin portal",
+    "content_type": 38,
+    "codename": "view_transport_operations_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1394,
+  "fields": {
+    "name": "Can update transport in admin portal",
+    "content_type": 38,
+    "codename": "update_transport_operations_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1395,
+  "fields": {
+    "name": "Can view airport in admin portal",
+    "content_type": 38,
+    "codename": "view_airport_operations_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1396,
+  "fields": {
+    "name": "Can update airport in admin portal",
+    "content_type": 38,
+    "codename": "update_airport_operations_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1397,
+  "fields": {
+    "name": "Can view food in admin portal",
+    "content_type": 38,
+    "codename": "view_food_operations_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1398,
+  "fields": {
+    "name": "Can update food in admin portal",
+    "content_type": 38,
+    "codename": "update_food_operations_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1399,
+  "fields": {
+    "name": "Can view pax details in admin portal",
+    "content_type": 38,
+    "codename": "view_pax_details_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1400,
+  "fields": {
+    "name": "Can update pax details in admin portal",
+    "content_type": 38,
+    "codename": "update_pax_details_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1401,
+  "fields": {
+    "name": "Can view leads in admin portal",
+    "content_type": 86,
+    "codename": "view_leads_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1402,
+  "fields": {
+    "name": "Can add leads in admin portal",
+    "content_type": 86,
+    "codename": "add_leads_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1405,
+  "fields": {
+    "name": "Can view loan in admin portal",
+    "content_type": 86,
+    "codename": "view_loan_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1406,
+  "fields": {
+    "name": "Can add loan in admin portal",
+    "content_type": 86,
+    "codename": "add_loan_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1407,
+  "fields": {
+    "name": "Can edit loan in admin portal",
+    "content_type": 86,
+    "codename": "edit_loan_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1409,
+  "fields": {
+    "name": "Can view tasks in admin portal",
+    "content_type": 86,
+    "codename": "view_tasks_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1410,
+  "fields": {
+    "name": "Can add tasks in admin portal",
+    "content_type": 86,
+    "codename": "add_tasks_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1411,
+  "fields": {
+    "name": "Can edit tasks in admin portal",
+    "content_type": 86,
+    "codename": "edit_tasks_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1413,
+  "fields": {
+    "name": "Can view closed leads in admin portal",
+    "content_type": 86,
+    "codename": "view_closed_leads_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1414,
+  "fields": {
+    "name": "Can view instant in admin portal",
+    "content_type": 86,
+    "codename": "view_instant_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1415,
+  "fields": {
+    "name": "Can view passport leads in admin portal",
+    "content_type": 86,
+    "codename": "view_passport_leads_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1416,
+  "fields": {
+    "name": "Can add passport leads in admin portal",
+    "content_type": 86,
+    "codename": "add_passport_leads_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1417,
+  "fields": {
+    "name": "Can edit passport leads in admin portal",
+    "content_type": 86,
+    "codename": "edit_passport_leads_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1418,
+  "fields": {
+    "name": "Can delete passport leads in admin portal",
+    "content_type": 86,
+    "codename": "delete_passport_leads_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1419,
+  "fields": {
+    "name": "Can view walking customer in admin portal",
+    "content_type": 147,
+    "codename": "view_walking_customer_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1420,
+  "fields": {
+    "name": "Can add walking customer in admin portal",
+    "content_type": 147,
+    "codename": "add_walking_customer_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1421,
+  "fields": {
+    "name": "Can edit walking customer in admin portal",
+    "content_type": 147,
+    "codename": "edit_walking_customer_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1422,
+  "fields": {
+    "name": "Can delete walking customer in admin portal",
+    "content_type": 147,
+    "codename": "delete_walking_customer_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1423,
+  "fields": {
+    "name": "Can view customer database in admin portal",
+    "content_type": 147,
+    "codename": "view_customer_database_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1424,
+  "fields": {
+    "name": "Can add customer database in admin portal",
+    "content_type": 147,
+    "codename": "add_customer_database_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1425,
+  "fields": {
+    "name": "Can edit customer database in admin portal",
+    "content_type": 147,
+    "codename": "edit_customer_database_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1426,
+  "fields": {
+    "name": "Can delete customer database in admin portal",
+    "content_type": 147,
+    "codename": "delete_customer_database_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1427,
+  "fields": {
+    "name": "Can view employees in admin portal",
+    "content_type": 4,
+    "codename": "view_employees_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1428,
+  "fields": {
+    "name": "Can add employees in admin portal",
+    "content_type": 4,
+    "codename": "add_employees_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1429,
+  "fields": {
+    "name": "Can edit employees in admin portal",
+    "content_type": 4,
+    "codename": "edit_employees_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1430,
+  "fields": {
+    "name": "Can delete employees in admin portal",
+    "content_type": 4,
+    "codename": "delete_employees_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1431,
+  "fields": {
+    "name": "Can view attendance in admin portal",
+    "content_type": 4,
+    "codename": "view_attendance_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1432,
+  "fields": {
+    "name": "Can add attendance in admin portal",
+    "content_type": 4,
+    "codename": "add_attendance_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1433,
+  "fields": {
+    "name": "Can edit attendance in admin portal",
+    "content_type": 4,
+    "codename": "edit_attendance_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1434,
+  "fields": {
+    "name": "Can delete attendance in admin portal",
+    "content_type": 4,
+    "codename": "delete_attendance_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1435,
+  "fields": {
+    "name": "Can view movements in admin portal",
+    "content_type": 4,
+    "codename": "view_movements_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1436,
+  "fields": {
+    "name": "Can add movements in admin portal",
+    "content_type": 4,
+    "codename": "add_movements_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1437,
+  "fields": {
+    "name": "Can edit movements in admin portal",
+    "content_type": 4,
+    "codename": "edit_movements_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1438,
+  "fields": {
+    "name": "Can delete movements in admin portal",
+    "content_type": 4,
+    "codename": "delete_movements_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1443,
+  "fields": {
+    "name": "Can view punctuality in admin portal",
+    "content_type": 4,
+    "codename": "view_punctuality_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1444,
+  "fields": {
+    "name": "Can add punctuality in admin portal",
+    "content_type": 4,
+    "codename": "add_punctuality_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1445,
+  "fields": {
+    "name": "Can edit punctuality in admin portal",
+    "content_type": 4,
+    "codename": "edit_punctuality_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1446,
+  "fields": {
+    "name": "Can delete punctuality in admin portal",
+    "content_type": 4,
+    "codename": "delete_punctuality_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1447,
+  "fields": {
+    "name": "Can view approvals in admin portal",
+    "content_type": 4,
+    "codename": "view_approvals_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1448,
+  "fields": {
+    "name": "Can add approvals in admin portal",
+    "content_type": 4,
+    "codename": "add_approvals_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1449,
+  "fields": {
+    "name": "Can edit approvals in admin portal",
+    "content_type": 4,
+    "codename": "edit_approvals_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1450,
+  "fields": {
+    "name": "Can delete approvals in admin portal",
+    "content_type": 4,
+    "codename": "delete_approvals_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1479,
+  "fields": {
+    "name": "Can view all passengers in admin portal",
+    "content_type": 154,
+    "codename": "view_pax_all_passengers_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1501,
+  "fields": {
+    "name": "Can view add users in admin portal",
+    "content_type": 4,
+    "codename": "view_add_users_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1503,
+  "fields": {
+    "name": "Can add super admin in admin portal",
+    "content_type": 4,
+    "codename": "add_super_admin_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1504,
+  "fields": {
+    "name": "Can edit super admin in admin portal",
+    "content_type": 4,
+    "codename": "edit_super_admin_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1505,
+  "fields": {
+    "name": "Can delete super admin in admin portal",
+    "content_type": 4,
+    "codename": "delete_super_admin_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1507,
+  "fields": {
+    "name": "Can add admin in admin portal",
+    "content_type": 4,
+    "codename": "add_admin_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1508,
+  "fields": {
+    "name": "Can edit admin in admin portal",
+    "content_type": 4,
+    "codename": "edit_admin_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1509,
+  "fields": {
+    "name": "Can delete admin in admin portal",
+    "content_type": 4,
+    "codename": "delete_admin_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1511,
+  "fields": {
+    "name": "Can add agent in admin portal",
+    "content_type": 4,
+    "codename": "add_agent_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1512,
+  "fields": {
+    "name": "Can edit agent in admin portal",
+    "content_type": 4,
+    "codename": "edit_agent_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1513,
+  "fields": {
+    "name": "Can delete agent in admin portal",
+    "content_type": 4,
+    "codename": "delete_agent_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1515,
+  "fields": {
+    "name": "Can add area agent in admin portal",
+    "content_type": 4,
+    "codename": "add_area_agent_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1516,
+  "fields": {
+    "name": "Can edit area agent in admin portal",
+    "content_type": 4,
+    "codename": "edit_area_agent_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1517,
+  "fields": {
+    "name": "Can delete area agent in admin portal",
+    "content_type": 4,
+    "codename": "delete_area_agent_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1519,
+  "fields": {
+    "name": "Can edit employee in admin portal",
+    "content_type": 4,
+    "codename": "edit_employee_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1520,
+  "fields": {
+    "name": "Can delete employee in admin portal",
+    "content_type": 4,
+    "codename": "delete_employee_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1522,
+  "fields": {
+    "name": "Can add branch users in admin portal",
+    "content_type": 4,
+    "codename": "add_branch_users_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1523,
+  "fields": {
+    "name": "Can edit branch users in admin portal",
+    "content_type": 4,
+    "codename": "edit_branch_users_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1524,
+  "fields": {
+    "name": "Can delete branch users in admin portal",
+    "content_type": 4,
+    "codename": "delete_branch_users_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1525,
+  "fields": {
+    "name": "Can view pax movement in agent portal",
+    "content_type": 154,
+    "codename": "view_pax_movement_agent"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1526,
+  "fields": {
+    "name": "Can view tickets in agent portal",
+    "content_type": 23,
+    "codename": "view_ticket_agent"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1527,
+  "fields": {
+    "name": "Can view hotels in agent portal",
+    "content_type": 24,
+    "codename": "view_hotel_agent"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1535,
+  "fields": {
+    "name": "Can view users in admin portal",
+    "content_type": 4,
+    "codename": "view_users_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1539,
+  "fields": {
+    "name": "Can assign organization in admin portal",
+    "content_type": 10,
+    "codename": "assign_organization_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1540,
+  "fields": {
+    "name": "Can assign branches in admin portal",
+    "content_type": 11,
+    "codename": "assign_branches_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1541,
+  "fields": {
+    "name": "Can assign groups in admin portal",
+    "content_type": 3,
+    "codename": "assign_groups_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1542,
+  "fields": {
+    "name": "Can assign agency in admin portal",
+    "content_type": 29,
+    "codename": "assign_agency_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1543,
+  "fields": {
+    "name": "Can view organization in admin portal",
+    "content_type": 10,
+    "codename": "view_organization_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1544,
+  "fields": {
+    "name": "Can add organization in admin portal",
+    "content_type": 10,
+    "codename": "add_organization_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1545,
+  "fields": {
+    "name": "Can edit organization in admin portal",
+    "content_type": 10,
+    "codename": "edit_organization_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1546,
+  "fields": {
+    "name": "Can delete organization in admin portal",
+    "content_type": 10,
+    "codename": "delete_organization_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1547,
+  "fields": {
+    "name": "Can view groups in admin portal",
+    "content_type": 3,
+    "codename": "view_groups_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1548,
+  "fields": {
+    "name": "Can add groups in admin portal",
+    "content_type": 3,
+    "codename": "add_groups_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1549,
+  "fields": {
+    "name": "Can edit groups in admin portal",
+    "content_type": 3,
+    "codename": "edit_groups_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1550,
+  "fields": {
+    "name": "Can delete groups in admin portal",
+    "content_type": 3,
+    "codename": "delete_groups_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1551,
+  "fields": {
+    "name": "Can assign permissions to groups in admin portal",
+    "content_type": 3,
+    "codename": "assign_permissions_to_groups_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1552,
+  "fields": {
+    "name": "Can view agency in admin portal",
+    "content_type": 29,
+    "codename": "view_agency_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1553,
+  "fields": {
+    "name": "Can add agency in admin portal",
+    "content_type": 29,
+    "codename": "add_agency_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1554,
+  "fields": {
+    "name": "Can edit agency in admin portal",
+    "content_type": 29,
+    "codename": "edit_agency_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1555,
+  "fields": {
+    "name": "Can delete agency in admin portal",
+    "content_type": 29,
+    "codename": "delete_agency_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1556,
+  "fields": {
+    "name": "Can view branch in admin portal",
+    "content_type": 11,
+    "codename": "view_branch_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1557,
+  "fields": {
+    "name": "Can add branch in admin portal",
+    "content_type": 11,
+    "codename": "add_branch_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1558,
+  "fields": {
+    "name": "Can edit branch in admin portal",
+    "content_type": 11,
+    "codename": "edit_branch_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1559,
+  "fields": {
+    "name": "Can delete branch in admin portal",
+    "content_type": 11,
+    "codename": "delete_branch_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1560,
+  "fields": {
+    "name": "Can view discount groups in admin portal",
+    "content_type": 3,
+    "codename": "view_discount_groups_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1561,
+  "fields": {
+    "name": "Can add discount groups in admin portal",
+    "content_type": 3,
+    "codename": "add_discount_groups_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1562,
+  "fields": {
+    "name": "Can edit discount groups in admin portal",
+    "content_type": 3,
+    "codename": "edit_discount_groups_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1563,
+  "fields": {
+    "name": "Can delete discount groups in admin portal",
+    "content_type": 3,
+    "codename": "delete_discount_groups_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1564,
+  "fields": {
+    "name": "Can assign commission to discount groups in admin portal",
+    "content_type": 3,
+    "codename": "assign_commission_to_discount_groups_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1565,
+  "fields": {
+    "name": "Can view create resell request in admin portal",
+    "content_type": 3,
+    "codename": "view_create_resell_request_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1566,
+  "fields": {
+    "name": "Can add create resell request in admin portal",
+    "content_type": 3,
+    "codename": "add_create_resell_request_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1567,
+  "fields": {
+    "name": "Can edit create resell request in admin portal",
+    "content_type": 3,
+    "codename": "edit_create_resell_request_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1568,
+  "fields": {
+    "name": "Can delete create resell request in admin portal",
+    "content_type": 3,
+    "codename": "delete_create_resell_request_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1569,
+  "fields": {
+    "name": "Can view create link org in admin portal",
+    "content_type": 3,
+    "codename": "view_create_link_org_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1570,
+  "fields": {
+    "name": "Can add create link org in admin portal",
+    "content_type": 3,
+    "codename": "add_create_link_org_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1571,
+  "fields": {
+    "name": "Can edit create link org in admin portal",
+    "content_type": 3,
+    "codename": "edit_create_link_org_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1572,
+  "fields": {
+    "name": "Can delete create link org in admin portal",
+    "content_type": 3,
+    "codename": "delete_create_link_org_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1573,
+  "fields": {
+    "name": "Can view markup add group in admin portal",
+    "content_type": 3,
+    "codename": "view_markup_add_group_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1574,
+  "fields": {
+    "name": "Can add markup add group in admin portal",
+    "content_type": 3,
+    "codename": "add_markup_add_group_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1575,
+  "fields": {
+    "name": "Can edit markup add group in admin portal",
+    "content_type": 3,
+    "codename": "edit_markup_add_group_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1576,
+  "fields": {
+    "name": "Can delete markup add group in admin portal",
+    "content_type": 3,
+    "codename": "delete_markup_add_group_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1577,
+  "fields": {
+    "name": "Can view markup assign value in admin portal",
+    "content_type": 3,
+    "codename": "view_markup_assign_value_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1578,
+  "fields": {
+    "name": "Can add markup assign value in admin portal",
+    "content_type": 3,
+    "codename": "add_markup_assign_value_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1579,
+  "fields": {
+    "name": "Can edit markup assign value in admin portal",
+    "content_type": 3,
+    "codename": "edit_markup_assign_value_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1580,
+  "fields": {
+    "name": "Can delete markup assign value in admin portal",
+    "content_type": 3,
+    "codename": "delete_markup_assign_value_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1581,
+  "fields": {
+    "name": "Can view commission add group in admin portal",
+    "content_type": 3,
+    "codename": "view_commission_add_group_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1582,
+  "fields": {
+    "name": "Can add commission add group in admin portal",
+    "content_type": 3,
+    "codename": "add_commission_add_group_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1583,
+  "fields": {
+    "name": "Can edit commission add group in admin portal",
+    "content_type": 3,
+    "codename": "edit_commission_add_group_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1584,
+  "fields": {
+    "name": "Can delete commission add group in admin portal",
+    "content_type": 3,
+    "codename": "delete_commission_add_group_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1585,
+  "fields": {
+    "name": "Can view commission assign value in admin portal",
+    "content_type": 3,
+    "codename": "view_commission_assign_value_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1586,
+  "fields": {
+    "name": "Can add commission assign value in admin portal",
+    "content_type": 3,
+    "codename": "add_commission_assign_value_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1587,
+  "fields": {
+    "name": "Can edit commission assign value in admin portal",
+    "content_type": 3,
+    "codename": "edit_commission_assign_value_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1588,
+  "fields": {
+    "name": "Can delete commission assign value in admin portal",
+    "content_type": 3,
+    "codename": "delete_commission_assign_value_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1589,
+  "fields": {
+    "name": "Can view commission in admin portal",
+    "content_type": 154,
+    "codename": "view_hr_commission_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1590,
+  "fields": {
+    "name": "Can add commission in admin portal",
+    "content_type": 154,
+    "codename": "add_hr_commission_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1591,
+  "fields": {
+    "name": "Can edit commission in admin portal",
+    "content_type": 154,
+    "codename": "edit_hr_commission_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1592,
+  "fields": {
+    "name": "Can delete commission in admin portal",
+    "content_type": 154,
+    "codename": "delete_hr_commission_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1593,
+  "fields": {
+    "name": "Can view payments in admin portal",
+    "content_type": 154,
+    "codename": "view_hr_payments_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1594,
+  "fields": {
+    "name": "Can add payments in admin portal",
+    "content_type": 154,
+    "codename": "add_hr_payments_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1595,
+  "fields": {
+    "name": "Can edit payments in admin portal",
+    "content_type": 154,
+    "codename": "edit_hr_payments_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1596,
+  "fields": {
+    "name": "Can delete payments in admin portal",
+    "content_type": 154,
+    "codename": "delete_hr_payments_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1597,
+  "fields": {
+    "name": "Can view ledger in admin portal",
+    "content_type": 3,
+    "codename": "view_ledger_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1598,
+  "fields": {
+    "name": "Can add payments in admin portal",
+    "content_type": 3,
+    "codename": "add_payments_finance_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1599,
+  "fields": {
+    "name": "Can approve payments in admin portal",
+    "content_type": 3,
+    "codename": "approve_payments_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1600,
+  "fields": {
+    "name": "Can reject payments in admin portal",
+    "content_type": 3,
+    "codename": "reject_payments_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1601,
+  "fields": {
+    "name": "Can view bank account in admin portal",
+    "content_type": 3,
+    "codename": "view_bank_account_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1602,
+  "fields": {
+    "name": "Can add bank account in admin portal",
+    "content_type": 3,
+    "codename": "add_bank_account_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1603,
+  "fields": {
+    "name": "Can edit bank account in admin portal",
+    "content_type": 3,
+    "codename": "edit_bank_account_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1604,
+  "fields": {
+    "name": "Can delete bank account in admin portal",
+    "content_type": 3,
+    "codename": "delete_bank_account_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1605,
+  "fields": {
+    "name": "Can view pending payments in admin portal",
+    "content_type": 3,
+    "codename": "view_pending_payments_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1606,
+  "fields": {
+    "name": "Can add remarks to pending payments in admin portal",
+    "content_type": 3,
+    "codename": "add_remarks_pending_payments_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1607,
+  "fields": {
+    "name": "Can view booking history in admin portal",
+    "content_type": 3,
+    "codename": "view_booking_history_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1608,
+  "fields": {
+    "name": "Can view agent bookings in admin portal",
+    "content_type": 3,
+    "codename": "view_agent_bookings_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1609,
+  "fields": {
+    "name": "Can view organization bookings in admin portal",
+    "content_type": 3,
+    "codename": "view_org_bookings_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1610,
+  "fields": {
+    "name": "Can view branch bookings in admin portal",
+    "content_type": 3,
+    "codename": "view_branch_bookings_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1611,
+  "fields": {
+    "name": "Can view employee bookings in admin portal",
+    "content_type": 3,
+    "codename": "view_employee_bookings_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1612,
+  "fields": {
+    "name": "Can view recent transactions in admin portal",
+    "content_type": 3,
+    "codename": "view_recent_transactions_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1613,
+  "fields": {
+    "name": "Can view profit & loss reports in admin portal",
+    "content_type": 3,
+    "codename": "view_profit_loss_reports_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1614,
+  "fields": {
+    "name": "Can view financial ledger in admin portal",
+    "content_type": 3,
+    "codename": "view_financial_ledger_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1615,
+  "fields": {
+    "name": "Can view expense management in admin portal",
+    "content_type": 3,
+    "codename": "view_expense_management_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1616,
+  "fields": {
+    "name": "Can add expense management in admin portal",
+    "content_type": 3,
+    "codename": "add_expense_management_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1617,
+  "fields": {
+    "name": "Can edit expense management in admin portal",
+    "content_type": 3,
+    "codename": "edit_expense_management_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1618,
+  "fields": {
+    "name": "Can delete expense management in admin portal",
+    "content_type": 3,
+    "codename": "delete_expense_management_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1619,
+  "fields": {
+    "name": "Can view manual posting in admin portal",
+    "content_type": 3,
+    "codename": "view_manual_posting_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1620,
+  "fields": {
+    "name": "Can add manual posting in admin portal",
+    "content_type": 3,
+    "codename": "add_manual_posting_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1621,
+  "fields": {
+    "name": "Can edit manual posting in admin portal",
+    "content_type": 3,
+    "codename": "edit_manual_posting_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1622,
+  "fields": {
+    "name": "Can delete manual posting in admin portal",
+    "content_type": 3,
+    "codename": "delete_manual_posting_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1623,
+  "fields": {
+    "name": "Can view tax reports (FBR) in admin portal",
+    "content_type": 3,
+    "codename": "view_tax_reports_fbr_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1624,
+  "fields": {
+    "name": "Can view balance sheet in admin portal",
+    "content_type": 3,
+    "codename": "view_balance_sheet_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1625,
+  "fields": {
+    "name": "Can view audit trail in admin portal",
+    "content_type": 3,
+    "codename": "view_audit_trail_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1626,
+  "fields": {
+    "name": "Can view order delivery in admin portal",
+    "content_type": 3,
+    "codename": "view_order_delivery_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1627,
+  "fields": {
+    "name": "Can update order delivery in admin portal",
+    "content_type": 3,
+    "codename": "update_order_delivery_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1629,
+  "fields": {
+    "name": "Can view ledger in agent portal",
+    "content_type": 3,
+    "codename": "view_ledger_agent"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1630,
+  "fields": {
+    "name": "Can add deposit payment in agent portal",
+    "content_type": 3,
+    "codename": "add_deposit_payment_agent"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1631,
+  "fields": {
+    "name": "Can view bank account in agent portal",
+    "content_type": 3,
+    "codename": "view_bank_account_agent"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1632,
+  "fields": {
+    "name": "Can add bank account in agent portal",
+    "content_type": 3,
+    "codename": "add_bank_account_agent"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1633,
+  "fields": {
+    "name": "Can edit bank account in agent portal",
+    "content_type": 3,
+    "codename": "edit_bank_account_agent"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1634,
+  "fields": {
+    "name": "Can delete bank account in agent portal",
+    "content_type": 3,
+    "codename": "delete_bank_account_agent"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1635,
+  "fields": {
+    "name": "Can view booking history in agent portal",
+    "content_type": 3,
+    "codename": "view_booking_history_agent"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1636,
+  "fields": {
+    "name": "Can edit leads in admin portal",
+    "content_type": 86,
+    "codename": "edit_leads_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1638,
+  "fields": {
+    "name": "Can add log entry",
+    "content_type": 1,
+    "codename": "add_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1639,
+  "fields": {
+    "name": "Can change log entry",
+    "content_type": 1,
+    "codename": "change_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1640,
+  "fields": {
+    "name": "Can delete log entry",
+    "content_type": 1,
+    "codename": "delete_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1641,
+  "fields": {
+    "name": "Can view log entry",
+    "content_type": 1,
+    "codename": "view_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1642,
+  "fields": {
+    "name": "Can add permission",
+    "content_type": 2,
+    "codename": "add_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1643,
+  "fields": {
+    "name": "Can change permission",
+    "content_type": 2,
+    "codename": "change_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1644,
+  "fields": {
+    "name": "Can delete permission",
+    "content_type": 2,
+    "codename": "delete_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1645,
+  "fields": {
+    "name": "Can view permission",
+    "content_type": 2,
+    "codename": "view_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1646,
+  "fields": {
+    "name": "Can add group",
+    "content_type": 3,
+    "codename": "add_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1647,
+  "fields": {
+    "name": "Can change group",
+    "content_type": 3,
+    "codename": "change_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1648,
+  "fields": {
+    "name": "Can delete group",
+    "content_type": 3,
+    "codename": "delete_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1649,
+  "fields": {
+    "name": "Can view group",
+    "content_type": 3,
+    "codename": "view_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1650,
+  "fields": {
+    "name": "Can add user",
+    "content_type": 4,
+    "codename": "add_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1651,
+  "fields": {
+    "name": "Can change user",
+    "content_type": 4,
+    "codename": "change_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1652,
+  "fields": {
+    "name": "Can delete user",
+    "content_type": 4,
+    "codename": "delete_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1653,
+  "fields": {
+    "name": "Can view user",
+    "content_type": 4,
+    "codename": "view_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1654,
+  "fields": {
+    "name": "Can add content type",
+    "content_type": 5,
+    "codename": "add_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1655,
+  "fields": {
+    "name": "Can change content type",
+    "content_type": 5,
+    "codename": "change_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1656,
+  "fields": {
+    "name": "Can delete content type",
+    "content_type": 5,
+    "codename": "delete_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1657,
+  "fields": {
+    "name": "Can view content type",
+    "content_type": 5,
+    "codename": "view_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1658,
+  "fields": {
+    "name": "Can add session",
+    "content_type": 6,
+    "codename": "add_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1659,
+  "fields": {
+    "name": "Can change session",
+    "content_type": 6,
+    "codename": "change_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1660,
+  "fields": {
+    "name": "Can delete session",
+    "content_type": 6,
+    "codename": "delete_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1661,
+  "fields": {
+    "name": "Can view session",
+    "content_type": 6,
+    "codename": "view_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1662,
+  "fields": {
+    "name": "Can add blacklisted token",
+    "content_type": 125,
+    "codename": "add_blacklistedtoken"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1663,
+  "fields": {
+    "name": "Can change blacklisted token",
+    "content_type": 125,
+    "codename": "change_blacklistedtoken"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1664,
+  "fields": {
+    "name": "Can delete blacklisted token",
+    "content_type": 125,
+    "codename": "delete_blacklistedtoken"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1665,
+  "fields": {
+    "name": "Can view blacklisted token",
+    "content_type": 125,
+    "codename": "view_blacklistedtoken"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1666,
+  "fields": {
+    "name": "Can add outstanding token",
+    "content_type": 126,
+    "codename": "add_outstandingtoken"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1667,
+  "fields": {
+    "name": "Can change outstanding token",
+    "content_type": 126,
+    "codename": "change_outstandingtoken"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1668,
+  "fields": {
+    "name": "Can delete outstanding token",
+    "content_type": 126,
+    "codename": "delete_outstandingtoken"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1669,
+  "fields": {
+    "name": "Can view outstanding token",
+    "content_type": 126,
+    "codename": "view_outstandingtoken"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1670,
+  "fields": {
+    "name": "Can add user profile",
+    "content_type": 7,
+    "codename": "add_userprofile"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1671,
+  "fields": {
+    "name": "Can change user profile",
+    "content_type": 7,
+    "codename": "change_userprofile"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1672,
+  "fields": {
+    "name": "Can delete user profile",
+    "content_type": 7,
+    "codename": "delete_userprofile"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1673,
+  "fields": {
+    "name": "Can view user profile",
+    "content_type": 7,
+    "codename": "view_userprofile"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1674,
+  "fields": {
+    "name": "Can add permission extension",
+    "content_type": 8,
+    "codename": "add_permissionextension"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1675,
+  "fields": {
+    "name": "Can change permission extension",
+    "content_type": 8,
+    "codename": "change_permissionextension"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1676,
+  "fields": {
+    "name": "Can delete permission extension",
+    "content_type": 8,
+    "codename": "delete_permissionextension"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1677,
+  "fields": {
+    "name": "Can view permission extension",
+    "content_type": 8,
+    "codename": "view_permissionextension"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1678,
+  "fields": {
+    "name": "Can add group extension",
+    "content_type": 9,
+    "codename": "add_groupextension"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1679,
+  "fields": {
+    "name": "Can change group extension",
+    "content_type": 9,
+    "codename": "change_groupextension"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1680,
+  "fields": {
+    "name": "Can delete group extension",
+    "content_type": 9,
+    "codename": "delete_groupextension"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1681,
+  "fields": {
+    "name": "Can view group extension",
+    "content_type": 9,
+    "codename": "view_groupextension"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1682,
+  "fields": {
+    "name": "Can add organization",
+    "content_type": 10,
+    "codename": "add_organization"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1683,
+  "fields": {
+    "name": "Can change organization",
+    "content_type": 10,
+    "codename": "change_organization"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1684,
+  "fields": {
+    "name": "Can delete organization",
+    "content_type": 10,
+    "codename": "delete_organization"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1685,
+  "fields": {
+    "name": "Can view organization",
+    "content_type": 10,
+    "codename": "view_organization"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1686,
+  "fields": {
+    "name": "Can add branch",
+    "content_type": 11,
+    "codename": "add_branch"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1687,
+  "fields": {
+    "name": "Can change branch",
+    "content_type": 11,
+    "codename": "change_branch"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1688,
+  "fields": {
+    "name": "Can delete branch",
+    "content_type": 11,
+    "codename": "delete_branch"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1689,
+  "fields": {
+    "name": "Can view branch",
+    "content_type": 11,
+    "codename": "view_branch"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1690,
+  "fields": {
+    "name": "Can add agency",
+    "content_type": 29,
+    "codename": "add_agency"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1691,
+  "fields": {
+    "name": "Can change agency",
+    "content_type": 29,
+    "codename": "change_agency"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1692,
+  "fields": {
+    "name": "Can delete agency",
+    "content_type": 29,
+    "codename": "delete_agency"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1693,
+  "fields": {
+    "name": "Can view agency",
+    "content_type": 29,
+    "codename": "view_agency"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1694,
+  "fields": {
+    "name": "Can add agency files",
+    "content_type": 40,
+    "codename": "add_agencyfiles"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1695,
+  "fields": {
+    "name": "Can change agency files",
+    "content_type": 40,
+    "codename": "change_agencyfiles"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1696,
+  "fields": {
+    "name": "Can delete agency files",
+    "content_type": 40,
+    "codename": "delete_agencyfiles"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1697,
+  "fields": {
+    "name": "Can view agency files",
+    "content_type": 40,
+    "codename": "view_agencyfiles"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1698,
+  "fields": {
+    "name": "Can add agency contact",
+    "content_type": 41,
+    "codename": "add_agencycontact"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1699,
+  "fields": {
+    "name": "Can change agency contact",
+    "content_type": 41,
+    "codename": "change_agencycontact"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1700,
+  "fields": {
+    "name": "Can delete agency contact",
+    "content_type": 41,
+    "codename": "delete_agencycontact"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1701,
+  "fields": {
+    "name": "Can view agency contact",
+    "content_type": 41,
+    "codename": "view_agencycontact"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1702,
+  "fields": {
+    "name": "Can add organization link",
+    "content_type": 73,
+    "codename": "add_organizationlink"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1703,
+  "fields": {
+    "name": "Can change organization link",
+    "content_type": 73,
+    "codename": "change_organizationlink"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1704,
+  "fields": {
+    "name": "Can delete organization link",
+    "content_type": 73,
+    "codename": "delete_organizationlink"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1705,
+  "fields": {
+    "name": "Can view organization link",
+    "content_type": 73,
+    "codename": "view_organizationlink"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1706,
+  "fields": {
+    "name": "Can add agency profile",
+    "content_type": 80,
+    "codename": "add_agencyprofile"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1707,
+  "fields": {
+    "name": "Can change agency profile",
+    "content_type": 80,
+    "codename": "change_agencyprofile"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1708,
+  "fields": {
+    "name": "Can delete agency profile",
+    "content_type": 80,
+    "codename": "delete_agencyprofile"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1709,
+  "fields": {
+    "name": "Can view agency profile",
+    "content_type": 80,
+    "codename": "view_agencyprofile"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1710,
+  "fields": {
+    "name": "Can add rule",
+    "content_type": 81,
+    "codename": "add_rule"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1711,
+  "fields": {
+    "name": "Can change rule",
+    "content_type": 81,
+    "codename": "change_rule"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1712,
+  "fields": {
+    "name": "Can delete rule",
+    "content_type": 81,
+    "codename": "delete_rule"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1713,
+  "fields": {
+    "name": "Can view rule",
+    "content_type": 81,
+    "codename": "view_rule"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1714,
+  "fields": {
+    "name": "Can add walk in booking",
+    "content_type": 82,
+    "codename": "add_walkinbooking"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1715,
+  "fields": {
+    "name": "Can change walk in booking",
+    "content_type": 82,
+    "codename": "change_walkinbooking"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1716,
+  "fields": {
+    "name": "Can delete walk in booking",
+    "content_type": 82,
+    "codename": "delete_walkinbooking"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1717,
+  "fields": {
+    "name": "Can view walk in booking",
+    "content_type": 82,
+    "codename": "view_walkinbooking"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1718,
+  "fields": {
+    "name": "Can add organization id sequence",
+    "content_type": 105,
+    "codename": "add_organizationidsequence"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1719,
+  "fields": {
+    "name": "Can change organization id sequence",
+    "content_type": 105,
+    "codename": "change_organizationidsequence"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1720,
+  "fields": {
+    "name": "Can delete organization id sequence",
+    "content_type": 105,
+    "codename": "delete_organizationidsequence"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1721,
+  "fields": {
+    "name": "Can view organization id sequence",
+    "content_type": 105,
+    "codename": "view_organizationidsequence"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1722,
+  "fields": {
+    "name": "Can add Employee",
+    "content_type": 109,
+    "codename": "add_employee"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1723,
+  "fields": {
+    "name": "Can change Employee",
+    "content_type": 109,
+    "codename": "change_employee"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1724,
+  "fields": {
+    "name": "Can delete Employee",
+    "content_type": 109,
+    "codename": "delete_employee"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1725,
+  "fields": {
+    "name": "Can view Employee",
+    "content_type": 109,
+    "codename": "view_employee"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1726,
+  "fields": {
+    "name": "Can add resell request",
+    "content_type": 148,
+    "codename": "add_resellrequest"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1727,
+  "fields": {
+    "name": "Can change resell request",
+    "content_type": 148,
+    "codename": "change_resellrequest"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1728,
+  "fields": {
+    "name": "Can delete resell request",
+    "content_type": 148,
+    "codename": "delete_resellrequest"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1729,
+  "fields": {
+    "name": "Can view resell request",
+    "content_type": 148,
+    "codename": "view_resellrequest"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1730,
+  "fields": {
+    "name": "Can add umrah visa price",
+    "content_type": 17,
+    "codename": "add_umrahvisaprice"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1731,
+  "fields": {
+    "name": "Can change umrah visa price",
+    "content_type": 17,
+    "codename": "change_umrahvisaprice"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1732,
+  "fields": {
+    "name": "Can delete umrah visa price",
+    "content_type": 17,
+    "codename": "delete_umrahvisaprice"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1733,
+  "fields": {
+    "name": "Can view umrah visa price",
+    "content_type": 17,
+    "codename": "view_umrahvisaprice"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1734,
+  "fields": {
+    "name": "Can add transport sector price",
+    "content_type": 16,
+    "codename": "add_transportsectorprice"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1735,
+  "fields": {
+    "name": "Can change transport sector price",
+    "content_type": 16,
+    "codename": "change_transportsectorprice"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1736,
+  "fields": {
+    "name": "Can delete transport sector price",
+    "content_type": 16,
+    "codename": "delete_transportsectorprice"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1737,
+  "fields": {
+    "name": "Can view transport sector price",
+    "content_type": 16,
+    "codename": "view_transportsectorprice"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1738,
+  "fields": {
+    "name": "Can add shirka",
+    "content_type": 15,
+    "codename": "add_shirka"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1739,
+  "fields": {
+    "name": "Can change shirka",
+    "content_type": 15,
+    "codename": "change_shirka"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1740,
+  "fields": {
+    "name": "Can delete shirka",
+    "content_type": 15,
+    "codename": "delete_shirka"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1741,
+  "fields": {
+    "name": "Can view shirka",
+    "content_type": 15,
+    "codename": "view_shirka"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1742,
+  "fields": {
+    "name": "Can add riyal rate",
+    "content_type": 19,
+    "codename": "add_riyalrate"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1743,
+  "fields": {
+    "name": "Can change riyal rate",
+    "content_type": 19,
+    "codename": "change_riyalrate"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1744,
+  "fields": {
+    "name": "Can delete riyal rate",
+    "content_type": 19,
+    "codename": "delete_riyalrate"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1745,
+  "fields": {
+    "name": "Can view riyal rate",
+    "content_type": 19,
+    "codename": "view_riyalrate"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1746,
+  "fields": {
+    "name": "Can add city",
+    "content_type": 14,
+    "codename": "add_city"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1747,
+  "fields": {
+    "name": "Can change city",
+    "content_type": 14,
+    "codename": "change_city"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1748,
+  "fields": {
+    "name": "Can delete city",
+    "content_type": 14,
+    "codename": "delete_city"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1749,
+  "fields": {
+    "name": "Can view city",
+    "content_type": 14,
+    "codename": "view_city"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1750,
+  "fields": {
+    "name": "Can add booking expiry",
+    "content_type": 18,
+    "codename": "add_bookingexpiry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1751,
+  "fields": {
+    "name": "Can change booking expiry",
+    "content_type": 18,
+    "codename": "change_bookingexpiry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1752,
+  "fields": {
+    "name": "Can delete booking expiry",
+    "content_type": 18,
+    "codename": "delete_bookingexpiry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1753,
+  "fields": {
+    "name": "Can view booking expiry",
+    "content_type": 18,
+    "codename": "view_bookingexpiry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1754,
+  "fields": {
+    "name": "Can add airlines",
+    "content_type": 13,
+    "codename": "add_airlines"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1755,
+  "fields": {
+    "name": "Can change airlines",
+    "content_type": 13,
+    "codename": "change_airlines"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1756,
+  "fields": {
+    "name": "Can delete airlines",
+    "content_type": 13,
+    "codename": "delete_airlines"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1757,
+  "fields": {
+    "name": "Can view airlines",
+    "content_type": 13,
+    "codename": "view_airlines"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1758,
+  "fields": {
+    "name": "Can add Umrah Package",
+    "content_type": 25,
+    "codename": "add_umrahpackage"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1759,
+  "fields": {
+    "name": "Can change Umrah Package",
+    "content_type": 25,
+    "codename": "change_umrahpackage"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1760,
+  "fields": {
+    "name": "Can delete Umrah Package",
+    "content_type": 25,
+    "codename": "delete_umrahpackage"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1761,
+  "fields": {
+    "name": "Can view Umrah Package",
+    "content_type": 25,
+    "codename": "view_umrahpackage"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1762,
+  "fields": {
+    "name": "Can add Transport Detail",
+    "content_type": 26,
+    "codename": "add_umrahpackagetransportdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1763,
+  "fields": {
+    "name": "Can change Transport Detail",
+    "content_type": 26,
+    "codename": "change_umrahpackagetransportdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1764,
+  "fields": {
+    "name": "Can delete Transport Detail",
+    "content_type": 26,
+    "codename": "delete_umrahpackagetransportdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1765,
+  "fields": {
+    "name": "Can view Transport Detail",
+    "content_type": 26,
+    "codename": "view_umrahpackagetransportdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1766,
+  "fields": {
+    "name": "Can add umrah package ticket details",
+    "content_type": 27,
+    "codename": "add_umrahpackageticketdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1767,
+  "fields": {
+    "name": "Can change umrah package ticket details",
+    "content_type": 27,
+    "codename": "change_umrahpackageticketdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1768,
+  "fields": {
+    "name": "Can delete umrah package ticket details",
+    "content_type": 27,
+    "codename": "delete_umrahpackageticketdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1769,
+  "fields": {
+    "name": "Can view umrah package ticket details",
+    "content_type": 27,
+    "codename": "view_umrahpackageticketdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1770,
+  "fields": {
+    "name": "Can add umrah package hotel details",
+    "content_type": 28,
+    "codename": "add_umrahpackagehoteldetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1771,
+  "fields": {
+    "name": "Can change umrah package hotel details",
+    "content_type": 28,
+    "codename": "change_umrahpackagehoteldetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1772,
+  "fields": {
+    "name": "Can delete umrah package hotel details",
+    "content_type": 28,
+    "codename": "delete_umrahpackagehoteldetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1773,
+  "fields": {
+    "name": "Can view umrah package hotel details",
+    "content_type": 28,
+    "codename": "view_umrahpackagehoteldetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1774,
+  "fields": {
+    "name": "Can add umrah package discount details",
+    "content_type": 30,
+    "codename": "add_umrahpackagediscountdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1775,
+  "fields": {
+    "name": "Can change umrah package discount details",
+    "content_type": 30,
+    "codename": "change_umrahpackagediscountdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1776,
+  "fields": {
+    "name": "Can delete umrah package discount details",
+    "content_type": 30,
+    "codename": "delete_umrahpackagediscountdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1777,
+  "fields": {
+    "name": "Can view umrah package discount details",
+    "content_type": 30,
+    "codename": "view_umrahpackagediscountdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1778,
+  "fields": {
+    "name": "Can add Custom Umrah Package",
+    "content_type": 31,
+    "codename": "add_customumrahpackage"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1779,
+  "fields": {
+    "name": "Can change Custom Umrah Package",
+    "content_type": 31,
+    "codename": "change_customumrahpackage"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1780,
+  "fields": {
+    "name": "Can delete Custom Umrah Package",
+    "content_type": 31,
+    "codename": "delete_customumrahpackage"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1781,
+  "fields": {
+    "name": "Can view Custom Umrah Package",
+    "content_type": 31,
+    "codename": "view_customumrahpackage"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1782,
+  "fields": {
+    "name": "Can add umrah visa price two",
+    "content_type": 32,
+    "codename": "add_umrahvisapricetwo"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1783,
+  "fields": {
+    "name": "Can change umrah visa price two",
+    "content_type": 32,
+    "codename": "change_umrahvisapricetwo"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1784,
+  "fields": {
+    "name": "Can delete umrah visa price two",
+    "content_type": 32,
+    "codename": "delete_umrahvisapricetwo"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1785,
+  "fields": {
+    "name": "Can view umrah visa price two",
+    "content_type": 32,
+    "codename": "view_umrahvisapricetwo"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1786,
+  "fields": {
+    "name": "Can add Custom Transport Detail",
+    "content_type": 34,
+    "codename": "add_customumrahpackagetransportdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1787,
+  "fields": {
+    "name": "Can change Custom Transport Detail",
+    "content_type": 34,
+    "codename": "change_customumrahpackagetransportdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1788,
+  "fields": {
+    "name": "Can delete Custom Transport Detail",
+    "content_type": 34,
+    "codename": "delete_customumrahpackagetransportdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1789,
+  "fields": {
+    "name": "Can view Custom Transport Detail",
+    "content_type": 34,
+    "codename": "view_customumrahpackagetransportdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1790,
+  "fields": {
+    "name": "Can add custom umrah package ticket details",
+    "content_type": 35,
+    "codename": "add_customumrahpackageticketdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1791,
+  "fields": {
+    "name": "Can change custom umrah package ticket details",
+    "content_type": 35,
+    "codename": "change_customumrahpackageticketdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1792,
+  "fields": {
+    "name": "Can delete custom umrah package ticket details",
+    "content_type": 35,
+    "codename": "delete_customumrahpackageticketdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1793,
+  "fields": {
+    "name": "Can view custom umrah package ticket details",
+    "content_type": 35,
+    "codename": "view_customumrahpackageticketdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1794,
+  "fields": {
+    "name": "Can add Hotel Detail",
+    "content_type": 36,
+    "codename": "add_customumrahpackagehoteldetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1795,
+  "fields": {
+    "name": "Can change Hotel Detail",
+    "content_type": 36,
+    "codename": "change_customumrahpackagehoteldetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1796,
+  "fields": {
+    "name": "Can delete Hotel Detail",
+    "content_type": 36,
+    "codename": "delete_customumrahpackagehoteldetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1797,
+  "fields": {
+    "name": "Can view Hotel Detail",
+    "content_type": 36,
+    "codename": "view_customumrahpackagehoteldetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1798,
+  "fields": {
+    "name": "Can add only visa price",
+    "content_type": 37,
+    "codename": "add_onlyvisaprice"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1799,
+  "fields": {
+    "name": "Can change only visa price",
+    "content_type": 37,
+    "codename": "change_onlyvisaprice"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1800,
+  "fields": {
+    "name": "Can delete only visa price",
+    "content_type": 37,
+    "codename": "delete_onlyvisaprice"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1801,
+  "fields": {
+    "name": "Can view only visa price",
+    "content_type": 37,
+    "codename": "view_onlyvisaprice"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1802,
+  "fields": {
+    "name": "Can add set visa type",
+    "content_type": 42,
+    "codename": "add_setvisatype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1803,
+  "fields": {
+    "name": "Can change set visa type",
+    "content_type": 42,
+    "codename": "change_setvisatype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1804,
+  "fields": {
+    "name": "Can delete set visa type",
+    "content_type": 42,
+    "codename": "delete_setvisatype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1805,
+  "fields": {
+    "name": "Can view set visa type",
+    "content_type": 42,
+    "codename": "view_setvisatype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1806,
+  "fields": {
+    "name": "Can add ziarat price",
+    "content_type": 43,
+    "codename": "add_ziaratprice"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1807,
+  "fields": {
+    "name": "Can change ziarat price",
+    "content_type": 43,
+    "codename": "change_ziaratprice"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1808,
+  "fields": {
+    "name": "Can delete ziarat price",
+    "content_type": 43,
+    "codename": "delete_ziaratprice"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1809,
+  "fields": {
+    "name": "Can view ziarat price",
+    "content_type": 43,
+    "codename": "view_ziaratprice"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1810,
+  "fields": {
+    "name": "Can add food price",
+    "content_type": 44,
+    "codename": "add_foodprice"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1811,
+  "fields": {
+    "name": "Can change food price",
+    "content_type": 44,
+    "codename": "change_foodprice"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1812,
+  "fields": {
+    "name": "Can delete food price",
+    "content_type": 44,
+    "codename": "delete_foodprice"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1813,
+  "fields": {
+    "name": "Can view food price",
+    "content_type": 44,
+    "codename": "view_foodprice"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1814,
+  "fields": {
+    "name": "Can add custom umrah ziarat details",
+    "content_type": 49,
+    "codename": "add_customumrahziaratdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1815,
+  "fields": {
+    "name": "Can change custom umrah ziarat details",
+    "content_type": 49,
+    "codename": "change_customumrahziaratdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1816,
+  "fields": {
+    "name": "Can delete custom umrah ziarat details",
+    "content_type": 49,
+    "codename": "delete_customumrahziaratdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1817,
+  "fields": {
+    "name": "Can view custom umrah ziarat details",
+    "content_type": 49,
+    "codename": "view_customumrahziaratdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1818,
+  "fields": {
+    "name": "Can add custom umrah food details",
+    "content_type": 48,
+    "codename": "add_customumrahfooddetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1819,
+  "fields": {
+    "name": "Can change custom umrah food details",
+    "content_type": 48,
+    "codename": "change_customumrahfooddetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1820,
+  "fields": {
+    "name": "Can delete custom umrah food details",
+    "content_type": 48,
+    "codename": "delete_customumrahfooddetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1821,
+  "fields": {
+    "name": "Can view custom umrah food details",
+    "content_type": 48,
+    "codename": "view_customumrahfooddetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1822,
+  "fields": {
+    "name": "Can add Visa",
+    "content_type": 117,
+    "codename": "add_visa"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1823,
+  "fields": {
+    "name": "Can change Visa",
+    "content_type": 117,
+    "codename": "change_visa"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1824,
+  "fields": {
+    "name": "Can delete Visa",
+    "content_type": 117,
+    "codename": "delete_visa"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1825,
+  "fields": {
+    "name": "Can view Visa",
+    "content_type": 117,
+    "codename": "view_visa"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1826,
+  "fields": {
+    "name": "Can add Package Inclusion",
+    "content_type": 118,
+    "codename": "add_packageinclusion"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1827,
+  "fields": {
+    "name": "Can change Package Inclusion",
+    "content_type": 118,
+    "codename": "change_packageinclusion"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1828,
+  "fields": {
+    "name": "Can delete Package Inclusion",
+    "content_type": 118,
+    "codename": "delete_packageinclusion"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1829,
+  "fields": {
+    "name": "Can view Package Inclusion",
+    "content_type": 118,
+    "codename": "view_packageinclusion"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1830,
+  "fields": {
+    "name": "Can add Package Exclusion",
+    "content_type": 119,
+    "codename": "add_packageexclusion"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1831,
+  "fields": {
+    "name": "Can change Package Exclusion",
+    "content_type": 119,
+    "codename": "change_packageexclusion"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1832,
+  "fields": {
+    "name": "Can delete Package Exclusion",
+    "content_type": 119,
+    "codename": "delete_packageexclusion"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1833,
+  "fields": {
+    "name": "Can view Package Exclusion",
+    "content_type": 119,
+    "codename": "view_packageexclusion"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1834,
+  "fields": {
+    "name": "Can add Flight Ticket",
+    "content_type": 23,
+    "codename": "add_ticket"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1835,
+  "fields": {
+    "name": "Can change Flight Ticket",
+    "content_type": 23,
+    "codename": "change_ticket"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1836,
+  "fields": {
+    "name": "Can delete Flight Ticket",
+    "content_type": 23,
+    "codename": "delete_ticket"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1837,
+  "fields": {
+    "name": "Can view Flight Ticket",
+    "content_type": 23,
+    "codename": "view_ticket"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1838,
+  "fields": {
+    "name": "Can add ticket trip details",
+    "content_type": 22,
+    "codename": "add_tickettripdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1839,
+  "fields": {
+    "name": "Can change ticket trip details",
+    "content_type": 22,
+    "codename": "change_tickettripdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1840,
+  "fields": {
+    "name": "Can delete ticket trip details",
+    "content_type": 22,
+    "codename": "delete_tickettripdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1841,
+  "fields": {
+    "name": "Can view ticket trip details",
+    "content_type": 22,
+    "codename": "view_tickettripdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1842,
+  "fields": {
+    "name": "Can add ticker stopover details",
+    "content_type": 20,
+    "codename": "add_tickerstopoverdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1843,
+  "fields": {
+    "name": "Can change ticker stopover details",
+    "content_type": 20,
+    "codename": "change_tickerstopoverdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1844,
+  "fields": {
+    "name": "Can delete ticker stopover details",
+    "content_type": 20,
+    "codename": "delete_tickerstopoverdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1845,
+  "fields": {
+    "name": "Can view ticker stopover details",
+    "content_type": 20,
+    "codename": "view_tickerstopoverdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1846,
+  "fields": {
+    "name": "Can add Hotel",
+    "content_type": 24,
+    "codename": "add_hotels"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1847,
+  "fields": {
+    "name": "Can change Hotel",
+    "content_type": 24,
+    "codename": "change_hotels"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1848,
+  "fields": {
+    "name": "Can delete Hotel",
+    "content_type": 24,
+    "codename": "delete_hotels"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1849,
+  "fields": {
+    "name": "Can view Hotel",
+    "content_type": 24,
+    "codename": "view_hotels"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1850,
+  "fields": {
+    "name": "Can add Hotel Price",
+    "content_type": 21,
+    "codename": "add_hotelprices"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1851,
+  "fields": {
+    "name": "Can change Hotel Price",
+    "content_type": 21,
+    "codename": "change_hotelprices"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1852,
+  "fields": {
+    "name": "Can delete Hotel Price",
+    "content_type": 21,
+    "codename": "delete_hotelprices"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1853,
+  "fields": {
+    "name": "Can view Hotel Price",
+    "content_type": 21,
+    "codename": "view_hotelprices"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1854,
+  "fields": {
+    "name": "Can add Hotel Contact Detail",
+    "content_type": 45,
+    "codename": "add_hotelcontactdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1855,
+  "fields": {
+    "name": "Can change Hotel Contact Detail",
+    "content_type": 45,
+    "codename": "change_hotelcontactdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1856,
+  "fields": {
+    "name": "Can delete Hotel Contact Detail",
+    "content_type": 45,
+    "codename": "delete_hotelcontactdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1857,
+  "fields": {
+    "name": "Can view Hotel Contact Detail",
+    "content_type": 45,
+    "codename": "view_hotelcontactdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1858,
+  "fields": {
+    "name": "Can add Hotel Room",
+    "content_type": 46,
+    "codename": "add_hotelrooms"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1859,
+  "fields": {
+    "name": "Can change Hotel Room",
+    "content_type": 46,
+    "codename": "change_hotelrooms"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1860,
+  "fields": {
+    "name": "Can delete Hotel Room",
+    "content_type": 46,
+    "codename": "delete_hotelrooms"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1861,
+  "fields": {
+    "name": "Can view Hotel Room",
+    "content_type": 46,
+    "codename": "view_hotelrooms"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1862,
+  "fields": {
+    "name": "Can add Room Detail",
+    "content_type": 47,
+    "codename": "add_roomdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1863,
+  "fields": {
+    "name": "Can change Room Detail",
+    "content_type": 47,
+    "codename": "change_roomdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1864,
+  "fields": {
+    "name": "Can delete Room Detail",
+    "content_type": 47,
+    "codename": "delete_roomdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1865,
+  "fields": {
+    "name": "Can view Room Detail",
+    "content_type": 47,
+    "codename": "view_roomdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1866,
+  "fields": {
+    "name": "Can add Hotel Photo",
+    "content_type": 72,
+    "codename": "add_hotelphoto"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1867,
+  "fields": {
+    "name": "Can change Hotel Photo",
+    "content_type": 72,
+    "codename": "change_hotelphoto"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1868,
+  "fields": {
+    "name": "Can delete Hotel Photo",
+    "content_type": 72,
+    "codename": "delete_hotelphoto"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1869,
+  "fields": {
+    "name": "Can view Hotel Photo",
+    "content_type": 72,
+    "codename": "view_hotelphoto"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1870,
+  "fields": {
+    "name": "Can add Hotel Category",
+    "content_type": 150,
+    "codename": "add_hotelcategory"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1871,
+  "fields": {
+    "name": "Can change Hotel Category",
+    "content_type": 150,
+    "codename": "change_hotelcategory"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1872,
+  "fields": {
+    "name": "Can delete Hotel Category",
+    "content_type": 150,
+    "codename": "delete_hotelcategory"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1873,
+  "fields": {
+    "name": "Can view Hotel Category",
+    "content_type": 150,
+    "codename": "view_hotelcategory"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1874,
+  "fields": {
+    "name": "Can add Bed Type",
+    "content_type": 157,
+    "codename": "add_bedtype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1875,
+  "fields": {
+    "name": "Can change Bed Type",
+    "content_type": 157,
+    "codename": "change_bedtype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1876,
+  "fields": {
+    "name": "Can delete Bed Type",
+    "content_type": 157,
+    "codename": "delete_bedtype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1877,
+  "fields": {
+    "name": "Can view Bed Type",
+    "content_type": 157,
+    "codename": "view_bedtype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1878,
+  "fields": {
+    "name": "Can add Hotel Floor",
+    "content_type": 164,
+    "codename": "add_hotelfloor"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1879,
+  "fields": {
+    "name": "Can change Hotel Floor",
+    "content_type": 164,
+    "codename": "change_hotelfloor"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1880,
+  "fields": {
+    "name": "Can delete Hotel Floor",
+    "content_type": 164,
+    "codename": "delete_hotelfloor"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1881,
+  "fields": {
+    "name": "Can view Hotel Floor",
+    "content_type": 164,
+    "codename": "view_hotelfloor"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1882,
+  "fields": {
+    "name": "Can add audit log",
+    "content_type": 74,
+    "codename": "add_auditlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1883,
+  "fields": {
+    "name": "Can change audit log",
+    "content_type": 74,
+    "codename": "change_auditlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1884,
+  "fields": {
+    "name": "Can delete audit log",
+    "content_type": 74,
+    "codename": "delete_auditlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1885,
+  "fields": {
+    "name": "Can view audit log",
+    "content_type": 74,
+    "codename": "view_auditlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1886,
+  "fields": {
+    "name": "Can add universal id sequence",
+    "content_type": 75,
+    "codename": "add_universalidsequence"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1887,
+  "fields": {
+    "name": "Can change universal id sequence",
+    "content_type": 75,
+    "codename": "change_universalidsequence"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1888,
+  "fields": {
+    "name": "Can delete universal id sequence",
+    "content_type": 75,
+    "codename": "delete_universalidsequence"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1889,
+  "fields": {
+    "name": "Can view universal id sequence",
+    "content_type": 75,
+    "codename": "view_universalidsequence"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1890,
+  "fields": {
+    "name": "Can add universal registration",
+    "content_type": 76,
+    "codename": "add_universalregistration"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1891,
+  "fields": {
+    "name": "Can change universal registration",
+    "content_type": 76,
+    "codename": "change_universalregistration"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1892,
+  "fields": {
+    "name": "Can delete universal registration",
+    "content_type": 76,
+    "codename": "delete_universalregistration"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1893,
+  "fields": {
+    "name": "Can view universal registration",
+    "content_type": 76,
+    "codename": "view_universalregistration"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1894,
+  "fields": {
+    "name": "Can add registration rule",
+    "content_type": 77,
+    "codename": "add_registrationrule"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1895,
+  "fields": {
+    "name": "Can change registration rule",
+    "content_type": 77,
+    "codename": "change_registrationrule"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1896,
+  "fields": {
+    "name": "Can delete registration rule",
+    "content_type": 77,
+    "codename": "delete_registrationrule"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1897,
+  "fields": {
+    "name": "Can view registration rule",
+    "content_type": 77,
+    "codename": "view_registrationrule"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1898,
+  "fields": {
+    "name": "Can add pax movement",
+    "content_type": 78,
+    "codename": "add_paxmovement"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1899,
+  "fields": {
+    "name": "Can change pax movement",
+    "content_type": 78,
+    "codename": "change_paxmovement"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1900,
+  "fields": {
+    "name": "Can delete pax movement",
+    "content_type": 78,
+    "codename": "delete_paxmovement"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1901,
+  "fields": {
+    "name": "Can view pax movement",
+    "content_type": 78,
+    "codename": "view_paxmovement"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1902,
+  "fields": {
+    "name": "Can add booking",
+    "content_type": 38,
+    "codename": "add_booking"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1903,
+  "fields": {
+    "name": "Can change booking",
+    "content_type": 38,
+    "codename": "change_booking"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1904,
+  "fields": {
+    "name": "Can delete booking",
+    "content_type": 38,
+    "codename": "delete_booking"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1905,
+  "fields": {
+    "name": "Can view booking",
+    "content_type": 38,
+    "codename": "view_booking"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1906,
+  "fields": {
+    "name": "Can add bank",
+    "content_type": 50,
+    "codename": "add_bank"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1907,
+  "fields": {
+    "name": "Can change bank",
+    "content_type": 50,
+    "codename": "change_bank"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1908,
+  "fields": {
+    "name": "Can delete bank",
+    "content_type": 50,
+    "codename": "delete_bank"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1909,
+  "fields": {
+    "name": "Can view bank",
+    "content_type": 50,
+    "codename": "view_bank"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1910,
+  "fields": {
+    "name": "Can add booking hotel details",
+    "content_type": 51,
+    "codename": "add_bookinghoteldetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1911,
+  "fields": {
+    "name": "Can change booking hotel details",
+    "content_type": 51,
+    "codename": "change_bookinghoteldetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1912,
+  "fields": {
+    "name": "Can delete booking hotel details",
+    "content_type": 51,
+    "codename": "delete_bookinghoteldetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1913,
+  "fields": {
+    "name": "Can view booking hotel details",
+    "content_type": 51,
+    "codename": "view_bookinghoteldetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1914,
+  "fields": {
+    "name": "Can add booking person detail",
+    "content_type": 52,
+    "codename": "add_bookingpersondetail"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1915,
+  "fields": {
+    "name": "Can change booking person detail",
+    "content_type": 52,
+    "codename": "change_bookingpersondetail"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1916,
+  "fields": {
+    "name": "Can delete booking person detail",
+    "content_type": 52,
+    "codename": "delete_bookingpersondetail"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1917,
+  "fields": {
+    "name": "Can view booking person detail",
+    "content_type": 52,
+    "codename": "view_bookingpersondetail"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1918,
+  "fields": {
+    "name": "Can add booking ticket details",
+    "content_type": 53,
+    "codename": "add_bookingticketdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1919,
+  "fields": {
+    "name": "Can change booking ticket details",
+    "content_type": 53,
+    "codename": "change_bookingticketdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1920,
+  "fields": {
+    "name": "Can delete booking ticket details",
+    "content_type": 53,
+    "codename": "delete_bookingticketdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1921,
+  "fields": {
+    "name": "Can view booking ticket details",
+    "content_type": 53,
+    "codename": "view_bookingticketdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1922,
+  "fields": {
+    "name": "Can add booking ticket stopover details",
+    "content_type": 54,
+    "codename": "add_bookingticketstopoverdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1923,
+  "fields": {
+    "name": "Can change booking ticket stopover details",
+    "content_type": 54,
+    "codename": "change_bookingticketstopoverdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1924,
+  "fields": {
+    "name": "Can delete booking ticket stopover details",
+    "content_type": 54,
+    "codename": "delete_bookingticketstopoverdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1925,
+  "fields": {
+    "name": "Can view booking ticket stopover details",
+    "content_type": 54,
+    "codename": "view_bookingticketstopoverdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1926,
+  "fields": {
+    "name": "Can add booking ticket ticket trip details",
+    "content_type": 55,
+    "codename": "add_bookingtickettickettripdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1927,
+  "fields": {
+    "name": "Can change booking ticket ticket trip details",
+    "content_type": 55,
+    "codename": "change_bookingtickettickettripdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1928,
+  "fields": {
+    "name": "Can delete booking ticket ticket trip details",
+    "content_type": 55,
+    "codename": "delete_bookingtickettickettripdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1929,
+  "fields": {
+    "name": "Can view booking ticket ticket trip details",
+    "content_type": 55,
+    "codename": "view_bookingtickettickettripdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1930,
+  "fields": {
+    "name": "Can add booking transport details",
+    "content_type": 56,
+    "codename": "add_bookingtransportdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1931,
+  "fields": {
+    "name": "Can change booking transport details",
+    "content_type": 56,
+    "codename": "change_bookingtransportdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1932,
+  "fields": {
+    "name": "Can delete booking transport details",
+    "content_type": 56,
+    "codename": "delete_bookingtransportdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1933,
+  "fields": {
+    "name": "Can view booking transport details",
+    "content_type": 56,
+    "codename": "view_bookingtransportdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1934,
+  "fields": {
+    "name": "Can add payment",
+    "content_type": 57,
+    "codename": "add_payment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1935,
+  "fields": {
+    "name": "Can change payment",
+    "content_type": 57,
+    "codename": "change_payment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1936,
+  "fields": {
+    "name": "Can delete payment",
+    "content_type": 57,
+    "codename": "delete_payment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1937,
+  "fields": {
+    "name": "Can view payment",
+    "content_type": 57,
+    "codename": "view_payment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1938,
+  "fields": {
+    "name": "Can add booking person ziyarat details",
+    "content_type": 58,
+    "codename": "add_bookingpersonziyaratdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1939,
+  "fields": {
+    "name": "Can change booking person ziyarat details",
+    "content_type": 58,
+    "codename": "change_bookingpersonziyaratdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1940,
+  "fields": {
+    "name": "Can delete booking person ziyarat details",
+    "content_type": 58,
+    "codename": "delete_bookingpersonziyaratdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1941,
+  "fields": {
+    "name": "Can view booking person ziyarat details",
+    "content_type": 58,
+    "codename": "view_bookingpersonziyaratdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1942,
+  "fields": {
+    "name": "Can add booking person food details",
+    "content_type": 59,
+    "codename": "add_bookingpersonfooddetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1943,
+  "fields": {
+    "name": "Can change booking person food details",
+    "content_type": 59,
+    "codename": "change_bookingpersonfooddetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1944,
+  "fields": {
+    "name": "Can delete booking person food details",
+    "content_type": 59,
+    "codename": "delete_bookingpersonfooddetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1945,
+  "fields": {
+    "name": "Can view booking person food details",
+    "content_type": 59,
+    "codename": "view_bookingpersonfooddetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1946,
+  "fields": {
+    "name": "Can add booking person contact details",
+    "content_type": 60,
+    "codename": "add_bookingpersoncontactdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1947,
+  "fields": {
+    "name": "Can change booking person contact details",
+    "content_type": 60,
+    "codename": "change_bookingpersoncontactdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1948,
+  "fields": {
+    "name": "Can delete booking person contact details",
+    "content_type": 60,
+    "codename": "delete_bookingpersoncontactdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1949,
+  "fields": {
+    "name": "Can view booking person contact details",
+    "content_type": 60,
+    "codename": "view_bookingpersoncontactdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1950,
+  "fields": {
+    "name": "Can add sector",
+    "content_type": 61,
+    "codename": "add_sector"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1951,
+  "fields": {
+    "name": "Can change sector",
+    "content_type": 61,
+    "codename": "change_sector"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1952,
+  "fields": {
+    "name": "Can delete sector",
+    "content_type": 61,
+    "codename": "delete_sector"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1953,
+  "fields": {
+    "name": "Can view sector",
+    "content_type": 61,
+    "codename": "view_sector"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1954,
+  "fields": {
+    "name": "Can add big sector",
+    "content_type": 62,
+    "codename": "add_bigsector"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1955,
+  "fields": {
+    "name": "Can change big sector",
+    "content_type": 62,
+    "codename": "change_bigsector"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1956,
+  "fields": {
+    "name": "Can delete big sector",
+    "content_type": 62,
+    "codename": "delete_bigsector"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1957,
+  "fields": {
+    "name": "Can view big sector",
+    "content_type": 62,
+    "codename": "view_bigsector"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1958,
+  "fields": {
+    "name": "Can add vehicle type",
+    "content_type": 63,
+    "codename": "add_vehicletype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1959,
+  "fields": {
+    "name": "Can change vehicle type",
+    "content_type": 63,
+    "codename": "change_vehicletype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1960,
+  "fields": {
+    "name": "Can delete vehicle type",
+    "content_type": 63,
+    "codename": "delete_vehicletype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1961,
+  "fields": {
+    "name": "Can view vehicle type",
+    "content_type": 63,
+    "codename": "view_vehicletype"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1962,
+  "fields": {
+    "name": "Can add internal note",
+    "content_type": 64,
+    "codename": "add_internalnote"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1963,
+  "fields": {
+    "name": "Can change internal note",
+    "content_type": 64,
+    "codename": "change_internalnote"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1964,
+  "fields": {
+    "name": "Can delete internal note",
+    "content_type": 64,
+    "codename": "delete_internalnote"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1965,
+  "fields": {
+    "name": "Can view internal note",
+    "content_type": 64,
+    "codename": "view_internalnote"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1966,
+  "fields": {
+    "name": "Can add booking transport sector",
+    "content_type": 65,
+    "codename": "add_bookingtransportsector"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1967,
+  "fields": {
+    "name": "Can change booking transport sector",
+    "content_type": 65,
+    "codename": "change_bookingtransportsector"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1968,
+  "fields": {
+    "name": "Can delete booking transport sector",
+    "content_type": 65,
+    "codename": "delete_bookingtransportsector"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1969,
+  "fields": {
+    "name": "Can view booking transport sector",
+    "content_type": 65,
+    "codename": "view_bookingtransportsector"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1970,
+  "fields": {
+    "name": "Can add bank account",
+    "content_type": 66,
+    "codename": "add_bankaccount"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1971,
+  "fields": {
+    "name": "Can change bank account",
+    "content_type": 66,
+    "codename": "change_bankaccount"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1972,
+  "fields": {
+    "name": "Can delete bank account",
+    "content_type": 66,
+    "codename": "delete_bankaccount"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1973,
+  "fields": {
+    "name": "Can view bank account",
+    "content_type": 66,
+    "codename": "view_bankaccount"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1974,
+  "fields": {
+    "name": "Can add organization link",
+    "content_type": 67,
+    "codename": "add_organizationlink"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1975,
+  "fields": {
+    "name": "Can change organization link",
+    "content_type": 67,
+    "codename": "change_organizationlink"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1976,
+  "fields": {
+    "name": "Can delete organization link",
+    "content_type": 67,
+    "codename": "delete_organizationlink"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1977,
+  "fields": {
+    "name": "Can view organization link",
+    "content_type": 67,
+    "codename": "view_organizationlink"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1978,
+  "fields": {
+    "name": "Can add allowed reseller",
+    "content_type": 68,
+    "codename": "add_allowedreseller"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1979,
+  "fields": {
+    "name": "Can change allowed reseller",
+    "content_type": 68,
+    "codename": "change_allowedreseller"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1980,
+  "fields": {
+    "name": "Can delete allowed reseller",
+    "content_type": 68,
+    "codename": "delete_allowedreseller"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1981,
+  "fields": {
+    "name": "Can view allowed reseller",
+    "content_type": 68,
+    "codename": "view_allowedreseller"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1982,
+  "fields": {
+    "name": "Can add discount group",
+    "content_type": 70,
+    "codename": "add_discountgroup"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1983,
+  "fields": {
+    "name": "Can change discount group",
+    "content_type": 70,
+    "codename": "change_discountgroup"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1984,
+  "fields": {
+    "name": "Can delete discount group",
+    "content_type": 70,
+    "codename": "delete_discountgroup"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1985,
+  "fields": {
+    "name": "Can view discount group",
+    "content_type": 70,
+    "codename": "view_discountgroup"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1986,
+  "fields": {
+    "name": "Can add discount",
+    "content_type": 69,
+    "codename": "add_discount"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1987,
+  "fields": {
+    "name": "Can change discount",
+    "content_type": 69,
+    "codename": "change_discount"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1988,
+  "fields": {
+    "name": "Can delete discount",
+    "content_type": 69,
+    "codename": "delete_discount"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1989,
+  "fields": {
+    "name": "Can view discount",
+    "content_type": 69,
+    "codename": "view_discount"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1990,
+  "fields": {
+    "name": "Can add markup",
+    "content_type": 71,
+    "codename": "add_markup"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1991,
+  "fields": {
+    "name": "Can change markup",
+    "content_type": 71,
+    "codename": "change_markup"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1992,
+  "fields": {
+    "name": "Can delete markup",
+    "content_type": 71,
+    "codename": "delete_markup"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1993,
+  "fields": {
+    "name": "Can view markup",
+    "content_type": 71,
+    "codename": "view_markup"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1994,
+  "fields": {
+    "name": "Can add booking call remark",
+    "content_type": 79,
+    "codename": "add_bookingcallremark"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1995,
+  "fields": {
+    "name": "Can change booking call remark",
+    "content_type": 79,
+    "codename": "change_bookingcallremark"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1996,
+  "fields": {
+    "name": "Can delete booking call remark",
+    "content_type": 79,
+    "codename": "delete_bookingcallremark"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1997,
+  "fields": {
+    "name": "Can view booking call remark",
+    "content_type": 79,
+    "codename": "view_bookingcallremark"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1998,
+  "fields": {
+    "name": "Can add hotel outsourcing",
+    "content_type": 96,
+    "codename": "add_hoteloutsourcing"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 1999,
+  "fields": {
+    "name": "Can change hotel outsourcing",
+    "content_type": 96,
+    "codename": "change_hoteloutsourcing"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2000,
+  "fields": {
+    "name": "Can delete hotel outsourcing",
+    "content_type": 96,
+    "codename": "delete_hoteloutsourcing"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2001,
+  "fields": {
+    "name": "Can view hotel outsourcing",
+    "content_type": 96,
+    "codename": "view_hoteloutsourcing"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2002,
+  "fields": {
+    "name": "Can add Booking Status Timeline",
+    "content_type": 121,
+    "codename": "add_bookingstatustimeline"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2003,
+  "fields": {
+    "name": "Can change Booking Status Timeline",
+    "content_type": 121,
+    "codename": "change_bookingstatustimeline"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2004,
+  "fields": {
+    "name": "Can delete Booking Status Timeline",
+    "content_type": 121,
+    "codename": "delete_bookingstatustimeline"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2005,
+  "fields": {
+    "name": "Can view Booking Status Timeline",
+    "content_type": 121,
+    "codename": "view_bookingstatustimeline"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2006,
+  "fields": {
+    "name": "Can add Booking Promotion",
+    "content_type": 122,
+    "codename": "add_bookingpromotion"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2007,
+  "fields": {
+    "name": "Can change Booking Promotion",
+    "content_type": 122,
+    "codename": "change_bookingpromotion"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2008,
+  "fields": {
+    "name": "Can delete Booking Promotion",
+    "content_type": 122,
+    "codename": "delete_bookingpromotion"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2009,
+  "fields": {
+    "name": "Can view Booking Promotion",
+    "content_type": 122,
+    "codename": "view_bookingpromotion"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2010,
+  "fields": {
+    "name": "Can add Booking Payment",
+    "content_type": 123,
+    "codename": "add_bookingpayment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2011,
+  "fields": {
+    "name": "Can change Booking Payment",
+    "content_type": 123,
+    "codename": "change_bookingpayment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2012,
+  "fields": {
+    "name": "Can delete Booking Payment",
+    "content_type": 123,
+    "codename": "delete_bookingpayment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2013,
+  "fields": {
+    "name": "Can view Booking Payment",
+    "content_type": 123,
+    "codename": "view_bookingpayment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2014,
+  "fields": {
+    "name": "Can add Booking PAX",
+    "content_type": 120,
+    "codename": "add_bookingpax"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2015,
+  "fields": {
+    "name": "Can change Booking PAX",
+    "content_type": 120,
+    "codename": "change_bookingpax"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2016,
+  "fields": {
+    "name": "Can delete Booking PAX",
+    "content_type": 120,
+    "codename": "delete_bookingpax"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2017,
+  "fields": {
+    "name": "Can view Booking PAX",
+    "content_type": 120,
+    "codename": "view_bookingpax"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2018,
+  "fields": {
+    "name": "Can add Booking Item",
+    "content_type": 124,
+    "codename": "add_bookingitem"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2019,
+  "fields": {
+    "name": "Can change Booking Item",
+    "content_type": 124,
+    "codename": "change_bookingitem"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2020,
+  "fields": {
+    "name": "Can delete Booking Item",
+    "content_type": 124,
+    "codename": "delete_bookingitem"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2021,
+  "fields": {
+    "name": "Can view Booking Item",
+    "content_type": 124,
+    "codename": "view_bookingitem"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2022,
+  "fields": {
+    "name": "Can add trn sequence",
+    "content_type": 149,
+    "codename": "add_trnsequence"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2023,
+  "fields": {
+    "name": "Can change trn sequence",
+    "content_type": 149,
+    "codename": "change_trnsequence"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2024,
+  "fields": {
+    "name": "Can delete trn sequence",
+    "content_type": 149,
+    "codename": "delete_trnsequence"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2025,
+  "fields": {
+    "name": "Can view trn sequence",
+    "content_type": 149,
+    "codename": "view_trnsequence"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2026,
+  "fields": {
+    "name": "Can add booking ziyarat details",
+    "content_type": 163,
+    "codename": "add_bookingziyaratdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2027,
+  "fields": {
+    "name": "Can change booking ziyarat details",
+    "content_type": 163,
+    "codename": "change_bookingziyaratdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2028,
+  "fields": {
+    "name": "Can delete booking ziyarat details",
+    "content_type": 163,
+    "codename": "delete_bookingziyaratdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2029,
+  "fields": {
+    "name": "Can view booking ziyarat details",
+    "content_type": 163,
+    "codename": "view_bookingziyaratdetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2030,
+  "fields": {
+    "name": "Can add booking food details",
+    "content_type": 162,
+    "codename": "add_bookingfooddetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2031,
+  "fields": {
+    "name": "Can change booking food details",
+    "content_type": 162,
+    "codename": "change_bookingfooddetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2032,
+  "fields": {
+    "name": "Can delete booking food details",
+    "content_type": 162,
+    "codename": "delete_bookingfooddetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2033,
+  "fields": {
+    "name": "Can view booking food details",
+    "content_type": 162,
+    "codename": "view_bookingfooddetails"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2034,
+  "fields": {
+    "name": "Can add blog",
+    "content_type": 97,
+    "codename": "add_blog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2035,
+  "fields": {
+    "name": "Can change blog",
+    "content_type": 97,
+    "codename": "change_blog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2036,
+  "fields": {
+    "name": "Can delete blog",
+    "content_type": 97,
+    "codename": "delete_blog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2037,
+  "fields": {
+    "name": "Can view blog",
+    "content_type": 97,
+    "codename": "view_blog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2038,
+  "fields": {
+    "name": "Can add lead form",
+    "content_type": 101,
+    "codename": "add_leadform"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2039,
+  "fields": {
+    "name": "Can change lead form",
+    "content_type": 101,
+    "codename": "change_leadform"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2040,
+  "fields": {
+    "name": "Can delete lead form",
+    "content_type": 101,
+    "codename": "delete_leadform"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2041,
+  "fields": {
+    "name": "Can view lead form",
+    "content_type": 101,
+    "codename": "view_leadform"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2042,
+  "fields": {
+    "name": "Can add form submission",
+    "content_type": 100,
+    "codename": "add_formsubmission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2043,
+  "fields": {
+    "name": "Can change form submission",
+    "content_type": 100,
+    "codename": "change_formsubmission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2044,
+  "fields": {
+    "name": "Can delete form submission",
+    "content_type": 100,
+    "codename": "delete_formsubmission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2045,
+  "fields": {
+    "name": "Can view form submission",
+    "content_type": 100,
+    "codename": "view_formsubmission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2046,
+  "fields": {
+    "name": "Can add blog section",
+    "content_type": 102,
+    "codename": "add_blogsection"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2047,
+  "fields": {
+    "name": "Can change blog section",
+    "content_type": 102,
+    "codename": "change_blogsection"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2048,
+  "fields": {
+    "name": "Can delete blog section",
+    "content_type": 102,
+    "codename": "delete_blogsection"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2049,
+  "fields": {
+    "name": "Can view blog section",
+    "content_type": 102,
+    "codename": "view_blogsection"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2050,
+  "fields": {
+    "name": "Can add blog like",
+    "content_type": 98,
+    "codename": "add_bloglike"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2051,
+  "fields": {
+    "name": "Can change blog like",
+    "content_type": 98,
+    "codename": "change_bloglike"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2052,
+  "fields": {
+    "name": "Can delete blog like",
+    "content_type": 98,
+    "codename": "delete_bloglike"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2053,
+  "fields": {
+    "name": "Can view blog like",
+    "content_type": 98,
+    "codename": "view_bloglike"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2054,
+  "fields": {
+    "name": "Can add blog comment",
+    "content_type": 99,
+    "codename": "add_blogcomment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2055,
+  "fields": {
+    "name": "Can change blog comment",
+    "content_type": 99,
+    "codename": "change_blogcomment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2056,
+  "fields": {
+    "name": "Can delete blog comment",
+    "content_type": 99,
+    "codename": "delete_blogcomment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2057,
+  "fields": {
+    "name": "Can view blog comment",
+    "content_type": 99,
+    "codename": "view_blogcomment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2058,
+  "fields": {
+    "name": "Can add form submission task",
+    "content_type": 103,
+    "codename": "add_formsubmissiontask"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2059,
+  "fields": {
+    "name": "Can change form submission task",
+    "content_type": 103,
+    "codename": "change_formsubmissiontask"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2060,
+  "fields": {
+    "name": "Can delete form submission task",
+    "content_type": 103,
+    "codename": "delete_formsubmissiontask"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2061,
+  "fields": {
+    "name": "Can view form submission task",
+    "content_type": 103,
+    "codename": "view_formsubmissiontask"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2062,
+  "fields": {
+    "name": "Can add account",
+    "content_type": 83,
+    "codename": "add_account"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2063,
+  "fields": {
+    "name": "Can change account",
+    "content_type": 83,
+    "codename": "change_account"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2064,
+  "fields": {
+    "name": "Can delete account",
+    "content_type": 83,
+    "codename": "delete_account"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2065,
+  "fields": {
+    "name": "Can view account",
+    "content_type": 83,
+    "codename": "view_account"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2066,
+  "fields": {
+    "name": "Can add Ledger Entry",
+    "content_type": 84,
+    "codename": "add_ledgerentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2067,
+  "fields": {
+    "name": "Can change Ledger Entry",
+    "content_type": 84,
+    "codename": "change_ledgerentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2068,
+  "fields": {
+    "name": "Can delete Ledger Entry",
+    "content_type": 84,
+    "codename": "delete_ledgerentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2069,
+  "fields": {
+    "name": "Can view Ledger Entry",
+    "content_type": 84,
+    "codename": "view_ledgerentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2070,
+  "fields": {
+    "name": "Can add Ledger Line",
+    "content_type": 85,
+    "codename": "add_ledgerline"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2071,
+  "fields": {
+    "name": "Can change Ledger Line",
+    "content_type": 85,
+    "codename": "change_ledgerline"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2072,
+  "fields": {
+    "name": "Can delete Ledger Line",
+    "content_type": 85,
+    "codename": "delete_ledgerline"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2073,
+  "fields": {
+    "name": "Can view Ledger Line",
+    "content_type": 85,
+    "codename": "view_ledgerline"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2074,
+  "fields": {
+    "name": "Can add audit log",
+    "content_type": 127,
+    "codename": "add_auditlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2075,
+  "fields": {
+    "name": "Can change audit log",
+    "content_type": 127,
+    "codename": "change_auditlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2076,
+  "fields": {
+    "name": "Can delete audit log",
+    "content_type": 127,
+    "codename": "delete_auditlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2077,
+  "fields": {
+    "name": "Can view audit log",
+    "content_type": 127,
+    "codename": "view_auditlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2078,
+  "fields": {
+    "name": "Can add chart of account",
+    "content_type": 128,
+    "codename": "add_chartofaccount"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2079,
+  "fields": {
+    "name": "Can change chart of account",
+    "content_type": 128,
+    "codename": "change_chartofaccount"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2080,
+  "fields": {
+    "name": "Can delete chart of account",
+    "content_type": 128,
+    "codename": "delete_chartofaccount"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2081,
+  "fields": {
+    "name": "Can view chart of account",
+    "content_type": 128,
+    "codename": "view_chartofaccount"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2082,
+  "fields": {
+    "name": "Can add expense",
+    "content_type": 129,
+    "codename": "add_expense"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2083,
+  "fields": {
+    "name": "Can change expense",
+    "content_type": 129,
+    "codename": "change_expense"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2084,
+  "fields": {
+    "name": "Can delete expense",
+    "content_type": 129,
+    "codename": "delete_expense"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2085,
+  "fields": {
+    "name": "Can view expense",
+    "content_type": 129,
+    "codename": "view_expense"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2086,
+  "fields": {
+    "name": "Can add financial record",
+    "content_type": 130,
+    "codename": "add_financialrecord"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2087,
+  "fields": {
+    "name": "Can change financial record",
+    "content_type": 130,
+    "codename": "change_financialrecord"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2088,
+  "fields": {
+    "name": "Can delete financial record",
+    "content_type": 130,
+    "codename": "delete_financialrecord"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2089,
+  "fields": {
+    "name": "Can view financial record",
+    "content_type": 130,
+    "codename": "view_financialrecord"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2090,
+  "fields": {
+    "name": "Can add transaction journal",
+    "content_type": 131,
+    "codename": "add_transactionjournal"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2091,
+  "fields": {
+    "name": "Can change transaction journal",
+    "content_type": 131,
+    "codename": "change_transactionjournal"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2092,
+  "fields": {
+    "name": "Can delete transaction journal",
+    "content_type": 131,
+    "codename": "delete_transactionjournal"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2093,
+  "fields": {
+    "name": "Can view transaction journal",
+    "content_type": 131,
+    "codename": "view_transactionjournal"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2094,
+  "fields": {
+    "name": "Can add Room Map",
+    "content_type": 132,
+    "codename": "add_roommap"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2095,
+  "fields": {
+    "name": "Can change Room Map",
+    "content_type": 132,
+    "codename": "change_roommap"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2096,
+  "fields": {
+    "name": "Can delete Room Map",
+    "content_type": 132,
+    "codename": "delete_roommap"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2097,
+  "fields": {
+    "name": "Can view Room Map",
+    "content_type": 132,
+    "codename": "view_roommap"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2098,
+  "fields": {
+    "name": "Can add Hotel Operation",
+    "content_type": 133,
+    "codename": "add_hoteloperation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2099,
+  "fields": {
+    "name": "Can change Hotel Operation",
+    "content_type": 133,
+    "codename": "change_hoteloperation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2100,
+  "fields": {
+    "name": "Can delete Hotel Operation",
+    "content_type": 133,
+    "codename": "delete_hoteloperation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2101,
+  "fields": {
+    "name": "Can view Hotel Operation",
+    "content_type": 133,
+    "codename": "view_hoteloperation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2102,
+  "fields": {
+    "name": "Can add Transport Operation",
+    "content_type": 134,
+    "codename": "add_transportoperation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2103,
+  "fields": {
+    "name": "Can change Transport Operation",
+    "content_type": 134,
+    "codename": "change_transportoperation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2104,
+  "fields": {
+    "name": "Can delete Transport Operation",
+    "content_type": 134,
+    "codename": "delete_transportoperation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2105,
+  "fields": {
+    "name": "Can view Transport Operation",
+    "content_type": 134,
+    "codename": "view_transportoperation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2106,
+  "fields": {
+    "name": "Can add Food Operation",
+    "content_type": 135,
+    "codename": "add_foodoperation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2107,
+  "fields": {
+    "name": "Can change Food Operation",
+    "content_type": 135,
+    "codename": "change_foodoperation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2108,
+  "fields": {
+    "name": "Can delete Food Operation",
+    "content_type": 135,
+    "codename": "delete_foodoperation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2109,
+  "fields": {
+    "name": "Can view Food Operation",
+    "content_type": 135,
+    "codename": "view_foodoperation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2110,
+  "fields": {
+    "name": "Can add airport operation",
+    "content_type": 136,
+    "codename": "add_airportoperation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2111,
+  "fields": {
+    "name": "Can change airport operation",
+    "content_type": 136,
+    "codename": "change_airportoperation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2112,
+  "fields": {
+    "name": "Can delete airport operation",
+    "content_type": 136,
+    "codename": "delete_airportoperation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2113,
+  "fields": {
+    "name": "Can view airport operation",
+    "content_type": 136,
+    "codename": "view_airportoperation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2114,
+  "fields": {
+    "name": "Can add Ziyarat Operation",
+    "content_type": 137,
+    "codename": "add_ziyaratoperation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2115,
+  "fields": {
+    "name": "Can change Ziyarat Operation",
+    "content_type": 137,
+    "codename": "change_ziyaratoperation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2116,
+  "fields": {
+    "name": "Can delete Ziyarat Operation",
+    "content_type": 137,
+    "codename": "delete_ziyaratoperation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2117,
+  "fields": {
+    "name": "Can view Ziyarat Operation",
+    "content_type": 137,
+    "codename": "view_ziyaratoperation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2118,
+  "fields": {
+    "name": "Can add operation log",
+    "content_type": 138,
+    "codename": "add_operationlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2119,
+  "fields": {
+    "name": "Can change operation log",
+    "content_type": 138,
+    "codename": "change_operationlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2120,
+  "fields": {
+    "name": "Can delete operation log",
+    "content_type": 138,
+    "codename": "delete_operationlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2121,
+  "fields": {
+    "name": "Can view operation log",
+    "content_type": 138,
+    "codename": "view_operationlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2122,
+  "fields": {
+    "name": "Can add commission rule",
+    "content_type": 94,
+    "codename": "add_commissionrule"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2123,
+  "fields": {
+    "name": "Can change commission rule",
+    "content_type": 94,
+    "codename": "change_commissionrule"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2124,
+  "fields": {
+    "name": "Can delete commission rule",
+    "content_type": 94,
+    "codename": "delete_commissionrule"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2125,
+  "fields": {
+    "name": "Can view commission rule",
+    "content_type": 94,
+    "codename": "view_commissionrule"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2126,
+  "fields": {
+    "name": "Can add commission earning",
+    "content_type": 95,
+    "codename": "add_commissionearning"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2127,
+  "fields": {
+    "name": "Can change commission earning",
+    "content_type": 95,
+    "codename": "change_commissionearning"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2128,
+  "fields": {
+    "name": "Can delete commission earning",
+    "content_type": 95,
+    "codename": "delete_commissionearning"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2129,
+  "fields": {
+    "name": "Can view commission earning",
+    "content_type": 95,
+    "codename": "view_commissionearning"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2130,
+  "fields": {
+    "name": "Can add area lead",
+    "content_type": 89,
+    "codename": "add_arealead"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2131,
+  "fields": {
+    "name": "Can change area lead",
+    "content_type": 89,
+    "codename": "change_arealead"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2132,
+  "fields": {
+    "name": "Can delete area lead",
+    "content_type": 89,
+    "codename": "delete_arealead"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2133,
+  "fields": {
+    "name": "Can view area lead",
+    "content_type": 89,
+    "codename": "view_arealead"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2134,
+  "fields": {
+    "name": "Can add lead payment promise",
+    "content_type": 90,
+    "codename": "add_leadpaymentpromise"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2135,
+  "fields": {
+    "name": "Can change lead payment promise",
+    "content_type": 90,
+    "codename": "change_leadpaymentpromise"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2136,
+  "fields": {
+    "name": "Can delete lead payment promise",
+    "content_type": 90,
+    "codename": "delete_leadpaymentpromise"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2137,
+  "fields": {
+    "name": "Can view lead payment promise",
+    "content_type": 90,
+    "codename": "view_leadpaymentpromise"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2138,
+  "fields": {
+    "name": "Can add lead follow up",
+    "content_type": 91,
+    "codename": "add_leadfollowup"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2139,
+  "fields": {
+    "name": "Can change lead follow up",
+    "content_type": 91,
+    "codename": "change_leadfollowup"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2140,
+  "fields": {
+    "name": "Can delete lead follow up",
+    "content_type": 91,
+    "codename": "delete_leadfollowup"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2141,
+  "fields": {
+    "name": "Can view lead follow up",
+    "content_type": 91,
+    "codename": "view_leadfollowup"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2142,
+  "fields": {
+    "name": "Can add lead conversation",
+    "content_type": 92,
+    "codename": "add_leadconversation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2143,
+  "fields": {
+    "name": "Can change lead conversation",
+    "content_type": 92,
+    "codename": "change_leadconversation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2144,
+  "fields": {
+    "name": "Can delete lead conversation",
+    "content_type": 92,
+    "codename": "delete_leadconversation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2145,
+  "fields": {
+    "name": "Can view lead conversation",
+    "content_type": 92,
+    "codename": "view_leadconversation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2146,
+  "fields": {
+    "name": "Can add lead",
+    "content_type": 86,
+    "codename": "add_lead"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2147,
+  "fields": {
+    "name": "Can change lead",
+    "content_type": 86,
+    "codename": "change_lead"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2148,
+  "fields": {
+    "name": "Can delete lead",
+    "content_type": 86,
+    "codename": "delete_lead"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2149,
+  "fields": {
+    "name": "Can view lead",
+    "content_type": 86,
+    "codename": "view_lead"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2150,
+  "fields": {
+    "name": "Can add loan commitment",
+    "content_type": 87,
+    "codename": "add_loancommitment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2151,
+  "fields": {
+    "name": "Can change loan commitment",
+    "content_type": 87,
+    "codename": "change_loancommitment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2152,
+  "fields": {
+    "name": "Can delete loan commitment",
+    "content_type": 87,
+    "codename": "delete_loancommitment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2153,
+  "fields": {
+    "name": "Can view loan commitment",
+    "content_type": 87,
+    "codename": "view_loancommitment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2154,
+  "fields": {
+    "name": "Can add follow up history",
+    "content_type": 88,
+    "codename": "add_followuphistory"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2155,
+  "fields": {
+    "name": "Can change follow up history",
+    "content_type": 88,
+    "codename": "change_followuphistory"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2156,
+  "fields": {
+    "name": "Can delete follow up history",
+    "content_type": 88,
+    "codename": "delete_followuphistory"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2157,
+  "fields": {
+    "name": "Can view follow up history",
+    "content_type": 88,
+    "codename": "view_followuphistory"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2158,
+  "fields": {
+    "name": "Can add follow up",
+    "content_type": 106,
+    "codename": "add_followup"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2159,
+  "fields": {
+    "name": "Can change follow up",
+    "content_type": 106,
+    "codename": "change_followup"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2160,
+  "fields": {
+    "name": "Can delete follow up",
+    "content_type": 106,
+    "codename": "delete_followup"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2161,
+  "fields": {
+    "name": "Can view follow up",
+    "content_type": 106,
+    "codename": "view_followup"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2162,
+  "fields": {
+    "name": "Can add system log",
+    "content_type": 93,
+    "codename": "add_systemlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2163,
+  "fields": {
+    "name": "Can change system log",
+    "content_type": 93,
+    "codename": "change_systemlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2164,
+  "fields": {
+    "name": "Can delete system log",
+    "content_type": 93,
+    "codename": "delete_systemlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2165,
+  "fields": {
+    "name": "Can view system log",
+    "content_type": 93,
+    "codename": "view_systemlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2166,
+  "fields": {
+    "name": "Can add promotion contact",
+    "content_type": 104,
+    "codename": "add_promotioncontact"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2167,
+  "fields": {
+    "name": "Can change promotion contact",
+    "content_type": 104,
+    "codename": "change_promotioncontact"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2168,
+  "fields": {
+    "name": "Can delete promotion contact",
+    "content_type": 104,
+    "codename": "delete_promotioncontact"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2169,
+  "fields": {
+    "name": "Can view promotion contact",
+    "content_type": 104,
+    "codename": "view_promotioncontact"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2170,
+  "fields": {
+    "name": "Can add airport transfer",
+    "content_type": 107,
+    "codename": "add_airporttransfer"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2171,
+  "fields": {
+    "name": "Can change airport transfer",
+    "content_type": 107,
+    "codename": "change_airporttransfer"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2172,
+  "fields": {
+    "name": "Can delete airport transfer",
+    "content_type": 107,
+    "codename": "delete_airporttransfer"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2173,
+  "fields": {
+    "name": "Can view airport transfer",
+    "content_type": 107,
+    "codename": "view_airporttransfer"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2174,
+  "fields": {
+    "name": "Can add food service",
+    "content_type": 108,
+    "codename": "add_foodservice"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2175,
+  "fields": {
+    "name": "Can change food service",
+    "content_type": 108,
+    "codename": "change_foodservice"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2176,
+  "fields": {
+    "name": "Can delete food service",
+    "content_type": 108,
+    "codename": "delete_foodservice"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2177,
+  "fields": {
+    "name": "Can view food service",
+    "content_type": 108,
+    "codename": "view_foodservice"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2178,
+  "fields": {
+    "name": "Can add pax movement",
+    "content_type": 110,
+    "codename": "add_paxmovement"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2179,
+  "fields": {
+    "name": "Can change pax movement",
+    "content_type": 110,
+    "codename": "change_paxmovement"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2180,
+  "fields": {
+    "name": "Can delete pax movement",
+    "content_type": 110,
+    "codename": "delete_paxmovement"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2181,
+  "fields": {
+    "name": "Can view pax movement",
+    "content_type": 110,
+    "codename": "view_paxmovement"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2182,
+  "fields": {
+    "name": "Can add transport",
+    "content_type": 111,
+    "codename": "add_transport"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2183,
+  "fields": {
+    "name": "Can change transport",
+    "content_type": 111,
+    "codename": "change_transport"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2184,
+  "fields": {
+    "name": "Can delete transport",
+    "content_type": 111,
+    "codename": "delete_transport"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2185,
+  "fields": {
+    "name": "Can view transport",
+    "content_type": 111,
+    "codename": "view_transport"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2186,
+  "fields": {
+    "name": "Can add ziyarat",
+    "content_type": 112,
+    "codename": "add_ziyarat"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2187,
+  "fields": {
+    "name": "Can change ziyarat",
+    "content_type": 112,
+    "codename": "change_ziyarat"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2188,
+  "fields": {
+    "name": "Can delete ziyarat",
+    "content_type": 112,
+    "codename": "delete_ziyarat"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2189,
+  "fields": {
+    "name": "Can view ziyarat",
+    "content_type": 112,
+    "codename": "view_ziyarat"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2190,
+  "fields": {
+    "name": "Can add transport pax",
+    "content_type": 113,
+    "codename": "add_transportpax"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2191,
+  "fields": {
+    "name": "Can change transport pax",
+    "content_type": 113,
+    "codename": "change_transportpax"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2192,
+  "fields": {
+    "name": "Can delete transport pax",
+    "content_type": 113,
+    "codename": "delete_transportpax"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2193,
+  "fields": {
+    "name": "Can view transport pax",
+    "content_type": 113,
+    "codename": "view_transportpax"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2194,
+  "fields": {
+    "name": "Can add food service pax",
+    "content_type": 114,
+    "codename": "add_foodservicepax"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2195,
+  "fields": {
+    "name": "Can change food service pax",
+    "content_type": 114,
+    "codename": "change_foodservicepax"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2196,
+  "fields": {
+    "name": "Can delete food service pax",
+    "content_type": 114,
+    "codename": "delete_foodservicepax"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2197,
+  "fields": {
+    "name": "Can view food service pax",
+    "content_type": 114,
+    "codename": "view_foodservicepax"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2198,
+  "fields": {
+    "name": "Can add airport transfer pax",
+    "content_type": 115,
+    "codename": "add_airporttransferpax"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2199,
+  "fields": {
+    "name": "Can change airport transfer pax",
+    "content_type": 115,
+    "codename": "change_airporttransferpax"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2200,
+  "fields": {
+    "name": "Can delete airport transfer pax",
+    "content_type": 115,
+    "codename": "delete_airporttransferpax"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2201,
+  "fields": {
+    "name": "Can view airport transfer pax",
+    "content_type": 115,
+    "codename": "view_airporttransferpax"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2202,
+  "fields": {
+    "name": "Can add ziyarat pax",
+    "content_type": 116,
+    "codename": "add_ziyaratpax"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2203,
+  "fields": {
+    "name": "Can change ziyarat pax",
+    "content_type": 116,
+    "codename": "change_ziyaratpax"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2204,
+  "fields": {
+    "name": "Can delete ziyarat pax",
+    "content_type": 116,
+    "codename": "delete_ziyaratpax"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2205,
+  "fields": {
+    "name": "Can view ziyarat pax",
+    "content_type": 116,
+    "codename": "view_ziyaratpax"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2206,
+  "fields": {
+    "name": "Can add employee",
+    "content_type": 151,
+    "codename": "add_employee"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2207,
+  "fields": {
+    "name": "Can change employee",
+    "content_type": 151,
+    "codename": "change_employee"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2208,
+  "fields": {
+    "name": "Can delete employee",
+    "content_type": 151,
+    "codename": "delete_employee"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2209,
+  "fields": {
+    "name": "Can view employee",
+    "content_type": 151,
+    "codename": "view_employee"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2210,
+  "fields": {
+    "name": "Can add salary history",
+    "content_type": 152,
+    "codename": "add_salaryhistory"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2211,
+  "fields": {
+    "name": "Can change salary history",
+    "content_type": 152,
+    "codename": "change_salaryhistory"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2212,
+  "fields": {
+    "name": "Can delete salary history",
+    "content_type": 152,
+    "codename": "delete_salaryhistory"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2213,
+  "fields": {
+    "name": "Can view salary history",
+    "content_type": 152,
+    "codename": "view_salaryhistory"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2214,
+  "fields": {
+    "name": "Can add punctuality record",
+    "content_type": 153,
+    "codename": "add_punctualityrecord"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2215,
+  "fields": {
+    "name": "Can change punctuality record",
+    "content_type": 153,
+    "codename": "change_punctualityrecord"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2216,
+  "fields": {
+    "name": "Can delete punctuality record",
+    "content_type": 153,
+    "codename": "delete_punctualityrecord"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2217,
+  "fields": {
+    "name": "Can view punctuality record",
+    "content_type": 153,
+    "codename": "view_punctualityrecord"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2218,
+  "fields": {
+    "name": "Can add movement log",
+    "content_type": 154,
+    "codename": "add_movementlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2219,
+  "fields": {
+    "name": "Can change movement log",
+    "content_type": 154,
+    "codename": "change_movementlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2220,
+  "fields": {
+    "name": "Can delete movement log",
+    "content_type": 154,
+    "codename": "delete_movementlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2221,
+  "fields": {
+    "name": "Can view movement log",
+    "content_type": 154,
+    "codename": "view_movementlog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2222,
+  "fields": {
+    "name": "Can add commission",
+    "content_type": 155,
+    "codename": "add_commission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2223,
+  "fields": {
+    "name": "Can change commission",
+    "content_type": 155,
+    "codename": "change_commission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2224,
+  "fields": {
+    "name": "Can delete commission",
+    "content_type": 155,
+    "codename": "delete_commission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2225,
+  "fields": {
+    "name": "Can view commission",
+    "content_type": 155,
+    "codename": "view_commission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2226,
+  "fields": {
+    "name": "Can add attendance",
+    "content_type": 156,
+    "codename": "add_attendance"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2227,
+  "fields": {
+    "name": "Can change attendance",
+    "content_type": 156,
+    "codename": "change_attendance"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2228,
+  "fields": {
+    "name": "Can delete attendance",
+    "content_type": 156,
+    "codename": "delete_attendance"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2229,
+  "fields": {
+    "name": "Can view attendance",
+    "content_type": 156,
+    "codename": "view_attendance"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2230,
+  "fields": {
+    "name": "Can add commission group",
+    "content_type": 158,
+    "codename": "add_commissiongroup"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2231,
+  "fields": {
+    "name": "Can change commission group",
+    "content_type": 158,
+    "codename": "change_commissiongroup"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2232,
+  "fields": {
+    "name": "Can delete commission group",
+    "content_type": 158,
+    "codename": "delete_commissiongroup"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2233,
+  "fields": {
+    "name": "Can view commission group",
+    "content_type": 158,
+    "codename": "view_commissiongroup"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2234,
+  "fields": {
+    "name": "Can add leave request",
+    "content_type": 159,
+    "codename": "add_leaverequest"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2235,
+  "fields": {
+    "name": "Can change leave request",
+    "content_type": 159,
+    "codename": "change_leaverequest"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2236,
+  "fields": {
+    "name": "Can delete leave request",
+    "content_type": 159,
+    "codename": "delete_leaverequest"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2237,
+  "fields": {
+    "name": "Can view leave request",
+    "content_type": 159,
+    "codename": "view_leaverequest"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2238,
+  "fields": {
+    "name": "Can add fine",
+    "content_type": 160,
+    "codename": "add_fine"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2239,
+  "fields": {
+    "name": "Can change fine",
+    "content_type": 160,
+    "codename": "change_fine"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2240,
+  "fields": {
+    "name": "Can delete fine",
+    "content_type": 160,
+    "codename": "delete_fine"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2241,
+  "fields": {
+    "name": "Can view fine",
+    "content_type": 160,
+    "codename": "view_fine"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2242,
+  "fields": {
+    "name": "Can add salary payment",
+    "content_type": 161,
+    "codename": "add_salarypayment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2243,
+  "fields": {
+    "name": "Can change salary payment",
+    "content_type": 161,
+    "codename": "change_salarypayment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2244,
+  "fields": {
+    "name": "Can delete salary payment",
+    "content_type": 161,
+    "codename": "delete_salarypayment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2245,
+  "fields": {
+    "name": "Can view salary payment",
+    "content_type": 161,
+    "codename": "view_salarypayment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2246,
+  "fields": {
+    "name": "Can add passport lead",
+    "content_type": 139,
+    "codename": "add_passportlead"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2247,
+  "fields": {
+    "name": "Can change passport lead",
+    "content_type": 139,
+    "codename": "change_passportlead"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2248,
+  "fields": {
+    "name": "Can delete passport lead",
+    "content_type": 139,
+    "codename": "delete_passportlead"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2249,
+  "fields": {
+    "name": "Can view passport lead",
+    "content_type": 139,
+    "codename": "view_passportlead"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2250,
+  "fields": {
+    "name": "Can add follow up log",
+    "content_type": 140,
+    "codename": "add_followuplog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2251,
+  "fields": {
+    "name": "Can change follow up log",
+    "content_type": 140,
+    "codename": "change_followuplog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2252,
+  "fields": {
+    "name": "Can delete follow up log",
+    "content_type": 140,
+    "codename": "delete_followuplog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2253,
+  "fields": {
+    "name": "Can view follow up log",
+    "content_type": 140,
+    "codename": "view_followuplog"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2254,
+  "fields": {
+    "name": "Can add pax profile",
+    "content_type": 141,
+    "codename": "add_paxprofile"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2255,
+  "fields": {
+    "name": "Can change pax profile",
+    "content_type": 141,
+    "codename": "change_paxprofile"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2256,
+  "fields": {
+    "name": "Can delete pax profile",
+    "content_type": 141,
+    "codename": "delete_paxprofile"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2257,
+  "fields": {
+    "name": "Can view pax profile",
+    "content_type": 141,
+    "codename": "view_paxprofile"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2258,
+  "fields": {
+    "name": "Can add lead",
+    "content_type": 144,
+    "codename": "add_lead"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2259,
+  "fields": {
+    "name": "Can change lead",
+    "content_type": 144,
+    "codename": "change_lead"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2260,
+  "fields": {
+    "name": "Can delete lead",
+    "content_type": 144,
+    "codename": "delete_lead"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2261,
+  "fields": {
+    "name": "Can view lead",
+    "content_type": 144,
+    "codename": "view_lead"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2262,
+  "fields": {
+    "name": "Can add loan commitment",
+    "content_type": 145,
+    "codename": "add_loancommitment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2263,
+  "fields": {
+    "name": "Can change loan commitment",
+    "content_type": 145,
+    "codename": "change_loancommitment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2264,
+  "fields": {
+    "name": "Can delete loan commitment",
+    "content_type": 145,
+    "codename": "delete_loancommitment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2265,
+  "fields": {
+    "name": "Can view loan commitment",
+    "content_type": 145,
+    "codename": "view_loancommitment"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2266,
+  "fields": {
+    "name": "Can add follow up history",
+    "content_type": 146,
+    "codename": "add_followuphistory"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2267,
+  "fields": {
+    "name": "Can change follow up history",
+    "content_type": 146,
+    "codename": "change_followuphistory"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2268,
+  "fields": {
+    "name": "Can delete follow up history",
+    "content_type": 146,
+    "codename": "delete_followuphistory"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2269,
+  "fields": {
+    "name": "Can view follow up history",
+    "content_type": 146,
+    "codename": "view_followuphistory"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2270,
+  "fields": {
+    "name": "Can add customer",
+    "content_type": 147,
+    "codename": "add_customer"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2271,
+  "fields": {
+    "name": "Can change customer",
+    "content_type": 147,
+    "codename": "change_customer"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2272,
+  "fields": {
+    "name": "Can delete customer",
+    "content_type": 147,
+    "codename": "delete_customer"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2273,
+  "fields": {
+    "name": "Can view customer",
+    "content_type": 147,
+    "codename": "view_customer"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2274,
+  "fields": {
+    "name": "Can add Dynamic Form",
+    "content_type": 142,
+    "codename": "add_dynamicform"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2275,
+  "fields": {
+    "name": "Can change Dynamic Form",
+    "content_type": 142,
+    "codename": "change_dynamicform"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2276,
+  "fields": {
+    "name": "Can delete Dynamic Form",
+    "content_type": 142,
+    "codename": "delete_dynamicform"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2277,
+  "fields": {
+    "name": "Can view Dynamic Form",
+    "content_type": 142,
+    "codename": "view_dynamicform"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2278,
+  "fields": {
+    "name": "Can add Form Submission",
+    "content_type": 143,
+    "codename": "add_formsubmission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2279,
+  "fields": {
+    "name": "Can change Form Submission",
+    "content_type": 143,
+    "codename": "change_formsubmission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2280,
+  "fields": {
+    "name": "Can delete Form Submission",
+    "content_type": 143,
+    "codename": "delete_formsubmission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2281,
+  "fields": {
+    "name": "Can view Form Submission",
+    "content_type": 143,
+    "codename": "view_formsubmission"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2282,
+  "fields": {
+    "name": "Can book tickets in agent portal",
+    "content_type": 23,
+    "codename": "book_ticket_agent"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2314,
+  "fields": {
+    "name": "Can edit riyal rate in admin portal",
+    "content_type": 4,
+    "codename": "edit_riyal_rate_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2315,
+  "fields": {
+    "name": "Can add shirka in admin portal",
+    "content_type": 4,
+    "codename": "add_shirka_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2316,
+  "fields": {
+    "name": "Can edit shirka in admin portal",
+    "content_type": 4,
+    "codename": "edit_shirka_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2317,
+  "fields": {
+    "name": "Can delete shirka in admin portal",
+    "content_type": 4,
+    "codename": "delete_shirka_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2318,
+  "fields": {
+    "name": "Can add sector in admin portal",
+    "content_type": 4,
+    "codename": "add_sector_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2319,
+  "fields": {
+    "name": "Can edit sector in admin portal",
+    "content_type": 4,
+    "codename": "edit_sector_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2320,
+  "fields": {
+    "name": "Can delete sector in admin portal",
+    "content_type": 4,
+    "codename": "delete_sector_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2321,
+  "fields": {
+    "name": "Can add big sector in admin portal",
+    "content_type": 4,
+    "codename": "add_big_sector_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2322,
+  "fields": {
+    "name": "Can edit big sector in admin portal",
+    "content_type": 4,
+    "codename": "edit_big_sector_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2323,
+  "fields": {
+    "name": "Can delete big sector in admin portal",
+    "content_type": 4,
+    "codename": "delete_big_sector_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2324,
+  "fields": {
+    "name": "Can add visa and transport rate in admin portal",
+    "content_type": 4,
+    "codename": "add_visa_transport_rate_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2325,
+  "fields": {
+    "name": "Can edit visa and transport rate in admin portal",
+    "content_type": 4,
+    "codename": "edit_visa_transport_rate_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2326,
+  "fields": {
+    "name": "Can delete visa and transport rate in admin portal",
+    "content_type": 4,
+    "codename": "delete_visa_transport_rate_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2327,
+  "fields": {
+    "name": "Can edit only visa rate in admin portal",
+    "content_type": 4,
+    "codename": "edit_only_visa_rate_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2328,
+  "fields": {
+    "name": "Can edit long term visa rate in admin portal",
+    "content_type": 4,
+    "codename": "edit_long_term_visa_rate_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2329,
+  "fields": {
+    "name": "Can add transport price in admin portal",
+    "content_type": 4,
+    "codename": "add_transport_price_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2330,
+  "fields": {
+    "name": "Can edit transport price in admin portal",
+    "content_type": 4,
+    "codename": "edit_transport_price_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2331,
+  "fields": {
+    "name": "Can delete transport price in admin portal",
+    "content_type": 4,
+    "codename": "delete_transport_price_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2332,
+  "fields": {
+    "name": "Can add food price in admin portal",
+    "content_type": 4,
+    "codename": "add_food_price_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2333,
+  "fields": {
+    "name": "Can edit food price in admin portal",
+    "content_type": 4,
+    "codename": "edit_food_price_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2334,
+  "fields": {
+    "name": "Can delete food price in admin portal",
+    "content_type": 4,
+    "codename": "delete_food_price_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2335,
+  "fields": {
+    "name": "Can add ziarat price in admin portal",
+    "content_type": 4,
+    "codename": "add_ziarat_price_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2336,
+  "fields": {
+    "name": "Can edit ziarat price in admin portal",
+    "content_type": 4,
+    "codename": "edit_ziarat_price_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2337,
+  "fields": {
+    "name": "Can delete ziarat price in admin portal",
+    "content_type": 4,
+    "codename": "delete_ziarat_price_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2338,
+  "fields": {
+    "name": "Can add flight (name, IATA code, logo) in admin portal",
+    "content_type": 4,
+    "codename": "add_flight_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2339,
+  "fields": {
+    "name": "Can edit flight (name, IATA code, logo) in admin portal",
+    "content_type": 4,
+    "codename": "edit_flight_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2340,
+  "fields": {
+    "name": "Can delete flight in admin portal",
+    "content_type": 4,
+    "codename": "delete_flight_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2341,
+  "fields": {
+    "name": "Can add city (name, IATA code) in admin portal",
+    "content_type": 4,
+    "codename": "add_city_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2342,
+  "fields": {
+    "name": "Can edit city (name, IATA code) in admin portal",
+    "content_type": 4,
+    "codename": "edit_city_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2343,
+  "fields": {
+    "name": "Can delete city in admin portal",
+    "content_type": 4,
+    "codename": "delete_city_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2344,
+  "fields": {
+    "name": "Can set time for booking expire in admin portal",
+    "content_type": 4,
+    "codename": "edit_booking_expire_time_admin"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2345,
+  "fields": {
+    "name": "Can add transport in agent umrah calculator",
+    "content_type": 167,
+    "codename": "add_transport_agent"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2348,
+  "fields": {
+    "name": "Can add flight in agent umrah calculator",
+    "content_type": 167,
+    "codename": "add_flight_agent"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2351,
+  "fields": {
+    "name": "Can add hotel in agent umrah calculator",
+    "content_type": 167,
+    "codename": "add_hotel_agent"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2354,
+  "fields": {
+    "name": "Can add food in agent umrah calculator",
+    "content_type": 167,
+    "codename": "add_food_agent"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2357,
+  "fields": {
+    "name": "Can add ziarat in agent umrah calculator",
+    "content_type": 167,
+    "codename": "add_ziarat_agent"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2360,
+  "fields": {
+    "name": "Can add Passenger Activity Status",
+    "content_type": 165,
+    "codename": "add_passengeractivitystatus"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2361,
+  "fields": {
+    "name": "Can change Passenger Activity Status",
+    "content_type": 165,
+    "codename": "change_passengeractivitystatus"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2362,
+  "fields": {
+    "name": "Can delete Passenger Activity Status",
+    "content_type": 165,
+    "codename": "delete_passengeractivitystatus"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 2363,
+  "fields": {
+    "name": "Can view Passenger Activity Status",
+    "content_type": 165,
+    "codename": "view_passengeractivitystatus"
+  }
+},
+{
+  "model": "auth.group",
+  "pk": 31,
+  "fields": {
+    "name": "admin",
+    "permissions": [
+      1602,
+      1582,
+      1586,
+      1570,
+      1566,
+      1561,
+      1616,
+      1548,
+      1620,
+      1574,
+      1578,
+      1598,
+      1606,
+      1599,
+      1564,
+      1541,
+      1551,
+      1604,
+      1584,
+      1588,
+      1572,
+      1568,
+      1563,
+      1618,
+      1550,
+      1622,
+      1576,
+      1580,
+      1603,
+      1583,
+      1587,
+      1571,
+      1567,
+      1562,
+      1617,
+      1549,
+      1621,
+      1575,
+      1579,
+      1600,
+      1627,
+      1608,
+      1625,
+      1624,
+      1601,
+      1607,
+      1610,
+      1581,
+      1585,
+      1569,
+      1565,
+      1560,
+      1611,
+      1615,
+      1614,
+      1547,
+      1597,
+      1619,
+      1573,
+      1577,
+      1626,
+      1609,
+      1605,
+      1613,
+      1612,
+      1623,
+      1507,
+      1511,
+      1448,
+      1515,
+      1432,
+      2321,
+      1522,
+      2341,
+      1385,
+      1428,
+      2338,
+      2332,
+      1436,
+      1444,
+      2318,
+      2315,
+      1503,
+      2329,
+      2324,
+      2335,
+      1328,
+      1509,
+      1513,
+      1450,
+      1517,
+      1434,
+      2323,
+      1524,
+      2343,
+      1520,
+      1430,
+      2340,
+      2334,
+      1438,
+      1446,
+      2320,
+      2317,
+      1505,
+      2331,
+      2326,
+      2337,
+      1508,
+      1512,
+      1449,
+      1516,
+      1433,
+      2322,
+      2344,
+      1523,
+      2342,
+      1519,
+      1429,
+      2339,
+      2333,
+      2328,
+      1437,
+      2327,
+      1445,
+      2314,
+      2319,
+      2316,
+      1504,
+      2330,
+      2325,
+      2336,
+      1501,
+      1447,
+      1431,
+      1427,
+      1435,
+      1443,
+      1535,
+      1361,
+      1363,
+      1362,
+      1360,
+      1365,
+      1367,
+      1366,
+      1364,
+      1396,
+      1398,
+      1390,
+      1400,
+      1394,
+      1392,
+      1395,
+      1397,
+      1389,
+      1399,
+      1393,
+      1391,
+      1424,
+      1420,
+      1426,
+      1422,
+      1425,
+      1421,
+      1423,
+      1419,
+      1590,
+      1594,
+      1592,
+      1596,
+      1591,
+      1595,
+      1589,
+      1593,
+      1479,
+      1402,
+      1406,
+      1416,
+      1410,
+      1418,
+      1636,
+      1407,
+      1417,
+      1411,
+      1413,
+      1414,
+      1401,
+      1405,
+      1415,
+      1409,
+      1553,
+      1542,
+      1555,
+      1554,
+      1552,
+      1557,
+      1540,
+      1559,
+      1558,
+      1556,
+      1544,
+      1539,
+      1546,
+      1545,
+      1543,
+      1369,
+      1371,
+      1370,
+      1368,
+      1331,
+      1333,
+      1332,
+      1330,
+      1349,
+      1357,
+      1343,
+      1353,
+      1351,
+      1359,
+      1345,
+      1355,
+      1350,
+      1358,
+      1344,
+      1354,
+      1348,
+      1356,
+      1342,
+      1352,
+      1337,
+      1339,
+      1338,
+      1336
+    ]
+  }
+},
+{
+  "model": "auth.group",
+  "pk": 32,
+  "fields": {
+    "name": "rafay",
+    "permissions": []
+  }
+},
+{
+  "model": "auth.group",
+  "pk": 33,
+  "fields": {
+    "name": "agent",
+    "permissions": [
+      2348,
+      2354,
+      2351,
+      2345,
+      2357,
+      1632,
+      1630,
+      1634,
+      1633,
+      1631,
+      1635,
+      1629,
+      1329,
+      1525,
+      1335,
+      1334,
+      1527,
+      2282,
+      1526
+    ]
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 1,
+  "fields": {
+    "app_label": "admin",
+    "model": "logentry"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 2,
+  "fields": {
+    "app_label": "auth",
+    "model": "permission"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 3,
+  "fields": {
+    "app_label": "auth",
+    "model": "group"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 4,
+  "fields": {
+    "app_label": "auth",
+    "model": "user"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 5,
+  "fields": {
+    "app_label": "contenttypes",
+    "model": "contenttype"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 6,
+  "fields": {
+    "app_label": "sessions",
+    "model": "session"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 7,
+  "fields": {
+    "app_label": "users",
+    "model": "userprofile"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 8,
+  "fields": {
+    "app_label": "users",
+    "model": "permissionextension"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 9,
+  "fields": {
+    "app_label": "users",
+    "model": "groupextension"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 10,
+  "fields": {
+    "app_label": "organization",
+    "model": "organization"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 11,
+  "fields": {
+    "app_label": "organization",
+    "model": "branch"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 12,
+  "fields": {
+    "app_label": "users",
+    "model": "userfiles"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 13,
+  "fields": {
+    "app_label": "packages",
+    "model": "airlines"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 14,
+  "fields": {
+    "app_label": "packages",
+    "model": "city"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 15,
+  "fields": {
+    "app_label": "packages",
+    "model": "shirka"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 16,
+  "fields": {
+    "app_label": "packages",
+    "model": "transportsectorprice"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 17,
+  "fields": {
+    "app_label": "packages",
+    "model": "umrahvisaprice"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 18,
+  "fields": {
+    "app_label": "packages",
+    "model": "bookingexpiry"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 19,
+  "fields": {
+    "app_label": "packages",
+    "model": "riyalrate"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 20,
+  "fields": {
+    "app_label": "tickets",
+    "model": "tickerstopoverdetails"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 21,
+  "fields": {
+    "app_label": "tickets",
+    "model": "hotelprices"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 22,
+  "fields": {
+    "app_label": "tickets",
+    "model": "tickettripdetails"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 23,
+  "fields": {
+    "app_label": "tickets",
+    "model": "ticket"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 24,
+  "fields": {
+    "app_label": "tickets",
+    "model": "hotels"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 25,
+  "fields": {
+    "app_label": "packages",
+    "model": "umrahpackage"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 26,
+  "fields": {
+    "app_label": "packages",
+    "model": "umrahpackagetransportdetails"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 27,
+  "fields": {
+    "app_label": "packages",
+    "model": "umrahpackageticketdetails"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 28,
+  "fields": {
+    "app_label": "packages",
+    "model": "umrahpackagehoteldetails"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 29,
+  "fields": {
+    "app_label": "organization",
+    "model": "agency"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 30,
+  "fields": {
+    "app_label": "packages",
+    "model": "umrahpackagediscountdetails"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 31,
+  "fields": {
+    "app_label": "packages",
+    "model": "customumrahpackage"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 32,
+  "fields": {
+    "app_label": "packages",
+    "model": "umrahvisapricetwo"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 33,
+  "fields": {
+    "app_label": "packages",
+    "model": "umrahvisapricetwohotel"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 34,
+  "fields": {
+    "app_label": "packages",
+    "model": "customumrahpackagetransportdetails"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 35,
+  "fields": {
+    "app_label": "packages",
+    "model": "customumrahpackageticketdetails"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 36,
+  "fields": {
+    "app_label": "packages",
+    "model": "customumrahpackagehoteldetails"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 37,
+  "fields": {
+    "app_label": "packages",
+    "model": "onlyvisaprice"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 38,
+  "fields": {
+    "app_label": "booking",
+    "model": "booking"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 39,
+  "fields": {
+    "app_label": "booking",
+    "model": "bookingdetail"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 40,
+  "fields": {
+    "app_label": "organization",
+    "model": "agencyfiles"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 41,
+  "fields": {
+    "app_label": "organization",
+    "model": "agencycontact"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 42,
+  "fields": {
+    "app_label": "packages",
+    "model": "setvisatype"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 43,
+  "fields": {
+    "app_label": "packages",
+    "model": "ziaratprice"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 44,
+  "fields": {
+    "app_label": "packages",
+    "model": "foodprice"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 45,
+  "fields": {
+    "app_label": "tickets",
+    "model": "hotelcontactdetails"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 46,
+  "fields": {
+    "app_label": "tickets",
+    "model": "hotelrooms"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 47,
+  "fields": {
+    "app_label": "tickets",
+    "model": "roomdetails"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 48,
+  "fields": {
+    "app_label": "packages",
+    "model": "customumrahfooddetails"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 49,
+  "fields": {
+    "app_label": "packages",
+    "model": "customumrahziaratdetails"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 50,
+  "fields": {
+    "app_label": "booking",
+    "model": "bank"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 51,
+  "fields": {
+    "app_label": "booking",
+    "model": "bookinghoteldetails"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 52,
+  "fields": {
+    "app_label": "booking",
+    "model": "bookingpersondetail"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 53,
+  "fields": {
+    "app_label": "booking",
+    "model": "bookingticketdetails"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 54,
+  "fields": {
+    "app_label": "booking",
+    "model": "bookingticketstopoverdetails"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 55,
+  "fields": {
+    "app_label": "booking",
+    "model": "bookingtickettickettripdetails"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 56,
+  "fields": {
+    "app_label": "booking",
+    "model": "bookingtransportdetails"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 57,
+  "fields": {
+    "app_label": "booking",
+    "model": "payment"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 58,
+  "fields": {
+    "app_label": "booking",
+    "model": "bookingpersonziyaratdetails"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 59,
+  "fields": {
+    "app_label": "booking",
+    "model": "bookingpersonfooddetails"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 60,
+  "fields": {
+    "app_label": "booking",
+    "model": "bookingpersoncontactdetails"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 61,
+  "fields": {
+    "app_label": "booking",
+    "model": "sector"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 62,
+  "fields": {
+    "app_label": "booking",
+    "model": "bigsector"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 63,
+  "fields": {
+    "app_label": "booking",
+    "model": "vehicletype"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 64,
+  "fields": {
+    "app_label": "booking",
+    "model": "internalnote"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 65,
+  "fields": {
+    "app_label": "booking",
+    "model": "bookingtransportsector"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 66,
+  "fields": {
+    "app_label": "booking",
+    "model": "bankaccount"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 67,
+  "fields": {
+    "app_label": "booking",
+    "model": "organizationlink"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 68,
+  "fields": {
+    "app_label": "booking",
+    "model": "allowedreseller"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 69,
+  "fields": {
+    "app_label": "booking",
+    "model": "discount"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 70,
+  "fields": {
+    "app_label": "booking",
+    "model": "discountgroup"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 71,
+  "fields": {
+    "app_label": "booking",
+    "model": "markup"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 72,
+  "fields": {
+    "app_label": "tickets",
+    "model": "hotelphoto"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 73,
+  "fields": {
+    "app_label": "organization",
+    "model": "organizationlink"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 74,
+  "fields": {
+    "app_label": "universal",
+    "model": "auditlog"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 75,
+  "fields": {
+    "app_label": "universal",
+    "model": "universalidsequence"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 76,
+  "fields": {
+    "app_label": "universal",
+    "model": "universalregistration"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 77,
+  "fields": {
+    "app_label": "universal",
+    "model": "registrationrule"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 78,
+  "fields": {
+    "app_label": "universal",
+    "model": "paxmovement"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 79,
+  "fields": {
+    "app_label": "booking",
+    "model": "bookingcallremark"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 80,
+  "fields": {
+    "app_label": "organization",
+    "model": "agencyprofile"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 81,
+  "fields": {
+    "app_label": "organization",
+    "model": "rule"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 82,
+  "fields": {
+    "app_label": "organization",
+    "model": "walkinbooking"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 83,
+  "fields": {
+    "app_label": "ledger",
+    "model": "account"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 84,
+  "fields": {
+    "app_label": "ledger",
+    "model": "ledgerentry"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 85,
+  "fields": {
+    "app_label": "ledger",
+    "model": "ledgerline"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 86,
+  "fields": {
+    "app_label": "leads",
+    "model": "lead"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 87,
+  "fields": {
+    "app_label": "leads",
+    "model": "loancommitment"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 88,
+  "fields": {
+    "app_label": "leads",
+    "model": "followuphistory"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 89,
+  "fields": {
+    "app_label": "area_leads",
+    "model": "arealead"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 90,
+  "fields": {
+    "app_label": "area_leads",
+    "model": "leadpaymentpromise"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 91,
+  "fields": {
+    "app_label": "area_leads",
+    "model": "leadfollowup"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 92,
+  "fields": {
+    "app_label": "area_leads",
+    "model": "leadconversation"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 93,
+  "fields": {
+    "app_label": "logs",
+    "model": "systemlog"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 94,
+  "fields": {
+    "app_label": "commissions",
+    "model": "commissionrule"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 95,
+  "fields": {
+    "app_label": "commissions",
+    "model": "commissionearning"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 96,
+  "fields": {
+    "app_label": "booking",
+    "model": "hoteloutsourcing"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 97,
+  "fields": {
+    "app_label": "blog",
+    "model": "blog"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 98,
+  "fields": {
+    "app_label": "blog",
+    "model": "bloglike"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 99,
+  "fields": {
+    "app_label": "blog",
+    "model": "blogcomment"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 100,
+  "fields": {
+    "app_label": "blog",
+    "model": "formsubmission"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 101,
+  "fields": {
+    "app_label": "blog",
+    "model": "leadform"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 102,
+  "fields": {
+    "app_label": "blog",
+    "model": "blogsection"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 103,
+  "fields": {
+    "app_label": "blog",
+    "model": "formsubmissiontask"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 104,
+  "fields": {
+    "app_label": "promotion_center",
+    "model": "promotioncontact"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 105,
+  "fields": {
+    "app_label": "organization",
+    "model": "organizationidsequence"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 106,
+  "fields": {
+    "app_label": "leads",
+    "model": "followup"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 107,
+  "fields": {
+    "app_label": "pax_movements",
+    "model": "airporttransfer"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 108,
+  "fields": {
+    "app_label": "pax_movements",
+    "model": "foodservice"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 109,
+  "fields": {
+    "app_label": "organization",
+    "model": "employee"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 110,
+  "fields": {
+    "app_label": "pax_movements",
+    "model": "paxmovement"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 111,
+  "fields": {
+    "app_label": "pax_movements",
+    "model": "transport"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 112,
+  "fields": {
+    "app_label": "pax_movements",
+    "model": "ziyarat"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 113,
+  "fields": {
+    "app_label": "pax_movements",
+    "model": "transportpax"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 114,
+  "fields": {
+    "app_label": "pax_movements",
+    "model": "foodservicepax"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 115,
+  "fields": {
+    "app_label": "pax_movements",
+    "model": "airporttransferpax"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 116,
+  "fields": {
+    "app_label": "pax_movements",
+    "model": "ziyaratpax"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 117,
+  "fields": {
+    "app_label": "packages",
+    "model": "visa"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 118,
+  "fields": {
+    "app_label": "packages",
+    "model": "packageinclusion"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 119,
+  "fields": {
+    "app_label": "packages",
+    "model": "packageexclusion"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 120,
+  "fields": {
+    "app_label": "booking",
+    "model": "bookingpax"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 121,
+  "fields": {
+    "app_label": "booking",
+    "model": "bookingstatustimeline"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 122,
+  "fields": {
+    "app_label": "booking",
+    "model": "bookingpromotion"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 123,
+  "fields": {
+    "app_label": "booking",
+    "model": "bookingpayment"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 124,
+  "fields": {
+    "app_label": "booking",
+    "model": "bookingitem"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 125,
+  "fields": {
+    "app_label": "token_blacklist",
+    "model": "blacklistedtoken"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 126,
+  "fields": {
+    "app_label": "token_blacklist",
+    "model": "outstandingtoken"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 127,
+  "fields": {
+    "app_label": "finance",
+    "model": "auditlog"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 128,
+  "fields": {
+    "app_label": "finance",
+    "model": "chartofaccount"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 129,
+  "fields": {
+    "app_label": "finance",
+    "model": "expense"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 130,
+  "fields": {
+    "app_label": "finance",
+    "model": "financialrecord"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 131,
+  "fields": {
+    "app_label": "finance",
+    "model": "transactionjournal"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 132,
+  "fields": {
+    "app_label": "operations",
+    "model": "roommap"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 133,
+  "fields": {
+    "app_label": "operations",
+    "model": "hoteloperation"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 134,
+  "fields": {
+    "app_label": "operations",
+    "model": "transportoperation"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 135,
+  "fields": {
+    "app_label": "operations",
+    "model": "foodoperation"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 136,
+  "fields": {
+    "app_label": "operations",
+    "model": "airportoperation"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 137,
+  "fields": {
+    "app_label": "operations",
+    "model": "ziyaratoperation"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 138,
+  "fields": {
+    "app_label": "operations",
+    "model": "operationlog"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 139,
+  "fields": {
+    "app_label": "passport_leads",
+    "model": "passportlead"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 140,
+  "fields": {
+    "app_label": "passport_leads",
+    "model": "followuplog"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 141,
+  "fields": {
+    "app_label": "passport_leads",
+    "model": "paxprofile"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 142,
+  "fields": {
+    "app_label": "forms",
+    "model": "dynamicform"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 143,
+  "fields": {
+    "app_label": "forms",
+    "model": "formsubmission"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 144,
+  "fields": {
+    "app_label": "customers",
+    "model": "lead"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 145,
+  "fields": {
+    "app_label": "customers",
+    "model": "loancommitment"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 146,
+  "fields": {
+    "app_label": "customers",
+    "model": "followuphistory"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 147,
+  "fields": {
+    "app_label": "customers",
+    "model": "customer"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 148,
+  "fields": {
+    "app_label": "organization",
+    "model": "resellrequest"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 149,
+  "fields": {
+    "app_label": "booking",
+    "model": "trnsequence"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 150,
+  "fields": {
+    "app_label": "tickets",
+    "model": "hotelcategory"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 151,
+  "fields": {
+    "app_label": "hr",
+    "model": "employee"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 152,
+  "fields": {
+    "app_label": "hr",
+    "model": "salaryhistory"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 153,
+  "fields": {
+    "app_label": "hr",
+    "model": "punctualityrecord"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 154,
+  "fields": {
+    "app_label": "hr",
+    "model": "movementlog"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 155,
+  "fields": {
+    "app_label": "hr",
+    "model": "commission"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 156,
+  "fields": {
+    "app_label": "hr",
+    "model": "attendance"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 157,
+  "fields": {
+    "app_label": "tickets",
+    "model": "bedtype"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 158,
+  "fields": {
+    "app_label": "hr",
+    "model": "commissiongroup"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 159,
+  "fields": {
+    "app_label": "hr",
+    "model": "leaverequest"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 160,
+  "fields": {
+    "app_label": "hr",
+    "model": "fine"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 161,
+  "fields": {
+    "app_label": "hr",
+    "model": "salarypayment"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 162,
+  "fields": {
+    "app_label": "booking",
+    "model": "bookingfooddetails"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 163,
+  "fields": {
+    "app_label": "booking",
+    "model": "bookingziyaratdetails"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 164,
+  "fields": {
+    "app_label": "tickets",
+    "model": "hotelfloor"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 165,
+  "fields": {
+    "app_label": "booking",
+    "model": "passengeractivitystatus"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 166,
+  "fields": {
+    "app_label": "users",
+    "model": "customuser"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 167,
+  "fields": {
+    "app_label": "agent",
+    "model": "umrah_calculator_agent"
+  }
+}
+]

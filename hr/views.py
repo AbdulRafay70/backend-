@@ -1,4 +1,5 @@
-from rest_framework import viewsets, filters, status
+from rest_framework import viewsets, filters, status, permissions
+from rest_framework.views import APIView
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.utils import timezone
@@ -18,6 +19,37 @@ class EmployeeViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.EmployeeSerializer
     filter_backends = [filters.SearchFilter]
     search_fields = ['first_name', 'last_name', 'role', 'phone', 'whatsapp']
+
+    def perform_update(self, serializer):
+        super().perform_update(serializer)
+        instance = serializer.instance
+        
+        # Sync commission_group to UserProfile
+        try:
+            from django.contrib.auth import get_user_model
+            from users.models import UserProfile
+            User = get_user_model()
+            
+            if instance.email:
+                user = User.objects.filter(email=instance.email).first()
+                if user:
+                    # Get or create profile
+                    profile, created = UserProfile.objects.get_or_create(user=user)
+                    
+                    # Update commission_id
+                    new_commission_id = str(instance.commission_group.id) if instance.commission_group else None
+                    if profile.commission_id != new_commission_id:
+                        profile.commission_id = new_commission_id
+                        profile.save()
+                        print(f"✅ [HR SYNC] Synced Employee {instance.first_name} commission group to User {user.email} profile. Commission ID: {new_commission_id}")
+                    else:
+                         print(f"ℹ️ [HR SYNC] User {user.email} profile already has correct commission ID: {new_commission_id}")
+                else:
+                    print(f"⚠️ [HR SYNC] No User found with email {instance.email} to sync commission group")
+        except Exception as e:
+            print(f"❌ [HR SYNC] Failed to sync commission group to UserProfile: {e}")
+            import traceback
+            traceback.print_exc()
 
     @action(detail=False, methods=['get'])
     def dashboard_stats(self, request):
@@ -203,7 +235,173 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         response_data['requires_approval'] = False
         response_data['message'] = 'Successfully checked out'
         
-        return Response(response_data)
+    @action(detail=True, methods=['post'])
+    def sync_commissions(self, request, pk=None):
+        """Force sync commission status from Agent module to HR module"""
+        employee = self.get_object()
+        from django.contrib.auth import get_user_model
+        from commissions.models import CommissionEarning
+        User = get_user_model()
+        
+        user = User.objects.filter(email=employee.email).first()
+        if not user:
+            return Response({'detail': 'No user linked to this employee'}, status=400)
+            
+        # Find all PAID earnings for this user
+        paid_earnings = CommissionEarning.objects.filter(
+            earned_by_type='employee',
+            earned_by_id=user.id,
+            status='paid'
+        )
+        
+        updated_count = 0
+        from .models import Commission as HrCommission
+        from booking.models import Booking
+        
+        for earning in paid_earnings:
+            # Resolve booking ref
+            booking_ref = None
+            if earning.booking_id:
+                try:
+                    bk = Booking.objects.get(pk=earning.booking_id)
+                    booking_ref = bk.booking_number
+                except Booking.DoesNotExist:
+                    booking_ref = str(earning.booking_id)
+            
+            if booking_ref:
+                # Update HR commission
+                cnt = HrCommission.objects.filter(
+                    booking_id=booking_ref,
+                    employee=employee
+                ).update(status='paid')
+                updated_count += cnt
+        
+        return Response({'detail': f'Synced {updated_count} commissions to PAID status', 'count': updated_count})
+
+
+class EmployeeLedgerView(APIView):
+    """
+    Virtual Ledger for Employees.
+    Aggregates:
+    - Commissions (Credit)
+    - Salary Accruals (Credit) - Base Salary portion
+    - Payments (Debit) - Salary Payments / Commission Redemptions
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, employee_id=None):
+        if not employee_id:
+            return Response({'detail': 'Employee ID required'}, status=400)
+        
+        try:
+            employee = models.Employee.objects.get(pk=employee_id)
+        except models.Employee.DoesNotExist:
+            return Response({'detail': 'Employee not found'}, status=404)
+
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        user = User.objects.filter(email=employee.email).first()
+
+        transactions = []
+
+        # 1. Commissions (Credit) - Only when PAID
+        from commissions.models import CommissionEarning
+        
+        # Try finding by Employee ID first (Standard)
+        earnings = CommissionEarning.objects.filter(
+            earned_by_type='employee', 
+            earned_by_id=employee.id,
+            status='paid'
+        )
+        
+        # Fallback: Check by User ID if linked, just in case commissions were booked against User
+        if not earnings.exists() and user:
+             earnings_user = CommissionEarning.objects.filter(
+                earned_by_type='employee', 
+                earned_by_id=user.id,
+                status='paid'
+            )
+             if earnings_user.exists():
+                 earnings = earnings_user
+
+        for e in earnings:
+                # Use redeemed_date if available, otherwise updated/created
+                tx_date = e.redeemed_date or e.updated_at or e.created_at
+                
+                transactions.append({
+                    'date': tx_date,
+                    'order_number': str(e.booking_id or e.booking_number or '-'),
+                    'type': f"Commission ({e.service_type or 'General'})",
+                    'debit': 0,
+                    'credit': float(e.commission_amount or 0),
+                    'timestamp': tx_date.timestamp()
+                })
+
+        # 2. Salary Payments (Credit for Base, Debit for Payment)
+        payments = models.SalaryPayment.objects.filter(employee=employee)
+        for p in payments:
+            # Credit: Base Salary Accrual (on creation)
+            transactions.append({
+                'date': p.created_at,
+                'order_number': f"SAL-{p.month}/{p.year}",
+                'type': "Salary Accrual",
+                'debit': 0,
+                'credit': float(p.base_salary or 0),
+                'timestamp': p.created_at.timestamp()
+            })
+            
+            # Debit: Payment Made
+            if p.status == 'paid' and p.paid_date:
+                # Typically SalaryPayment.net_amount includes commissions, so we shouldn't double count if we listed commissions separately?
+                # Ah, SalaryPayment logic in `generate_monthly_salaries`:
+                # net_amount = base_salary + comm_total - fine_total
+                # If we list individual commissions above as Credits, and Salary Accrual as Credit (Base), 
+                # then Payment (Debit) of Net Amount effectively clears both.
+                # HOWEVER, `comm_total` is calculated from `models.Commission`. 
+                # Does `CommissionEarning` sync to `models.Commission`?
+                # YES! In `signals.py`, I saw "SYNC TO HR MODULE".
+                # So `models.Commission` records exist.
+                # If I query `CommissionEarning` (Agent module) AND `SalaryPayment` (HR module), am I duplicating?
+                # `signals.py` creates `HrCommission` when `CommissionEarning` is created.
+                # `SalaryPayment` aggregates `HrCommission`.
+                # If I show `CommissionEarning` credits here, and `SalaryPayment` credits...
+                # Actually, `SalaryPayment` creation DOES NOT create a Ledger Credit for Commissions. It just sums them up.
+                # So if I show `CommissionEarning` as Credit, and `SalaryAccrual` (Base) as Credit.
+                # And `SalaryPayment` (Net Amount) as Debit.
+                # Then Balance = (Comm + Base) - (Net Paid).
+                # This should balance out.
+                # So yes, it is correct to show separate credits.
+                pass
+            
+            if p.status == 'paid' and p.paid_date:
+                 transactions.append({
+                    'date': p.paid_date,
+                    'order_number': f"PMT-{p.month}/{p.year}",
+                    'type': "Salary Payment",
+                    'debit': float(p.net_amount or 0),
+                    'credit': 0,
+                    'timestamp': p.paid_date.timestamp()
+                })
+        
+        # Sort by date
+        transactions.sort(key=lambda x: x['timestamp'])
+
+        # Calculate Running Balance
+        balance = 0
+        result = []
+        for t in transactions:
+            balance += (t['credit'] - t['debit'])
+            result.append({
+                'date': t['date'],
+                'order_number': t['order_number'],
+                'type': t['type'],
+                'debit': t['debit'],
+                'credit': t['credit'],
+                'balance': balance
+            })
+            
+        # Return reversed (newest first)
+        return Response(result[::-1])
 
 
 @extend_schema(tags=['HR'], description='Salary history records for employees')

@@ -139,11 +139,19 @@ class UniversalRegisterView(generics.CreateAPIView):
             )
         else:
             # External user - save to UniversalRegistration for approval
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info(f"External registration request: {request.data}")
+            
             serializer = self.get_serializer(data=request.data)
             serializer.is_valid(raise_exception=True)
+            logger.info(f"Validated registration data: {serializer.validated_data}")
+            
             self.perform_create(serializer)
             # Re-serialize the saved instance so file/image fields return URLs
             instance = serializer.instance
+            logger.info(f"Created registration instance: ID={instance.id}, type={instance.type}, name={instance.name}, contact_no={instance.contact_no}")
+            
             out_serializer = self.get_serializer(instance)
             headers = self.get_success_headers(out_serializer.data)
             return Response(
@@ -412,6 +420,8 @@ class ApproveRegistrationView(APIView):
     """POST /api/universal/<id>/approve/  -- mark a registration as approved/active
 
     Body (optional): { "note": "..." }
+    
+    When approving an organization, this also creates the corresponding Organization record.
     """
     permission_classes = (IsAuthenticated, IsAdminUser)
 
@@ -430,6 +440,48 @@ class ApproveRegistrationView(APIView):
         obj.status = UniversalRegistration.STATUS_ACTIVE
         obj.save()
 
+        # If this is an organization type, create the actual Organization record
+        if obj.type == UniversalRegistration.TYPE_ORGANIZATION:
+            from organization.models import Organization
+            import logging
+            logger = logging.getLogger(__name__)
+            
+            try:
+                logger.info(f"Approving organization: {obj.name}, email: {obj.email}, phone: {obj.contact_no}")
+                
+                # Check if organization already exists by email or name
+                existing_org = None
+                if obj.email:
+                    existing_org = Organization.objects.filter(email=obj.email).first()
+                
+                if not existing_org and obj.name:
+                    existing_org = Organization.objects.filter(name=obj.name).first()
+                
+                if not existing_org:
+                    # Create new organization
+                    logger.info(f"Creating new organization: {obj.name}")
+                    new_org = Organization.objects.create(
+                        name=obj.name or "Unknown Organization",
+                        phone_number=obj.contact_no or "",
+                        email=obj.email or "",
+                        address=obj.address or ""
+                    )
+                    logger.info(f"Organization created successfully with ID: {new_org.id}, code: {new_org.org_code}")
+                    # Store the organization code back to universal registration for reference
+                    obj.organization_id = new_org.org_code
+                    obj.save()
+                    logger.info(f"Updated universal registration with org_code: {new_org.org_code}")
+                else:
+                    logger.info(f"Organization already exists: {existing_org.name} (ID: {existing_org.id})")
+                    # Link existing organization
+                    if existing_org.org_code:
+                        obj.organization_id = existing_org.org_code
+                        obj.save()
+            except Exception as e:
+                logger.error(f"Error creating organization: {str(e)}", exc_info=True)
+                # Don't fail the approval if org creation fails
+                pass
+
         # Audit log
         new = UniversalRegistrationSerializer(obj).data
         AuditLog.objects.create(
@@ -442,7 +494,7 @@ class ApproveRegistrationView(APIView):
         )
 
         return Response({
-            'message': 'Registration approved',
+            'message': 'Registration approved and organization created successfully' if obj.type == UniversalRegistration.TYPE_ORGANIZATION else 'Registration approved',
             'data': new,
         }, status=status.HTTP_200_OK)
 

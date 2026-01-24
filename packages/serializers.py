@@ -358,6 +358,77 @@ class UmrahPackageHotelDetailsSerializer(ModelSerializer):
             "triple_bed_price",
             "double_bed_price",
         ]
+    
+    def to_representation(self, instance):
+        """Remove service charges from hotel prices for Full Agency agents"""
+        data = super().to_representation(instance)
+        
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return data
+        
+        try:
+            user = request.user
+            if not hasattr(user, 'profile') or user.profile is None:
+                return data
+            
+            user_type = getattr(user.profile, 'type', None)
+            
+            # Only modify prices for agents (not employees or admin)
+            if user_type in ['agent', 'subagent']:
+                agency = user.agencies.first()
+                if agency and agency.agency_type == 'Full Agency':
+                    # Full Agency - remove service charges from all bed prices
+                    from service_charges.utils import get_branch_service_charge_rule
+                    
+                    if agency.branch:
+                        rule = get_branch_service_charge_rule(agency.branch.id)
+                        
+                        if rule and rule.active and instance.hotel:
+                            from service_charges.models import HotelServiceCharge
+                            hotel_charge = HotelServiceCharge.objects.filter(
+                                service_charge_rule=rule,
+                                active=True,
+                                hotel_ids__contains=instance.hotel.id
+                            ).first()
+                            
+                            if hotel_charge:
+                                print(f"[HOTEL PRICE] Removing service charges for Full Agency")
+                                print(f"[HOTEL PRICE] Sharing: {data.get('sharing_bed_selling_price')} - {hotel_charge.sharing_charge}")
+                                
+                                # Remove service charges from each bed type, ensuring positive values
+                                if data.get('sharing_bed_selling_price'):
+                                    new_price = float(data['sharing_bed_selling_price']) - float(hotel_charge.sharing_charge or 0)
+                                    if new_price > 0:
+                                        data['sharing_bed_selling_price'] = new_price
+                                    print(f"[HOTEL PRICE] New sharing price: {data.get('sharing_bed_selling_price')}")
+                                
+                                if data.get('quaint_bed_selling_price'):
+                                    new_price = float(data['quaint_bed_selling_price']) - float(hotel_charge.quint_charge or 0)
+                                    if new_price > 0:
+                                        data['quaint_bed_selling_price'] = new_price
+                                
+                                if data.get('quad_bed_selling_price'):
+                                    new_price = float(data['quad_bed_selling_price']) - float(hotel_charge.quad_charge or 0)
+                                    if new_price > 0:
+                                        data['quad_bed_selling_price'] = new_price
+                                
+                                if data.get('triple_bed_selling_price'):
+                                    new_price = float(data['triple_bed_selling_price']) - float(hotel_charge.triple_charge or 0)
+                                    if new_price > 0:
+                                        data['triple_bed_selling_price'] = new_price
+                                
+                                if data.get('double_bed_selling_price'):
+                                    new_price = float(data['double_bed_selling_price']) - float(hotel_charge.double_charge or 0)
+                                    if new_price > 0:
+                                        data['double_bed_selling_price'] = new_price
+        except Exception as e:
+            # If anything fails, return original data
+            import traceback
+            print(f"[HOTEL PRICE] Error: {e}")
+            print(traceback.format_exc())
+        
+        return data
 
 
 class UmrahPackageTransportDetailsSerializer(ModelSerializer):
@@ -438,9 +509,72 @@ class UmrahPackageSerializer(ModelSerializer):
     adult_price = serializers.SerializerMethodField(read_only=True)
     infant_price = serializers.SerializerMethodField(read_only=True)
     child_discount = serializers.SerializerMethodField(read_only=True)
+    final_price = serializers.SerializerMethodField(read_only=True)
+    sharing_price = serializers.SerializerMethodField(read_only=True)
+    quint_price = serializers.SerializerMethodField(read_only=True)
+    quad_price = serializers.SerializerMethodField(read_only=True)
+    triple_price = serializers.SerializerMethodField(read_only=True)
+    double_price = serializers.SerializerMethodField(read_only=True)
     
     # New pricing breakdown
     total_price_breakdown = serializers.SerializerMethodField()
+
+    def _get_branch_for_service_charge(self, request):
+        """Helper to get branch for service charge calculation based on user type."""
+        if not request or not request.user.is_authenticated:
+            return None
+        
+        user = request.user
+        if not hasattr(user, 'profile') or user.profile is None:
+            return None
+            
+        user_type = getattr(user.profile, 'type', None)
+        if user_type not in ['agent', 'subagent', 'employee']:
+            return None
+            
+        if user_type == 'employee':
+            return user.branches.first()
+        else:
+            agency = user.agencies.first()
+            if agency:
+                # Area Agency gets service charges, Full Agency does NOT
+                if agency.agency_type == 'Area Agency':
+                    return agency.branch
+            return None
+
+    def _calculate_total_with_service_charge(self, request, base_price):
+        """Calculate final price by applying branch service charges if applicable."""
+        branch = self._get_branch_for_service_charge(request)
+        if branch:
+            from service_charges.utils import calculate_package_service_charge
+            result = calculate_package_service_charge(branch.id, base_price)
+            return float(result['final_price'])
+        return base_price
+
+    def get_final_price(self, obj):
+        """Calculate final price (adult_cost) with service charges for agents/employees."""
+        base_price = getattr(obj, 'adault_visa_selling_price', 0) or 0
+        try:
+             base_price = obj.adult_cost()
+        except:
+             pass
+        return self._calculate_total_with_service_charge(self.context.get('request'), base_price)
+
+    def get_sharing_price(self, obj):
+        return self._calculate_total_with_service_charge(self.context.get('request'), obj.sharing_cost())
+
+    def get_quint_price(self, obj):
+        return self._calculate_total_with_service_charge(self.context.get('request'), obj.quint_cost())
+
+    def get_quad_price(self, obj):
+        return self._calculate_total_with_service_charge(self.context.get('request'), obj.quad_cost())
+
+    def get_triple_price(self, obj):
+        return self._calculate_total_with_service_charge(self.context.get('request'), obj.triple_cost())
+
+    def get_double_price(self, obj):
+        return self._calculate_total_with_service_charge(self.context.get('request'), obj.double_cost())
+
 
     class Meta:
         model = UmrahPackage
@@ -596,11 +730,46 @@ class UmrahPackageSerializer(ModelSerializer):
         return TicketSerializer(qs, many=True).data
 
     def get_adult_price(self, obj):
-        """Adult price / cost computed from components (food, ziarat, transport, visa, ticket)."""
+        from service_charges.utils import calculate_package_service_charge
+        request = self.context.get('request')
         try:
-            return obj.adult_cost()
+            base_price = obj.adult_cost()
         except Exception:
-            return getattr(obj, 'adault_visa_selling_price', None)
+            base_price = getattr(obj, 'adault_visa_selling_price', 0) or 0
+        
+        print(f"[PACKAGE PRICE] get_adult_price called for package {obj.id}, base_price: {base_price}")
+        
+        if not request or not request.user.is_authenticated:
+            print(f"[PACKAGE PRICE] No authenticated user, returning base price")
+            return base_price
+        try:
+            user = request.user
+            if not hasattr(user, 'profile') or user.profile is None:
+                return base_price
+            user_type = getattr(user.profile, 'type', None)
+            print(f"[PACKAGE PRICE] User type: {user_type}")
+            if user_type in ['agent', 'subagent', 'employee']:
+                branch = None
+                if user_type == 'employee':
+                    branch = user.branches.first()
+                else:
+                    agency = user.agencies.first()
+                    if agency:
+                        print(f"[PACKAGE PRICE] Agency type: {agency.agency_type}")
+                        if agency.agency_type == 'Area Agency':
+                            branch = agency.branch
+                        else:
+                            print(f"[PACKAGE PRICE] Full Agency - returning base price {base_price}")
+                            return base_price
+                if branch:
+                    result = calculate_package_service_charge(branch.id, base_price)
+                    final = float(result['final_price'])
+                    print(f"[PACKAGE PRICE] Returning final price with service charge: {final}")
+                    return final
+        except Exception as e:
+            print(f"[PACKAGE PRICE] Error: {e}")
+        print(f"[PACKAGE PRICE] Returning base price: {base_price}")
+        return base_price
 
     def get_infant_price(self, obj):
         """INFANT PRICE = INFANT TICKET SELLING PRICE + INFANT VISA SELLING PRICE"""

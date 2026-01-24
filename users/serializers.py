@@ -9,11 +9,24 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 class UserProfileSerializer(serializers.ModelSerializer):
     commission_id = serializers.CharField(read_only=False, required=False, allow_null=True)
+    can_access_agent_panel = serializers.SerializerMethodField(read_only=True)
+
+    def get_can_access_agent_panel(self, obj):
+        """Check if user can access agent panel based on type or permissions"""
+        # Get the user from the profile
+        user = obj.user
+        
+        # Subagents always have access
+        if obj.type == 'subagent':
+            return True
+        
+        # Check if user has the permission via groups
+        return user.has_perm('auth.agent_portal_access')
 
     class Meta:
         model = UserProfile
         # explicitly include commission_id and avoid exposing user FK through this serializer
-        fields = ["id", "type", "commission_id"]
+        fields = ["id", "type", "commission_id", "can_access_agent_panel"]
         read_only_fields = ["id"]
 
 
@@ -64,7 +77,7 @@ class UserSerializer(serializers.ModelSerializer):
             pass
         
         # Check if user has the permission
-        return obj.has_perm('organization.employee_agent_portal_access')
+        return obj.has_perm('auth.agent_portal_access')
 
     class Meta:
         model = User
@@ -292,7 +305,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         
         # Check if user has the permission via groups (if not already granted by branch type)
         if not can_access_agent:
-            can_access_agent = user.has_perm('organization.employee_agent_portal_access')
+            can_access_agent = user.has_perm('auth.agent_portal_access')
         
         token['can_access_agent_panel'] = can_access_agent
         
@@ -404,7 +417,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         
         # Check if user has the permission via groups (if not already granted by branch type)
         if not can_access_agent:
-            can_access_agent = user.has_perm('organization.employee_agent_portal_access')
+            can_access_agent = user.has_perm('auth.agent_portal_access')
         
         data['user']['can_access_agent_panel'] = can_access_agent
         

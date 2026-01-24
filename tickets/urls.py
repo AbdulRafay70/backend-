@@ -5,6 +5,8 @@ from .hotel_availability_api import HotelAvailabilityAPIView
 from .room_assignment_api import RoomAssignmentAPIView, RoomUnassignmentAPIView
 from .room_map_api import RoomMapManagementAPIView
 from .hotel_floors_api import HotelFloorsListAPIView, HotelFloorDetailAPIView
+from .hotel_booking_api import HotelBookingAPIView
+from .room_occupied_dates_api import RoomOccupiedDatesAPIView
 
 router = DefaultRouter()
 router.register(r'tickets', TicketViewSet, basename='tickets')
@@ -18,6 +20,8 @@ urlpatterns = [
     # Hotel & Accommodation APIs (must come BEFORE router.urls to avoid conflicts)
     path('api/hotel-floors/', HotelFloorsListAPIView.as_view(), name='hotel-floors-list'),
     path('api/hotel-floors/<int:pk>/', HotelFloorDetailAPIView.as_view(), name='hotel-floor-detail'),
+    path('api/hotel-bookings/', HotelBookingAPIView.as_view(), name='hotel-bookings'),
+    path('api/hotel-rooms/<int:room_id>/occupied-dates/', RoomOccupiedDatesAPIView.as_view(), name='room-occupied-dates'),
     path('api/hotels/availability/', HotelAvailabilityAPIView.as_view(), name='hotel-availability'),
     path('api/hotel-availability/', HotelAvailabilityAPIView.as_view(), name='hotel-availability-alt'),
     path('api/hotels/assign-room/', RoomAssignmentAPIView.as_view(), name='room-assignment'),

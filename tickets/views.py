@@ -276,23 +276,39 @@ class TicketViewSet(ModelViewSet):
 
 class HotelsViewSet(ModelViewSet):
     serializer_class = HotelsSerializer
-    permission_classes = [IsAuthenticated, PermissionByAction]
-    
-    # RBAC Permission Map
-    # Allow viewing hotels if user has hotel permissions OR package permissions
-    # (since creating packages requires selecting hotels)
-    # Also allow agents to view hotels
-    permission_map = {
-        'list': ['tickets.view_hotel_admin', 'packages.view_package_admin', 'packages.add_package_admin', 'tickets.view_hotel_agent'],
-        'retrieve': ['tickets.view_hotel_admin', 'packages.view_package_admin', 'packages.add_package_admin', 'tickets.view_hotel_agent'],
-        'create': 'tickets.add_hotel_admin',
-        'update': 'tickets.edit_hotel_admin',
-        'partial_update': 'tickets.edit_hotel_admin',
-        'destroy': 'tickets.delete_hotel_admin',
-    }
+    permission_classes = [IsAuthenticated]  # Remove PermissionByAction - allow all authenticated users
     
     # Accept multipart/form-data for file uploads in create/update
     parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def get_queryset(self):
+        """Filter hotels based on user's organization access"""
+        user = self.request.user
+        
+        # Superusers see all hotels
+        if user.is_superuser:
+            return Hotels.objects.all()
+        
+        # Get user's accessible organizations
+        from organization.models import Organization, Branch, Agency
+        
+        # 1. Direct organization membership
+        user_orgs = user.organizations.all()
+        
+        # 2. Through branches
+        user_branches = Branch.objects.filter(user=user)
+        branch_orgs = Organization.objects.filter(branches__in=user_branches)
+        
+        # 3. Through agencies
+        user_agencies = Agency.objects.filter(user=user)
+        agency_orgs = Organization.objects.filter(branches__agencies__in=user_agencies)
+        
+        # Combine all accessible organizations
+        accessible_orgs = user_orgs | branch_orgs | agency_orgs
+        accessible_org_ids = accessible_orgs.values_list('id', flat=True)
+        
+        # Return hotels belonging to accessible organizations
+        return Hotels.objects.filter(organization_id__in=accessible_org_ids)
 
     def _parse_json_fields(self, data):
         """Helper to parse JSON-encoded strings in multipart form data into Python structures."""
@@ -397,7 +413,7 @@ class HotelsViewSet(ModelViewSet):
         return Response(serializer.data)
 
     def get_queryset(self):
-        from organization.models import OrganizationLink
+        from organization.models import Organization, OrganizationLink, Branch, Agency
         
         # Debugging previously added here was removed.
         # If further investigation is needed, enable structured logging instead of prints.
@@ -414,9 +430,27 @@ class HotelsViewSet(ModelViewSet):
         if not owner_org_id:
             raise PermissionDenied("Missing 'owner_organization' or 'organization' query parameter.")
 
-        # Check if user has access to this organization
-        user_organizations = self.request.user.organizations.values_list('id', flat=True)
-        if int(owner_org_id) not in user_organizations:
+        # Check if user has access to this organization (including branch/agency linkage)
+        user_orgs = self.request.user.organizations.all()
+        user_branches = Branch.objects.filter(user=self.request.user)
+        branch_orgs = Organization.objects.filter(branches__in=user_branches)
+        user_agencies = Agency.objects.filter(user=self.request.user)
+        agency_orgs = Organization.objects.filter(branches__agencies__in=user_agencies)
+        accessible_orgs = user_orgs | branch_orgs | agency_orgs
+        accessible_org_ids = list(accessible_orgs.values_list('id', flat=True))
+        
+        # If the provided ID is an agency ID instead of org ID, resolve it to org ID
+        # Check if it's an agency the user has access to
+        try:
+            agency = Agency.objects.filter(id=int(owner_org_id), user=self.request.user).first()
+            if agency and agency.branch and agency.branch.organization:
+                actual_org_id = agency.branch.organization.id
+                print(f"DEBUG HotelsViewSet - Resolved agency {owner_org_id} to organization {actual_org_id}")
+                owner_org_id = actual_org_id
+        except (ValueError, AttributeError):
+            pass
+        
+        if int(owner_org_id) not in accessible_org_ids:
             raise PermissionDenied("You don't have access to this organization.")
 
         # Get linked organizations

@@ -1,4 +1,5 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from .views import (
     LedgerCreateAPIView, 
     LedgerListAPIView, 
@@ -25,6 +26,17 @@ from .views_pending_balances import (
     organization_pending_balances, 
     final_balance
 )
+
+# Import inter-org views
+from .views_interorg import (
+    InterOrgFinancialSummaryView,
+    InterOrgPaymentViewSet,
+    InterOrgTransactionHistoryView,
+)
+
+# Setup router for viewsets
+router = DefaultRouter()
+router.register(r'inter-org-payments', InterOrgPaymentViewSet, basename='interorg-payment')
 
 urlpatterns = [
     # Main ledger endpoints (matching specification)
@@ -60,6 +72,20 @@ urlpatterns = [
     path("api/ledger/org-to-org/<int:org1_id>/<int:org2_id>/", 
          OrgToOrgLedgerAPIView.as_view(), 
          name="ledger-org-to-org"),
+
+    # 🔹 INTER-ORG RESELLER ENDPOINTS
+    # Inter-org financial summary
+    path("api/ledger/inter-org-summary/",
+         InterOrgFinancialSummaryView.as_view(),
+         name="interorg-financial-summary"),
+    
+    # Inter-org transaction history
+    path("api/ledger/inter-org-transactions/",
+         InterOrgTransactionHistoryView.as_view(),
+         name="interorg-transaction-history"),
+    
+    # Router URLs (inter-org payments CRUD + custom actions)
+    path("api/ledger/", include(router.urls)),
 
     # Legacy/additional balance endpoints
     path("api/agents/pending-balances", agents_pending_balances, name="agents-pending-balances"),

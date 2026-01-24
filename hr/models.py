@@ -73,6 +73,7 @@ class Commission(models.Model):
 
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='commissions')
     booking_id = models.CharField(max_length=128, blank=True)
+    service_type = models.CharField(max_length=50, blank=True, null=True, help_text="Type of service (e.g. group_ticket, umrah_package)")
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     date = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='unpaid')

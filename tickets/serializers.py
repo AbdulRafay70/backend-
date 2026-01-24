@@ -131,11 +131,59 @@ class TicketTripDetailsSerializer(serializers.ModelSerializer):
 class TicketSerializer(serializers.ModelSerializer):
     trip_details = TicketTripDetailsSerializer(many=True)
     stopover_details = TickerStopoverDetailsSerializer(many=True, required=False)
+    final_price = serializers.SerializerMethodField()
 
     class Meta:
         model = Ticket
         # keep all model fields for write operations but hide top-level `airline` in responses
         fields = "__all__"
+    
+    def get_final_price(self, obj):
+        """Calculate final price with service charges for agents/employees"""
+        from service_charges.utils import calculate_ticket_service_charge
+        
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            # Return base price for unauthenticated users
+            return obj.adult_price
+        
+        try:
+            user = request.user
+            # Safely get user profile and type
+            if not hasattr(user, 'profile') or user.profile is None:
+                return obj.adult_price
+            
+            user_type = getattr(user.profile, 'type', None)
+            
+            # Only apply service charges for employees and Area Agency agents (NOT Full Agency)
+            if user_type in ['agent', 'subagent', 'employee']:
+                branch = None
+                
+                # Get branch - different logic for employees vs agents
+                if user_type == 'employee':
+                    # Employees: get branch from user's branches
+                    branch = user.branches.first()
+                else:
+                    # Agents: get branch from user's agency
+                    agency = user.agencies.first()
+                    if agency:
+                        # Check if agency is Area Agency (not Full Agency)
+                        if agency.agency_type == 'Area Agency':
+                            branch = agency.branch
+                        else:
+                            # Full Agency - don't apply service charges
+                            return obj.adult_price
+                
+                if branch:
+                    result = calculate_ticket_service_charge(branch.id, obj.adult_price)
+                    return float(result['final_price'])
+        except Exception as e:
+            # If anything fails, return base price
+            pass
+        
+        # Admin and others see base price
+        return obj.adult_price
+
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
@@ -345,6 +393,86 @@ class TicketSerializer(serializers.ModelSerializer):
         trip_details_data = validated_data.pop("trip_details", None)
         stopover_details_data = validated_data.pop("stopover_details", None)
 
+        # -------------------------------------------------------------------------
+        # History Tracking Logic
+        # -------------------------------------------------------------------------
+        # Capture current state before updates
+        # We want to track changes to flight number, airline, departure/arrival times.
+        # Check if relevant fields are changing.
+        
+        # Prepare current state snapshot (fields that are relevant for display)
+        from django.utils import timezone
+        now_dt = timezone.now()
+        
+        updated_at_val = getattr(instance, "updated_at", None)
+        if updated_at_val and hasattr(updated_at_val, 'isoformat'):
+            updated_at_str = updated_at_val.isoformat()
+        else:
+            updated_at_str = now_dt.isoformat()
+
+        current_snapshot = {
+            "updated_at": updated_at_str,
+            "airline": instance.airline.name if instance.airline else "N/A",
+            "airline_code": instance.airline.code if instance.airline else "",
+            "flight_number": instance.flight_number,
+            "origin": instance.origin.name if instance.origin else "N/A",
+            "origin_code": instance.origin.code if instance.origin else "",
+            "destination": instance.destination.name if instance.destination else "N/A",
+            "destination_code": instance.destination.code if instance.destination else "",
+            "departure_date": str(instance.departure_date) if instance.departure_date else None,
+            "departure_time": str(instance.departure_time) if instance.departure_time else None,
+            "arrival_date": str(instance.arrival_date) if instance.arrival_date else None,
+            "arrival_time": str(instance.arrival_time) if instance.arrival_time else None,
+            "pnr": instance.pnr,
+        }
+
+        # Check for significant changes
+        has_changes = False
+        
+        # Check direct fields
+        if 'flight_number' in validated_data and validated_data['flight_number'] != instance.flight_number:
+            has_changes = True
+        if 'departure_date' in validated_data and validated_data['departure_date'] != instance.departure_date:
+            has_changes = True
+        if 'departure_time' in validated_data and validated_data['departure_time'] != instance.departure_time:
+            has_changes = True
+        if 'arrival_date' in validated_data and validated_data['arrival_date'] != instance.arrival_date:
+            has_changes = True
+        if 'arrival_time' in validated_data and validated_data['arrival_time'] != instance.arrival_time:
+            has_changes = True
+
+        # Check trip details changes implicitly
+        # (If trip_details_data is provided, we assume it might change something, so we snapshot the old state)
+        if trip_details_data is not None and len(trip_details_data) > 0:
+            # Deep comparison is hard, but usually trip_details_data comes on update only if changed.
+            # We can compare against existing trip details.
+            # For simplicity, if trip_details are being updated, we consider it a change.
+            has_changes = True
+
+        if has_changes:
+            # Append current state to history
+            # Initialize history if it's new (handle default list)
+            if not instance.history:
+                instance.history = []
+            
+            # Add timestamp for when this version was "archived" (i.e. now)
+            from django.utils import timezone
+            current_snapshot['archived_at'] = timezone.now().isoformat()
+            
+            # Check if this snapshot is identical to the last history entry to avoid duplicates
+            if not instance.history or instance.history[-1].get('flight_number') != current_snapshot['flight_number'] or \
+               instance.history[-1].get('departure_time') != current_snapshot['departure_time'] or \
+               instance.history[-1].get('arrival_time') != current_snapshot['arrival_time']:
+                
+                 instance.history.append(current_snapshot)
+                 # Limit history size if needed (e.g. keep last 10)
+                 if len(instance.history) > 10:
+                     instance.history = instance.history[-10:]
+
+        # -------------------------------------------------------------------------
+        # End History Tracking Logic
+        # -------------------------------------------------------------------------
+
         # If frontend provided a numeric flight suffix at top-level or inside trip_details,
         # ensure the instance.flight_number is updated accordingly so list endpoints
         # return the expected airline-code + suffix string.
@@ -410,7 +538,8 @@ class TicketSerializer(serializers.ModelSerializer):
                 except Exception:
                     pass
                 instance.save()
-
+            
+            # Since we snapshot history above assuming trip details change, we proceed to update
             instance.trip_details.all().delete()
             for trip in trip_details_data:
                 trip.pop('airline', None)
@@ -714,8 +843,12 @@ class HotelsSerializer(serializers.ModelSerializer):
         with legacy clients / Swagger UI expectations.
         If `owner_organization_id` is present, prefer it; otherwise fall
         back to the stored `organization_id`.
+        
+        Also adds hotel service charges to room prices automatically.
         """
         data = super().to_representation(instance)
+        
+        # Handle owner organization ID
         try:
             owner_id = getattr(instance, 'owner_organization_id', None)
             if owner_id is None:
@@ -730,6 +863,97 @@ class HotelsSerializer(serializers.ModelSerializer):
                     data.pop('organization', None)
         except Exception:
             pass
+        
+        # Add service charges to room prices (ONLY for agent panel requests)
+        try:
+            from service_charges.models import HotelServiceCharge
+            import json
+            
+            # Check if request is from agent panel (not admin panel)
+            request = self.context.get('request')
+            should_add_charges = False
+            
+            if request:
+                # Check the Referer header to determine which panel is making the request
+                referer = request.META.get('HTTP_REFERER', '')
+                # Agent panel runs on port 5174 (Vite), Admin panel runs on port 9002
+                is_agent_panel = ':5174' in referer or (':9001' in referer) or ('agent' in referer.lower() and ':9002' not in referer)
+                is_admin_panel = ':9002' in referer or ('admin' in referer.lower() and ':5174' not in referer)
+                
+                # Only add service charges for agent panel, NOT for admin panel
+                is_full_agency = False
+                if is_agent_panel:
+                    try:
+                        user = request.user
+                        if user.is_authenticated:
+                            agency = getattr(user, 'agencies', None)
+                            if agency:
+                                agency_obj = agency.first()
+                                if agency_obj and agency_obj.agency_type == 'Full Agency':
+                                    is_full_agency = True
+                    except Exception:
+                        pass
+                
+                # Only add service charges for agent panel AND if not Full Agency
+                should_add_charges = is_agent_panel and not is_admin_panel and not is_full_agency
+                
+                print(f"\n🔍 Hotel {instance.id} - Referer: {referer}")
+                print(f"   Agent panel: {is_agent_panel}, Admin panel: {is_admin_panel}, Full Agency: {is_full_agency}")
+                print(f"   Will add service charges: {should_add_charges}")
+            
+            hotel_id = instance.id
+            
+            if should_add_charges and hotel_id and 'prices' in data:
+                # Fetch service charge for this hotel
+                # Note: JSONField __contains doesn't work reliably, so we fetch all and filter in Python
+                service_charge = None
+                for charge in HotelServiceCharge.objects.filter(active=True):
+                    if hotel_id in charge.hotel_ids:
+                        service_charge = charge
+                        break
+                
+                if service_charge:
+                    print(f"✅ Found service charge record ID: {service_charge.id}")
+                    print(f"   hotel_ids field: {service_charge.hotel_ids}")
+                    
+                    # Map room types to their service charge fields (convert Decimal to float)
+                    room_type_charge_map = {
+                        'sharing': float(service_charge.sharing_charge or 0),
+                        'double': float(service_charge.double_charge or 0),
+                        'triple': float(service_charge.triple_charge or 0),
+                        'quad': float(service_charge.quad_charge or 0),
+                        'quint': float(service_charge.quint_charge or 0),
+                    }
+                    
+                    print(f"   Charges: Sharing={room_type_charge_map['sharing']}, Double={room_type_charge_map['double']}")
+                    
+                    # Add service charge to each room price
+                    for price_entry in data['prices']:
+                        room_type = price_entry.get('room_type', '').lower()
+                        if room_type in room_type_charge_map:
+                            charge = room_type_charge_map[room_type]
+                            if charge > 0 and 'selling_price' in price_entry:
+                                original_price = price_entry['selling_price'] or 0
+                                new_price = original_price + charge
+                                price_entry['selling_price'] = new_price
+                                # Add a flag to indicate service charge was applied
+                                price_entry['service_charge_applied'] = charge
+                                # Debug logging
+                                print(f"   ✅ {room_type.upper()}: {original_price} + {charge} = {new_price}")
+                            else:
+                                if charge == 0:
+                                    print(f"   ⚠️  {room_type.upper()}: No charge configured (0 PKR)")
+                else:
+                    print(f"   ℹ️  No service charge found for Hotel ID: {hotel_id}")
+            elif not should_add_charges:
+                print(f"   ⏭️  Skipping service charges (admin panel request)")
+        except Exception as e:
+            # Log error but don't fail the serialization
+            print(f"❌ Error adding service charges to hotel {instance.id}: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            pass
+        
         return data
 
 
@@ -864,6 +1088,7 @@ class TicketListSerializer(serializers.ModelSerializer):
     stopover_details = TickerStopoverDetailsListSerializer(many=True, read_only=True)
     # expose adult_price for compatibility with frontend which expects ticket.adult_price
     adult_price = serializers.SerializerMethodField()
+    final_price = serializers.SerializerMethodField()
 
     class Meta:
         model = Ticket
@@ -875,6 +1100,7 @@ class TicketListSerializer(serializers.ModelSerializer):
             "stopover_details",
             "adult_fare",
             "adult_price",
+            "final_price",
             "child_fare",
             "infant_fare",
             "baggage_weight",
@@ -915,6 +1141,52 @@ class TicketListSerializer(serializers.ModelSerializer):
             })
         return details
 
+    def get_final_price(self, obj):
+        """Calculate final price with service charges for agents/employees"""
+        from service_charges.utils import calculate_ticket_service_charge
+        
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            # Return base price for unauthenticated users
+            return obj.adult_price
+        
+        try:
+            user = request.user
+            # Safely get user profile and type
+            if not hasattr(user, 'profile') or user.profile is None:
+                return obj.adult_price
+            
+            user_type = getattr(user.profile, 'type', None)
+            
+            # Only apply service charges for employees and Area Agency agents (NOT Full Agency)
+            if user_type in ['agent', 'subagent', 'employee']:
+                branch = None
+                
+                # Get branch - different logic for employees vs agents
+                if user_type == 'employee':
+                    # Employees: get branch from user's branches
+                    branch = user.branches.first()
+                else:
+                    # Agents: get branch from user's agency
+                    agency = user.agencies.first()
+                    if agency:
+                        # Check if agency is Area Agency (not Full Agency)
+                        if agency.agency_type == 'Area Agency':
+                            branch = agency.branch
+                        else:
+                            # Full Agency - don't apply service charges
+                            return obj.adult_price
+                
+                if branch:
+                    result = calculate_ticket_service_charge(branch.id, obj.adult_price)
+                    return float(result['final_price'])
+        except Exception as e:
+            # If anything fails, return base price
+            pass
+        
+        # Admin and others see base price
+        return obj.adult_price
+    
     def get_adult_price(self, obj):
         # prefer explicit adult_price, then adult_fare, then adult_price purchase fallback
         return getattr(obj, 'adult_price', None) or getattr(obj, 'adult_fare', None) or getattr(obj, 'adult_purchase_price', None)
