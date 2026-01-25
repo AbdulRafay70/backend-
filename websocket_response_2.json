@@ -1,0 +1,20 @@
+{
+  "response": {
+    "content": {
+      "command": "FlightSearchRS",
+      "error": {
+        "message": "Error in setting common response"
+      }
+    },
+    "hubUuid": "X1kv4aDvK3zHQpz6wjfGFvLtyMMQyYftit55PpxW",
+    "node": {
+      "currency": "PKR",
+      "agencyCode": "CLI_11078"
+    },
+    "selectCredential": {
+      "id": 137
+    },
+    "supplierCode": 17,
+    "service": "FlightRS"
+  }
+}

@@ -33,6 +33,7 @@ from .models import (
 )
 from rest_framework import serializers
 from tickets.serializers import HotelsSerializer, TicketSerializer
+from tickets.models import Hotels
 from django.db import models
 
 
@@ -341,126 +342,128 @@ class BookingExpirySerializer(ModelSerializer):
         fields = "__all__"
 
 
+class SimpleHotelsSerializer(serializers.ModelSerializer):
+    """Minimal hotel serializer to avoid returning full price lists in package details"""
+    class Meta:
+        model = Hotels
+        fields = ["id", "name", "category", "city", "rating", "distance_from_haram"] # Adjust fields based on what's available/needed
+        # Using a subset of fields. 'rating' and 'distance_from_haram' might not exist, 
+        # let's stick to safe fields or allow extra if model has them.
+        # Checking Hotel model from previous view... it has 'name', 'category'.
+        # Let's keep it safe:
+        fields = ["id", "name", "category", "address", "organization"] 
+
 class UmrahPackageHotelDetailsSerializer(ModelSerializer):
-    hotel_info = HotelsSerializer(source="hotel", read_only=True, required=False)
+    hotel_info = SimpleHotelsSerializer(source="hotel", read_only=True)
+    hotel = serializers.PrimaryKeyRelatedField(queryset=Hotels.objects.all(), write_only=True)
 
     class Meta:
         model = UmrahPackageHotelDetails
-        # Exclude the raw/base bed price fields from API output and keep only
-        # the explicit selling/purchase fields (selling/purchase are useful
-        # for financial calculations while base display prices may be redundant).
-        exclude = [
-            "package",
-            # base bed prices (we keep selling/purchase fields only)
-            "quaint_bed_price",
-            "sharing_bed_price",
-            "quad_bed_price",
-            "triple_bed_price",
-            "double_bed_price",
+        fields = [
+            "id",
+            "hotel", # Add the write-only hotel field here
+            "hotel_info",
+            "check_in_date",
+            "check_out_date",
+            "number_of_nights",
+            # Add price fields so they are accepted during write
+            "quaint_bed_selling_price",
+            "quaint_bed_purchase_price",
+            "sharing_bed_selling_price",
+            "sharing_bed_purchase_price",
+            "quad_bed_selling_price",
+            "quad_bed_purchase_price",
+            "triple_bed_selling_price",
+            "triple_bed_purchase_price",
+            "double_bed_selling_price",
+            "double_bed_purchase_price",
         ]
     
     def to_representation(self, instance):
-        """Remove service charges from hotel prices for Full Agency agents"""
         data = super().to_representation(instance)
         
-        request = self.context.get('request')
-        if not request or not request.user.is_authenticated:
-            return data
+        # Create the custom prices array structure
+        prices = []
         
-        try:
-            user = request.user
-            if not hasattr(user, 'profile') or user.profile is None:
-                return data
-            
-            user_type = getattr(user.profile, 'type', None)
-            
-            # Only modify prices for agents (not employees or admin)
-            if user_type in ['agent', 'subagent']:
-                agency = user.agencies.first()
-                if agency and agency.agency_type == 'Full Agency':
-                    # Full Agency - remove service charges from all bed prices
-                    from service_charges.utils import get_branch_service_charge_rule
-                    
-                    if agency.branch:
-                        rule = get_branch_service_charge_rule(agency.branch.id)
-                        
-                        if rule and rule.active and instance.hotel:
-                            from service_charges.models import HotelServiceCharge
-                            hotel_charge = HotelServiceCharge.objects.filter(
-                                service_charge_rule=rule,
-                                active=True,
-                                hotel_ids__contains=instance.hotel.id
-                            ).first()
-                            
-                            if hotel_charge:
-                                print(f"[HOTEL PRICE] Removing service charges for Full Agency")
-                                print(f"[HOTEL PRICE] Sharing: {data.get('sharing_bed_selling_price')} - {hotel_charge.sharing_charge}")
-                                
-                                # Remove service charges from each bed type, ensuring positive values
-                                if data.get('sharing_bed_selling_price'):
-                                    new_price = float(data['sharing_bed_selling_price']) - float(hotel_charge.sharing_charge or 0)
-                                    if new_price > 0:
-                                        data['sharing_bed_selling_price'] = new_price
-                                    print(f"[HOTEL PRICE] New sharing price: {data.get('sharing_bed_selling_price')}")
-                                
-                                if data.get('quaint_bed_selling_price'):
-                                    new_price = float(data['quaint_bed_selling_price']) - float(hotel_charge.quint_charge or 0)
-                                    if new_price > 0:
-                                        data['quaint_bed_selling_price'] = new_price
-                                
-                                if data.get('quad_bed_selling_price'):
-                                    new_price = float(data['quad_bed_selling_price']) - float(hotel_charge.quad_charge or 0)
-                                    if new_price > 0:
-                                        data['quad_bed_selling_price'] = new_price
-                                
-                                if data.get('triple_bed_selling_price'):
-                                    new_price = float(data['triple_bed_selling_price']) - float(hotel_charge.triple_charge or 0)
-                                    if new_price > 0:
-                                        data['triple_bed_selling_price'] = new_price
-                                
-                                if data.get('double_bed_selling_price'):
-                                    new_price = float(data['double_bed_selling_price']) - float(hotel_charge.double_charge or 0)
-                                    if new_price > 0:
-                                        data['double_bed_selling_price'] = new_price
-        except Exception as e:
-            # If anything fails, return original data
-            import traceback
-            print(f"[HOTEL PRICE] Error: {e}")
-            print(traceback.format_exc())
+        # Helper to add a room type price object if valid
+        def add_price(room_type, selling, purchase, is_sharing_allowed=True):
+             # You might want to filter out if prices are 0, but user didn't specify. 
+             # Including all defined types for now.
+            prices.append({
+                "room_type": room_type,
+                "selling_price": selling or 0,
+                "purchase_price": purchase or 0,
+                "is_sharing_allowed": is_sharing_allowed
+            })
+
+        # Map flat model fields to the new prices array
+        # Note: 'single' and 'quint' might need adjustment based on your exact definitions.
+        # Assuming 'quaint' in model maps to 'quint' or 'single' based on your earlier JSON.
+        # Your JSON showed "single", "double", "triple", "quad", "quint".
+        # Model has: quaint, sharing, quad, triple, double.
         
+        # Mapping model 'quaint' to 'quint' for now as per common typo
+        add_price("quint", instance.quaint_bed_selling_price, instance.quaint_bed_purchase_price)
+        add_price("quad", instance.quad_bed_selling_price, instance.quad_bed_purchase_price)
+        add_price("triple", instance.triple_bed_selling_price, instance.triple_bed_purchase_price)
+        add_price("double", instance.double_bed_selling_price, instance.double_bed_purchase_price)
+        add_price("sharing", instance.sharing_bed_selling_price, instance.sharing_bed_purchase_price) # Mapped 'sharing' to 'sharing'
+        
+        # If you have other room types like 6-bed etc stored elsewhere, add them here. 
+        # Since the model only has these specific fields, I can only map these.
+        
+        data['prices'] = prices
         return data
 
 
 class UmrahPackageTransportDetailsSerializer(ModelSerializer):
-    transport_sector_info = TransportSectorPriceSerializer(
-        source="transport_sector", read_only=True, required=False
-    )
+    transport_sector_info = serializers.SerializerMethodField()
+
+    def get_transport_sector_info(self, instance):
+        try:
+            if not instance.transport_sector:
+                return None
+            from booking.serializers import VehicleTypeSerializer
+            return VehicleTypeSerializer(instance.transport_sector).data
+        except Exception:
+            return None
 
     class Meta:
         model = UmrahPackageTransportDetails
-        exclude = ["package"]
+        fields = [
+             "id",
+             "transport_sector",
+             "transport_sector_info",
+             "vehicle_type",
+
+             "transport_type",
+             "transport_selling_price",
+             "transport_purchase_price",
+             
+        ]
+
+    def to_internal_value(self, data):
+        # Flatten nested transport_prices from frontend to model fields
+        if 'transport_prices' in data and isinstance(data['transport_prices'], dict):
+            prices = data['transport_prices']
+            # We use setdefault to allow direct flat fields to override if sent (though frontend sends nested)
+            # Use 'transport_selling_price' key for model
+            if 'selling_price' in prices:
+                data['transport_selling_price'] = prices['selling_price']
+            if 'purchase_price' in prices:
+                data['transport_purchase_price'] = prices['purchase_price']
+        
+        return super().to_internal_value(data)
 
     def to_representation(self, instance):
-        """Hide legacy/irrelevant fields and expose explicit per-person prices.
-
-        Remove `vehicle_type` and legacy single-price fields from API output so
-        clients always use explicit selling/purchase fields.
-        """
         data = super().to_representation(instance)
-        # Remove legacy or unwanted keys if present
-        for k in ("adault_price", "child_price", "infant_price"):
-            if k in data:
-                data.pop(k, None)
-
-        # Ensure explicit selling/purchase fields are present in the response
-        # (model may already contain these; fall back to None if absent)
-        data.setdefault("adult_selling_price", getattr(instance, "adult_selling_price", None))
-        data.setdefault("adult_purchase_price", getattr(instance, "adult_purchase_price", None))
-        data.setdefault("child_selling_price", getattr(instance, "child_selling_price", None))
-        data.setdefault("child_purchase_price", getattr(instance, "child_purchase_price", None))
-        data.setdefault("infant_selling_price", getattr(instance, "infant_selling_price", None))
-        data.setdefault("infant_purchase_price", getattr(instance, "infant_purchase_price", None))
-
+        
+        # Structure the pricing into a separate object/field
+        data['transport_prices'] = {
+            "selling_price": instance.transport_selling_price or 0,
+            "purchase_price": instance.transport_purchase_price or 0
+        }
+        
         return data
 
 
@@ -470,6 +473,31 @@ class UmrahPackageTicketDetailsSerializer(ModelSerializer):
     class Meta:
         model = UmrahPackageTicketDetails
         exclude = ["package"]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        ticket_info = data.get('ticket_info', {})
+        
+        # Restore airline field if missing (TicketSerializer removed it)
+        if instance.ticket and instance.ticket.airline and 'airline' not in ticket_info:
+            ticket_info['airline'] = AirlinesSerializer(instance.ticket.airline).data
+
+        # Backend fix: Frontend expects 'adult_price' but new API gives 'adult_selling_price'
+        # Map selling prices to legacy keys if not present
+        if 'adult_selling_price' in ticket_info:
+             if 'adult_price' not in ticket_info:
+                 ticket_info['adult_price'] = ticket_info['adult_selling_price']
+        
+        if 'child_selling_price' in ticket_info:
+             if 'child_price' not in ticket_info:
+                 ticket_info['child_price'] = ticket_info['child_selling_price']
+
+        if 'infant_selling_price' in ticket_info:
+             if 'infant_price' not in ticket_info:
+                 ticket_info['infant_price'] = ticket_info['infant_selling_price']
+
+        data['ticket_info'] = ticket_info
+        return data
 
 
 class UmrahPackageDiscountDetailsSerializer(ModelSerializer):
@@ -485,9 +513,7 @@ class UmrahPackageSerializer(ModelSerializer):
     """
     # Nested relationships
     hotel_details = UmrahPackageHotelDetailsSerializer(many=True, required=False)
-    transport_details = UmrahPackageTransportDetailsSerializer(
-        many=True, required=False
-    )
+    transport_details = UmrahPackageTransportDetailsSerializer(many=True, required=False)
     ticket_details = UmrahPackageTicketDetailsSerializer(many=True, required=False)
     discount_details = UmrahPackageDiscountDetailsSerializer(many=True, required=False)
     # These nested fields are intentionally disabled for the public package list
@@ -638,6 +664,54 @@ class UmrahPackageSerializer(ModelSerializer):
             '1_adult_1_infant': obj.calculate_total_price(adults=1, children=0, infants=1),
         }
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        # remove legacy top-level numeric organization FK if present
+        if 'organization' in data:
+            data.pop('organization', None)
+
+        # Remove explicit individual fields if you want them clean, 
+        # BUT user might want them. 
+        # For now, adding the requested structured object.
+        data['package_selling_prices'] = {
+            "sharing": instance.sharing_selling_price,
+            "double": instance.double_selling_price,
+            "triple": instance.triple_selling_price,
+            "quad": instance.quad_selling_price,
+            "quint": instance.quaint_selling_price,
+            # Child Prices
+            "child_without_bed": instance.child_without_bed_selling_price,
+            "child_with_bed": {
+                 "sharing": instance.child_sharing_selling_price,
+                 "double": instance.child_double_selling_price,
+                 "triple": instance.child_triple_selling_price,
+                 "quad": instance.child_quad_selling_price,
+                 "quint": instance.child_quaint_selling_price,
+            },
+            "infant": instance.infant_package_selling_price,
+        }
+        
+        # Optional: Add purchase prices too for Admin
+        data['package_purchase_prices'] = {
+            "sharing": instance.sharing_purchase_price,
+            "double": instance.double_purchase_price,
+            "triple": instance.triple_purchase_price,
+            "quad": instance.quad_purchase_price,
+            "quint": instance.quaint_purchase_price,
+            # Child Prices
+            "child_without_bed": instance.child_without_bed_purchase_price,
+            "child_with_bed": {
+                 "sharing": instance.child_sharing_purchase_price,
+                 "double": instance.child_double_purchase_price,
+                 "triple": instance.child_triple_purchase_price,
+                 "quad": instance.child_quad_purchase_price,
+                 "quint": instance.child_quaint_purchase_price,
+            },
+            "infant": instance.infant_package_purchase_price,
+        }
+
+        return data
+
     def create(self, validated_data):
         hotel_data = validated_data.pop("hotel_details", [])
         transport_data = validated_data.pop("transport_details", [])
@@ -665,6 +739,9 @@ class UmrahPackageSerializer(ModelSerializer):
         
         for exclusion in exclusions_data:
             PackageExclusion.objects.create(package=package, **exclusion)
+
+        # TRIGGER PRICE CALCULATION
+        package.calculate_and_save_prices()
 
         return package
 
@@ -706,6 +783,9 @@ class UmrahPackageSerializer(ModelSerializer):
         
         for exclusion in exclusions_data:
             PackageExclusion.objects.create(package=instance, **exclusion)
+
+        # TRIGGER PRICE CALCULATION
+        instance.calculate_and_save_prices()
 
         return instance
 
@@ -793,8 +873,8 @@ class UmrahPackageSerializer(ModelSerializer):
             ticket = obj.ticket_details.first()
             if not ticket or not getattr(ticket, 'ticket', None):
                 return 0
-            t = ticket.ticket
-            return (getattr(t, 'adult_price', 0) or 0) - (getattr(t, 'child_price', 0) or 0)
+            # t = ticket.ticket
+            # return (getattr(t, 'adult_price', 0) or 0) - (getattr(t, 'child_price', 0) or 0)
 
     def _first_hotel_field(self, obj, field_name):
         """Helper to get field from first hotel detail"""
@@ -818,11 +898,7 @@ class PublicUmrahPackageHotelSummarySerializer(serializers.ModelSerializer):
             "check_in_date", 
             "check_out_date", 
             "number_of_nights",
-            "sharing_bed_selling_price",
-            "quaint_bed_selling_price",
-            "quad_bed_selling_price",
-            "triple_bed_selling_price",
-            "double_bed_selling_price",
+            
         ]
 
 
@@ -911,7 +987,7 @@ class PublicUmrahPackageListSerializer(serializers.ModelSerializer):
             "food_selling_price",
             "makkah_ziyarat_selling_price",
             "madinah_ziyarat_selling_price",
-            "transport_selling_price",
+            
         ]
 
     def get_price(self, obj):
@@ -923,6 +999,44 @@ class PublicUmrahPackageListSerializer(serializers.ModelSerializer):
             return getattr(obj, 'adault_visa_selling_price', 0) + (obj.adault_service_charge or 0)
         except Exception:
             return None
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['package_selling_prices'] = {
+            "sharing": instance.sharing_selling_price,
+            "double": instance.double_selling_price,
+            "triple": instance.triple_selling_price,
+            "quad": instance.quad_selling_price,
+            "quint": instance.quaint_selling_price,
+            # Child Prices
+            "child_without_bed": instance.child_without_bed_selling_price,
+            "child_with_bed": {
+                 "sharing": instance.child_sharing_selling_price,
+                 "double": instance.child_double_selling_price,
+                 "triple": instance.child_triple_selling_price,
+                 "quad": instance.child_quad_selling_price,
+                 "quint": instance.child_quaint_selling_price,
+            },
+            "infant": instance.infant_package_selling_price,
+        }
+        data['package_purchase_prices'] = {
+            "sharing": instance.sharing_purchase_price,
+            "double": instance.double_purchase_price,
+            "triple": instance.triple_purchase_price,
+            "quad": instance.quad_purchase_price,
+            "quint": instance.quaint_purchase_price,
+            # Child Prices
+            "child_without_bed": instance.child_without_bed_purchase_price,
+            "child_with_bed": {
+                 "sharing": instance.child_sharing_purchase_price,
+                 "double": instance.child_double_purchase_price,
+                 "triple": instance.child_triple_purchase_price,
+                 "quad": instance.child_quad_purchase_price,
+                 "quint": instance.child_quaint_purchase_price,
+            },
+            "infant": instance.infant_package_purchase_price,
+        }
+        return data
 
 
 class PublicUmrahPackageDetailSerializer(ModelSerializer):
@@ -953,7 +1067,7 @@ class PublicUmrahPackageDetailSerializer(ModelSerializer):
             "food_selling_price",
             "makkah_ziyarat_selling_price",
             "madinah_ziyarat_selling_price",
-            "transport_selling_price",
+            
             "hotels",
             "transport",
             "tickets",
@@ -968,6 +1082,44 @@ class PublicUmrahPackageDetailSerializer(ModelSerializer):
             return getattr(obj, 'adault_visa_selling_price', 0) + (obj.adault_service_charge or 0)
         except Exception:
             return None
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        data['package_selling_prices'] = {
+            "sharing": instance.sharing_selling_price,
+            "double": instance.double_selling_price,
+            "triple": instance.triple_selling_price,
+            "quad": instance.quad_selling_price,
+            "quint": instance.quaint_selling_price,
+            # Child Prices
+            "child_without_bed": instance.child_without_bed_selling_price,
+            "child_with_bed": {
+                 "sharing": instance.child_sharing_selling_price,
+                 "double": instance.child_double_selling_price,
+                 "triple": instance.child_triple_selling_price,
+                 "quad": instance.child_quad_selling_price,
+                 "quint": instance.child_quaint_selling_price,
+            },
+            "infant": instance.infant_package_selling_price,
+        }
+        data['package_purchase_prices'] = {
+            "sharing": instance.sharing_purchase_price,
+            "double": instance.double_purchase_price,
+            "triple": instance.triple_purchase_price,
+            "quad": instance.quad_purchase_price,
+            "quint": instance.quaint_purchase_price,
+             # Child Prices
+            "child_without_bed": instance.child_without_bed_purchase_price,
+            "child_with_bed": {
+                 "sharing": instance.child_sharing_purchase_price,
+                 "double": instance.child_double_purchase_price,
+                 "triple": instance.child_triple_purchase_price,
+                 "quad": instance.child_quad_purchase_price,
+                 "quint": instance.child_quaint_purchase_price,
+            },
+            "infant": instance.infant_package_purchase_price,
+        }
+        return data
 
     def get_adult_price(self, obj):
         # keep the original (typo'd) field name as the source
@@ -1052,9 +1204,7 @@ class CustomUmrahPackageSerializer(ModelSerializer):
     # agent_name = serializers.CharField(source="agent.username", read_only=True)
     agency_name = serializers.CharField(source="agency.name", read_only=True)
     hotel_details = CustomUmrahPackageHotelDetailsSerializer(many=True, required=False)
-    transport_details = CustomUmrahPackageTransportDetailsSerializer(
-        many=True, required=False
-    )
+    transport_details = CustomUmrahPackageTransportDetailsSerializer(many=True, required=False)
     ticket_details = CustomUmrahPackageTicketDetailsSerializer(
         many=True, required=False
     )

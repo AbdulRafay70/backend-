@@ -131,35 +131,37 @@ class TicketTripDetailsSerializer(serializers.ModelSerializer):
 class TicketSerializer(serializers.ModelSerializer):
     trip_details = TicketTripDetailsSerializer(many=True)
     stopover_details = TickerStopoverDetailsSerializer(many=True, required=False)
-    final_price = serializers.SerializerMethodField()
+    
+    # New selling price fields (Selling Price + Service Charge)
+    adult_selling_price = serializers.SerializerMethodField()
+    child_selling_price = serializers.SerializerMethodField()
+    infant_selling_price = serializers.SerializerMethodField()
 
     class Meta:
         model = Ticket
-        # keep all model fields for write operations but hide top-level `airline` in responses
         fields = "__all__"
     
-    def get_final_price(self, obj):
-        """Calculate final price with service charges for agents/employees"""
-        from service_charges.utils import calculate_ticket_service_charge
+    def _get_price_with_charges(self, obj, base_price):
+        """Helper to calculate price with service charges based on user type."""
+        result_price = base_price or 0
         
         request = self.context.get('request')
         if not request or not request.user.is_authenticated:
-            # Return base price for unauthenticated users
-            return obj.adult_price
+            return result_price
         
         try:
             user = request.user
-            # Safely get user profile and type
             if not hasattr(user, 'profile') or user.profile is None:
-                return obj.adult_price
+                return result_price
             
             user_type = getattr(user.profile, 'type', None)
             
-            # Only apply service charges for employees and Area Agency agents (NOT Full Agency)
+            # Full Agency -> NO Service Charge (return base price)
+            # Area Agency / Employee -> Apply Service Charge
+            
             if user_type in ['agent', 'subagent', 'employee']:
                 branch = None
                 
-                # Get branch - different logic for employees vs agents
                 if user_type == 'employee':
                     # Employees: get branch from user's branches
                     branch = user.branches.first()
@@ -167,28 +169,47 @@ class TicketSerializer(serializers.ModelSerializer):
                     # Agents: get branch from user's agency
                     agency = user.agencies.first()
                     if agency:
-                        # Check if agency is Area Agency (not Full Agency)
                         if agency.agency_type == 'Area Agency':
                             branch = agency.branch
                         else:
-                            # Full Agency - don't apply service charges
-                            return obj.adult_price
+                            # Full Agency - STRICTLY return base price
+                            return result_price
                 
                 if branch:
-                    result = calculate_ticket_service_charge(branch.id, obj.adult_price)
-                    return float(result['final_price'])
-        except Exception as e:
-            # If anything fails, return base price
+                    from service_charges.utils import calculate_ticket_service_charge
+                    # We pass the base_price. The utility returns a dict with 'final_price'
+                    res = calculate_ticket_service_charge(branch.id, result_price)
+                    return float(res['final_price'])
+                    
+        except Exception:
             pass
-        
-        # Admin and others see base price
-        return obj.adult_price
+            
+        return result_price
 
+    def get_adult_selling_price(self, obj):
+        return self._get_price_with_charges(obj, obj.adult_fare)
+
+    def get_child_selling_price(self, obj):
+        return self._get_price_with_charges(obj, obj.child_fare)
+
+    def get_infant_selling_price(self, obj):
+        return self._get_price_with_charges(obj, obj.infant_fare)
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
-        # remove top-level airline from API responses; nested trip/stopover entries include airline info
+        # remove top-level airline from API responses
         data.pop('airline', None)
+        
+        # remove legacy duplicate fields and raw fare fields to clean up response
+        # User requested removals: adult_fare, adult_price, final_price, child_fare, infant_fare
+        fields_to_remove = [
+            'adult_price', 'child_price', 'infant_price', 
+            'adult_fare', 'child_fare', 'infant_fare',
+            'weight', 'pieces', 'final_price'
+        ]
+        for field in fields_to_remove:
+            data.pop(field, None)
+            
         return data
 
     def validate(self, data):
@@ -1083,26 +1104,24 @@ class TickerStopoverDetailsListSerializer(serializers.ModelSerializer):
 
 
 class TicketListSerializer(serializers.ModelSerializer):
-    # build trip_details entries including parent ticket's flight_number
     trip_details = serializers.SerializerMethodField()
     stopover_details = TickerStopoverDetailsListSerializer(many=True, read_only=True)
-    # expose adult_price for compatibility with frontend which expects ticket.adult_price
-    adult_price = serializers.SerializerMethodField()
-    final_price = serializers.SerializerMethodField()
+    
+    # New selling price fields
+    adult_selling_price = serializers.SerializerMethodField()
+    child_selling_price = serializers.SerializerMethodField()
+    infant_selling_price = serializers.SerializerMethodField()
 
     class Meta:
         model = Ticket
-        # explicit list of fields the user requested (trimmed)
         fields = (
             "id",
             "flight_number",
             "trip_details",
             "stopover_details",
-            "adult_fare",
-            "adult_price",
-            "final_price",
-            "child_fare",
-            "infant_fare",
+            "adult_selling_price",
+            "child_selling_price",
+            "infant_selling_price",
             "baggage_weight",
             "baggage_pieces",
             "is_refundable",
@@ -1124,12 +1143,8 @@ class TicketListSerializer(serializers.ModelSerializer):
         )
 
     def get_trip_details(self, obj):
-        # obj is a Ticket instance; construct trip detail dicts including ticket.flight_number
         details = []
-        # Always iterate the related manager queryset to avoid TypeError
         for td in obj.trip_details.all():
-            # prefer the per-trip flight_number stored on the TicketTripDetails record
-            # (if the frontend provided a numeric suffix and it was stored there)
             fn = getattr(td, 'flight_number', None) or getattr(obj, 'flight_number', None)
             details.append({
                 'airline': {"id": getattr(obj, 'airline_id', None), "name": getattr(obj.airline, 'name', None)},
@@ -1141,28 +1156,27 @@ class TicketListSerializer(serializers.ModelSerializer):
             })
         return details
 
-    def get_final_price(self, obj):
-        """Calculate final price with service charges for agents/employees"""
-        from service_charges.utils import calculate_ticket_service_charge
+    def _get_price_with_charges(self, obj, base_price):
+        """Helper to calculate price with service charges based on user type."""
+        result_price = base_price or 0
         
         request = self.context.get('request')
         if not request or not request.user.is_authenticated:
-            # Return base price for unauthenticated users
-            return obj.adult_price
+            return result_price
         
         try:
             user = request.user
-            # Safely get user profile and type
             if not hasattr(user, 'profile') or user.profile is None:
-                return obj.adult_price
+                return result_price
             
             user_type = getattr(user.profile, 'type', None)
             
-            # Only apply service charges for employees and Area Agency agents (NOT Full Agency)
+            # Full Agency -> NO Service Charge (return base price)
+            # Area Agency / Employee -> Apply Service Charge
+            
             if user_type in ['agent', 'subagent', 'employee']:
                 branch = None
                 
-                # Get branch - different logic for employees vs agents
                 if user_type == 'employee':
                     # Employees: get branch from user's branches
                     branch = user.branches.first()
@@ -1170,23 +1184,28 @@ class TicketListSerializer(serializers.ModelSerializer):
                     # Agents: get branch from user's agency
                     agency = user.agencies.first()
                     if agency:
-                        # Check if agency is Area Agency (not Full Agency)
                         if agency.agency_type == 'Area Agency':
                             branch = agency.branch
                         else:
-                            # Full Agency - don't apply service charges
-                            return obj.adult_price
+                            # Full Agency - STRICTLY return base price
+                            return result_price
                 
                 if branch:
-                    result = calculate_ticket_service_charge(branch.id, obj.adult_price)
-                    return float(result['final_price'])
-        except Exception as e:
-            # If anything fails, return base price
+                    from service_charges.utils import calculate_ticket_service_charge
+                    # We pass the base_price. The utility returns a dict with 'final_price'
+                    res = calculate_ticket_service_charge(branch.id, result_price)
+                    return float(res['final_price'])
+                    
+        except Exception:
             pass
-        
-        # Admin and others see base price
-        return obj.adult_price
-    
-    def get_adult_price(self, obj):
-        # prefer explicit adult_price, then adult_fare, then adult_price purchase fallback
-        return getattr(obj, 'adult_price', None) or getattr(obj, 'adult_fare', None) or getattr(obj, 'adult_purchase_price', None)
+            
+        return result_price
+
+    def get_adult_selling_price(self, obj):
+        return self._get_price_with_charges(obj, getattr(obj, 'adult_fare', 0))
+
+    def get_child_selling_price(self, obj):
+        return self._get_price_with_charges(obj, getattr(obj, 'child_fare', 0))
+
+    def get_infant_selling_price(self, obj):
+        return self._get_price_with_charges(obj, getattr(obj, 'infant_fare', 0))

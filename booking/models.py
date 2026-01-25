@@ -967,6 +967,22 @@ class BookingTicketDetails(models.Model):
     is_meal_included = models.BooleanField(default=False)
     is_refundable = models.BooleanField(default=False)
     pnr = models.CharField(max_length=100)
+    
+    # Selling Prices (What the customer pays)
+    child_selling_price = models.FloatField(default=0)
+    infant_selling_price = models.FloatField(default=0)
+    adult_selling_price = models.FloatField(default=0)
+
+    # Purchase Prices (Cost to the agency)
+    adult_purchase_price = models.FloatField(default=0)
+    child_purchase_price = models.FloatField(default=0)
+    infant_purchase_price = models.FloatField(default=0)
+
+    # Profit & Loss
+    profit = models.FloatField(default=0)
+    loss = models.FloatField(default=0)
+
+    # Legacy fields (kept for backward compatibility, mapped to selling price typically)
     child_price = models.FloatField(default=0)
     infant_price = models.FloatField(default=0)
     adult_price = models.FloatField(default=0)

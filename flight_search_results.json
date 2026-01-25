@@ -1,0 +1,5324 @@
+[
+  {
+    "requestDetails": {
+      "count": "3",
+      "service": "FlightRS"
+    }
+  },
+  {
+    "response": {
+      "content": {
+        "command": "FlightSearchRS",
+        "error": {
+          "message": "FLIGHTS NOT_AVAILABLE"
+        }
+      },
+      "hubUuid": "S4QRuZaVqKN4bUrE_cF7jMde51nQkvcS6i5FC5-m",
+      "node": {
+        "currency": "PKR",
+        "agencyCode": "CLI_11078"
+      },
+      "selectCredential": {
+        "id": 137
+      },
+      "supplierCode": 17,
+      "service": "FlightRS"
+    }
+  },
+  {
+    "response": {
+      "content": {
+        "command": "FlightSearchRS",
+        "totalPages": "2",
+        "currentPage": "1",
+        "searchResponse": {
+          "flightIndex": [
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": true,
+              "brandedFareSeparate": true,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "1"
+              },
+              "fare": {
+                "baseFare": "20330.00",
+                "tax": "35175.00",
+                "total": 55505.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "20330.0",
+                    "tax": "35175.0",
+                    "total": "55505.00",
+                    "fareBasis": "TCMOPK"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "0940",
+                    "issuingAirline": "WY"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1130",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1225"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "MCT"
+                        },
+                        "companyId": {
+                          "mktgAirline": "WY",
+                          "operAirline": "WY"
+                        },
+                        "flightNo": "324",
+                        "eqpType": "738",
+                        "rbd": "T",
+                        "duration": "0155",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "20",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1855",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "2010"
+                        },
+                        "location": {
+                          "depAirport": "MCT",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "WY",
+                          "operAirline": "WY"
+                        },
+                        "flightNo": "623",
+                        "eqpType": "7M8",
+                        "rbd": "T",
+                        "duration": "0115",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "20",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKA9IQQBAAAAA==|DurmnvUqWDKA/IQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "738",
+                  "0-1": "7M8"
+                },
+                "depTerminalMap": {
+                  "0-0": "M"
+                },
+                "arrTerminalMap": {
+                  "0-1": "1"
+                },
+                "issuingAirline": "WY",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKA9IQQBAAAAA==": "S",
+                  "DurmnvUqWDKA/IQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": true,
+              "brandedFareSeparate": true,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "2"
+              },
+              "fare": {
+                "baseFare": "20330.00",
+                "tax": "35175.00",
+                "total": 55505.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "20330.0",
+                    "tax": "35175.0",
+                    "total": "55505.00",
+                    "fareBasis": "TCMOPK"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "1105",
+                    "issuingAirline": "WY"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1130",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1225"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "MCT"
+                        },
+                        "companyId": {
+                          "mktgAirline": "WY",
+                          "operAirline": "WY"
+                        },
+                        "flightNo": "324",
+                        "eqpType": "738",
+                        "rbd": "T",
+                        "duration": "0155",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "20",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "2020",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "2135"
+                        },
+                        "location": {
+                          "depAirport": "MCT",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "WY",
+                          "operAirline": "WY"
+                        },
+                        "flightNo": "611",
+                        "eqpType": "7M8",
+                        "rbd": "T",
+                        "duration": "0115",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "20",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKA9IQQBAAAAA==|DurmnvUqWDKAeJQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "738",
+                  "0-1": "7M8"
+                },
+                "depTerminalMap": {
+                  "0-0": "M"
+                },
+                "arrTerminalMap": {
+                  "0-1": "1"
+                },
+                "issuingAirline": "WY",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKA9IQQBAAAAA==": "S",
+                  "DurmnvUqWDKAeJQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": true,
+              "brandedFareSeparate": true,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "3"
+              },
+              "fare": {
+                "baseFare": "20330.00",
+                "tax": "35175.00",
+                "total": 55505.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "20330.0",
+                    "tax": "35175.0",
+                    "total": "55505.00",
+                    "fareBasis": "TCMOPK"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "2330",
+                    "issuingAirline": "WY"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1130",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1225"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "MCT"
+                        },
+                        "companyId": {
+                          "mktgAirline": "WY",
+                          "operAirline": "WY"
+                        },
+                        "flightNo": "324",
+                        "eqpType": "738",
+                        "rbd": "T",
+                        "duration": "0155",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "20",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "11-02-2026",
+                          "depTime": "0845",
+                          "arrDate": "11-02-2026",
+                          "arrTime": "1000"
+                        },
+                        "location": {
+                          "depAirport": "MCT",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "WY",
+                          "operAirline": "WY"
+                        },
+                        "flightNo": "603",
+                        "eqpType": "7M8",
+                        "rbd": "T",
+                        "duration": "0115",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "20",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKA9IQQBAAAAA==|DurmnvUqWDKAZJQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "738",
+                  "0-1": "7M8"
+                },
+                "depTerminalMap": {
+                  "0-0": "M"
+                },
+                "arrTerminalMap": {
+                  "0-1": "1"
+                },
+                "issuingAirline": "WY",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKA9IQQBAAAAA==": "S",
+                  "DurmnvUqWDKAZJQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": true,
+              "brandedFareSeparate": true,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "4"
+              },
+              "fare": {
+                "baseFare": "23150.00",
+                "tax": "35175.00",
+                "total": 58325.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "23150.0",
+                    "tax": "35175.0",
+                    "total": "58325.00",
+                    "fareBasis": "RCMOPK"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "0525",
+                    "issuingAirline": "WY"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1130",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1225"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "MCT"
+                        },
+                        "companyId": {
+                          "mktgAirline": "WY",
+                          "operAirline": "WY"
+                        },
+                        "flightNo": "324",
+                        "eqpType": "738",
+                        "rbd": "R",
+                        "duration": "0155",
+                        "cabin": "C",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "20",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1440",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1555"
+                        },
+                        "location": {
+                          "depAirport": "MCT",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "WY",
+                          "operAirline": "WY"
+                        },
+                        "flightNo": "609",
+                        "eqpType": "7M8",
+                        "rbd": "R",
+                        "duration": "0115",
+                        "cabin": "C",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "20",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKA9IQQBAAAAA==|DurmnvUqWDKAuJQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "738",
+                  "0-1": "7M8"
+                },
+                "depTerminalMap": {
+                  "0-0": "M"
+                },
+                "arrTerminalMap": {
+                  "0-1": "1"
+                },
+                "issuingAirline": "WY",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKA9IQQBAAAAA==": "S",
+                  "DurmnvUqWDKAuJQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": false,
+              "brandedFareSeparate": false,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "5"
+              },
+              "fare": {
+                "baseFare": "45740.00",
+                "tax": "19535.00",
+                "total": 65275.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "45740.0",
+                    "tax": "19535.0",
+                    "total": "65275.00",
+                    "fareBasis": "HOL7PK1"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "0225",
+                    "issuingAirline": "FZ"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "0330",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "0455"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "2"
+                        },
+                        "companyId": {
+                          "mktgAirline": "FZ",
+                          "operAirline": "FZ"
+                        },
+                        "flightNo": "332",
+                        "eqpType": "73H",
+                        "rbd": "H",
+                        "duration": "0225",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKA+JQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "73H"
+                },
+                "depTerminalMap": {
+                  "0-0": "M"
+                },
+                "arrTerminalMap": {
+                  "0-0": "2"
+                },
+                "issuingAirline": "FZ",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKA+JQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": false,
+              "brandedFareSeparate": false,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "6"
+              },
+              "fare": {
+                "baseFare": "45740.00",
+                "tax": "19535.00",
+                "total": 65275.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "45740.0",
+                    "tax": "19535.0",
+                    "total": "65275.00",
+                    "fareBasis": "HOL7PK1"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "0225",
+                    "issuingAirline": "FZ"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1000",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1125"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "2"
+                        },
+                        "companyId": {
+                          "mktgAirline": "FZ",
+                          "operAirline": "FZ"
+                        },
+                        "flightNo": "334",
+                        "eqpType": "7M8",
+                        "rbd": "H",
+                        "duration": "0225",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAVKQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "7M8"
+                },
+                "depTerminalMap": {
+                  "0-0": "M"
+                },
+                "arrTerminalMap": {
+                  "0-0": "2"
+                },
+                "issuingAirline": "FZ",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAVKQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": false,
+              "brandedFareSeparate": false,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "7"
+              },
+              "fare": {
+                "baseFare": "45740.00",
+                "tax": "19535.00",
+                "total": 65275.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "45740.0",
+                    "tax": "19535.0",
+                    "total": "65275.00",
+                    "fareBasis": "HOL7PK1"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "0230",
+                    "issuingAirline": "FZ"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1640",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1810"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "2"
+                        },
+                        "companyId": {
+                          "mktgAirline": "FZ",
+                          "operAirline": "FZ"
+                        },
+                        "flightNo": "336",
+                        "eqpType": "7M8",
+                        "rbd": "H",
+                        "duration": "0230",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAPKQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "7M8"
+                },
+                "depTerminalMap": {
+                  "0-0": "M"
+                },
+                "arrTerminalMap": {
+                  "0-0": "2"
+                },
+                "issuingAirline": "FZ",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAPKQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": true,
+              "brandedFareSeparate": true,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "8"
+              },
+              "fare": {
+                "baseFare": "28520.00",
+                "tax": "38858.00",
+                "total": 67378.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "28520.0",
+                    "tax": "38858.0",
+                    "total": "67378.00",
+                    "fareBasis": "SOW1PK"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "2420",
+                    "issuingAirline": "UL"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1750",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "2145"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "CMB"
+                        },
+                        "companyId": {
+                          "mktgAirline": "UL",
+                          "operAirline": "UL"
+                        },
+                        "flightNo": "184",
+                        "eqpType": "320",
+                        "rbd": "S",
+                        "duration": "0325",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "11-02-2026",
+                          "depTime": "1400",
+                          "arrDate": "11-02-2026",
+                          "arrTime": "1710"
+                        },
+                        "location": {
+                          "depAirport": "CMB",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "UL",
+                          "operAirline": "UL"
+                        },
+                        "flightNo": "231",
+                        "eqpType": "320",
+                        "rbd": "S",
+                        "duration": "0440",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAhKQQBAAAAA==|DurmnvUqWDKAjKQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "320",
+                  "0-1": "320"
+                },
+                "depTerminalMap": {
+                  "0-0": "M"
+                },
+                "arrTerminalMap": {
+                  "0-1": "1"
+                },
+                "issuingAirline": "UL",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAhKQQBAAAAA==": "S",
+                  "DurmnvUqWDKAjKQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": true,
+              "brandedFareSeparate": true,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "9"
+              },
+              "fare": {
+                "baseFare": "28520.00",
+                "tax": "38858.00",
+                "total": 67378.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "28520.0",
+                    "tax": "38858.0",
+                    "total": "67378.00",
+                    "fareBasis": "SOW1PK"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "2900",
+                    "issuingAirline": "UL"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1750",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "2145"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "CMB"
+                        },
+                        "companyId": {
+                          "mktgAirline": "UL",
+                          "operAirline": "UL"
+                        },
+                        "flightNo": "184",
+                        "eqpType": "320",
+                        "rbd": "S",
+                        "duration": "0325",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "11-02-2026",
+                          "depTime": "1840",
+                          "arrDate": "11-02-2026",
+                          "arrTime": "2150"
+                        },
+                        "location": {
+                          "depAirport": "CMB",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "UL",
+                          "operAirline": "UL"
+                        },
+                        "flightNo": "225",
+                        "eqpType": "333",
+                        "rbd": "S",
+                        "duration": "0440",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAhKQQBAAAAA==|DurmnvUqWDKA0KQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "320",
+                  "0-1": "333"
+                },
+                "depTerminalMap": {
+                  "0-0": "M"
+                },
+                "arrTerminalMap": {
+                  "0-1": "1"
+                },
+                "issuingAirline": "UL",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKA0KQQBAAAAA==": "S",
+                  "DurmnvUqWDKAhKQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": false,
+              "brandedFareSeparate": false,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "10"
+              },
+              "fare": {
+                "baseFare": "49410.00",
+                "tax": "18205.00",
+                "total": 67615.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "49410.0",
+                    "tax": "18205.0",
+                    "total": "67615.00",
+                    "fareBasis": "VLOWPK"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "1245",
+                    "issuingAirline": "PK"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1600",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1755"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "arrAirport": "ISB"
+                        },
+                        "companyId": {
+                          "mktgAirline": "PK",
+                          "operAirline": "PK"
+                        },
+                        "flightNo": "308",
+                        "eqpType": "320",
+                        "rbd": "H",
+                        "duration": "0155",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "11-02-2026",
+                          "depTime": "0050",
+                          "arrDate": "11-02-2026",
+                          "arrTime": "0345"
+                        },
+                        "location": {
+                          "depAirport": "ISB",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "PK",
+                          "operAirline": "PK"
+                        },
+                        "flightNo": "233",
+                        "eqpType": "320",
+                        "rbd": "V",
+                        "duration": "0355",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKA7KQQBAAAAA==|DurmnvUqWDKA9KQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "320",
+                  "0-1": "320"
+                },
+                "arrTerminalMap": {
+                  "0-1": "1"
+                },
+                "issuingAirline": "PK",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKA9KQQBAAAAA==": "A",
+                  "DurmnvUqWDKA7KQQBAAAAA==": "A"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": false,
+              "brandedFareSeparate": false,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "11"
+              },
+              "fare": {
+                "baseFare": "49410.00",
+                "tax": "18205.00",
+                "total": 67615.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "49410.0",
+                    "tax": "18205.0",
+                    "total": "67615.00",
+                    "fareBasis": "VLOWPK"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "1515",
+                    "issuingAirline": "PK"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1330",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1525"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "arrAirport": "ISB"
+                        },
+                        "companyId": {
+                          "mktgAirline": "PK",
+                          "operAirline": "PK"
+                        },
+                        "flightNo": "368",
+                        "eqpType": "320",
+                        "rbd": "H",
+                        "duration": "0155",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "11-02-2026",
+                          "depTime": "0050",
+                          "arrDate": "11-02-2026",
+                          "arrTime": "0345"
+                        },
+                        "location": {
+                          "depAirport": "ISB",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "PK",
+                          "operAirline": "PK"
+                        },
+                        "flightNo": "233",
+                        "eqpType": "320",
+                        "rbd": "V",
+                        "duration": "0355",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAVLQQBAAAAA==|DurmnvUqWDKA9KQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "320",
+                  "0-1": "320"
+                },
+                "arrTerminalMap": {
+                  "0-1": "1"
+                },
+                "issuingAirline": "PK",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAVLQQBAAAAA==": "A",
+                  "DurmnvUqWDKA9KQQBAAAAA==": "A"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": false,
+              "brandedFareSeparate": false,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "12"
+              },
+              "fare": {
+                "baseFare": "49410.00",
+                "tax": "18205.00",
+                "total": 67615.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "49410.0",
+                    "tax": "18205.0",
+                    "total": "67615.00",
+                    "fareBasis": "VLOWPK"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "2145",
+                    "issuingAirline": "PK"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "0700",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "0855"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "arrAirport": "ISB"
+                        },
+                        "companyId": {
+                          "mktgAirline": "PK",
+                          "operAirline": "PK"
+                        },
+                        "flightNo": "300",
+                        "eqpType": "320",
+                        "rbd": "H",
+                        "duration": "0155",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "11-02-2026",
+                          "depTime": "0050",
+                          "arrDate": "11-02-2026",
+                          "arrTime": "0345"
+                        },
+                        "location": {
+                          "depAirport": "ISB",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "PK",
+                          "operAirline": "PK"
+                        },
+                        "flightNo": "233",
+                        "eqpType": "320",
+                        "rbd": "V",
+                        "duration": "0355",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAPLQQBAAAAA==|DurmnvUqWDKA9KQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "320",
+                  "0-1": "320"
+                },
+                "arrTerminalMap": {
+                  "0-1": "1"
+                },
+                "issuingAirline": "PK",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAPLQQBAAAAA==": "A",
+                  "DurmnvUqWDKA9KQQBAAAAA==": "A"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": false,
+              "brandedFareSeparate": false,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "13"
+              },
+              "fare": {
+                "baseFare": "56460.00",
+                "tax": "19535.00",
+                "total": 75995.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "56460.0",
+                    "tax": "19535.0",
+                    "total": "75995.00",
+                    "fareBasis": "KOL7PK1"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "0215",
+                    "issuingAirline": "FZ"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "2355",
+                          "arrDate": "11-02-2026",
+                          "arrTime": "0110"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "2"
+                        },
+                        "companyId": {
+                          "mktgAirline": "FZ",
+                          "operAirline": "FZ"
+                        },
+                        "flightNo": "330",
+                        "eqpType": "7M8",
+                        "rbd": "K",
+                        "duration": "0215",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAiLQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "7M8"
+                },
+                "depTerminalMap": {
+                  "0-0": "M"
+                },
+                "arrTerminalMap": {
+                  "0-0": "2"
+                },
+                "issuingAirline": "FZ",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAiLQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": true,
+              "brandedFareSeparate": true,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "14"
+              },
+              "fare": {
+                "baseFare": "68040.00",
+                "tax": "26703.00",
+                "total": 94743.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "68040.0",
+                    "tax": "26703.0",
+                    "total": "94743.00",
+                    "fareBasis": "TAOXPKB4"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "0830",
+                    "issuingAirline": "SV"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1330",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1520"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "RUH",
+                          "arrTerminal": "4"
+                        },
+                        "companyId": {
+                          "mktgAirline": "SV",
+                          "operAirline": "SV"
+                        },
+                        "flightNo": "709",
+                        "eqpType": "330",
+                        "rbd": "T",
+                        "duration": "0350",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "1",
+                            "unit": "PC"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1805",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "2100"
+                        },
+                        "location": {
+                          "depAirport": "RUH",
+                          "depTerminal": "4",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "SV",
+                          "operAirline": "SV"
+                        },
+                        "flightNo": "552",
+                        "eqpType": "330",
+                        "rbd": "T",
+                        "duration": "0155",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "1",
+                            "unit": "PC"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAvLQQBAAAAA==|DurmnvUqWDKAxLQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "330",
+                  "0-1": "330"
+                },
+                "depTerminalMap": {
+                  "0-0": "M",
+                  "0-1": "4"
+                },
+                "arrTerminalMap": {
+                  "0-0": "4",
+                  "0-1": "1"
+                },
+                "issuingAirline": "SV",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAvLQQBAAAAA==": "S",
+                  "DurmnvUqWDKAxLQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": true,
+              "brandedFareSeparate": true,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "15"
+              },
+              "fare": {
+                "baseFare": "68040.00",
+                "tax": "26703.00",
+                "total": 94743.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "68040.0",
+                    "tax": "26703.0",
+                    "total": "94743.00",
+                    "fareBasis": "TAOXPKB4"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "1240",
+                    "issuingAirline": "SV"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1330",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1520"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "RUH",
+                          "arrTerminal": "4"
+                        },
+                        "companyId": {
+                          "mktgAirline": "SV",
+                          "operAirline": "SV"
+                        },
+                        "flightNo": "709",
+                        "eqpType": "330",
+                        "rbd": "T",
+                        "duration": "0350",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "1",
+                            "unit": "PC"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "2215",
+                          "arrDate": "11-02-2026",
+                          "arrTime": "0110"
+                        },
+                        "location": {
+                          "depAirport": "RUH",
+                          "depTerminal": "4",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "SV",
+                          "operAirline": "SV"
+                        },
+                        "flightNo": "584",
+                        "eqpType": "321",
+                        "rbd": "T",
+                        "duration": "0155",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "1",
+                            "unit": "PC"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAvLQQBAAAAA==|DurmnvUqWDKAPMQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "330",
+                  "0-1": "321"
+                },
+                "depTerminalMap": {
+                  "0-0": "M",
+                  "0-1": "4"
+                },
+                "arrTerminalMap": {
+                  "0-0": "4",
+                  "0-1": "1"
+                },
+                "issuingAirline": "SV",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAPMQQBAAAAA==": "S",
+                  "DurmnvUqWDKAvLQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": true,
+              "brandedFareSeparate": true,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "16"
+              },
+              "fare": {
+                "baseFare": "68040.00",
+                "tax": "26703.00",
+                "total": 94743.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "68040.0",
+                    "tax": "26703.0",
+                    "total": "94743.00",
+                    "fareBasis": "TAOXPKB4"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "1430",
+                    "issuingAirline": "SV"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1330",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1520"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "RUH",
+                          "arrTerminal": "4"
+                        },
+                        "companyId": {
+                          "mktgAirline": "SV",
+                          "operAirline": "SV"
+                        },
+                        "flightNo": "709",
+                        "eqpType": "330",
+                        "rbd": "T",
+                        "duration": "0350",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "1",
+                            "unit": "PC"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "11-02-2026",
+                          "depTime": "0005",
+                          "arrDate": "11-02-2026",
+                          "arrTime": "0300"
+                        },
+                        "location": {
+                          "depAirport": "RUH",
+                          "depTerminal": "4",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "SV",
+                          "operAirline": "SV"
+                        },
+                        "flightNo": "592",
+                        "eqpType": "321",
+                        "rbd": "T",
+                        "duration": "0155",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "1",
+                            "unit": "PC"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAvLQQBAAAAA==|DurmnvUqWDKAdMQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "330",
+                  "0-1": "321"
+                },
+                "depTerminalMap": {
+                  "0-0": "M",
+                  "0-1": "4"
+                },
+                "arrTerminalMap": {
+                  "0-0": "4",
+                  "0-1": "1"
+                },
+                "issuingAirline": "SV",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAdMQQBAAAAA==": "S",
+                  "DurmnvUqWDKAvLQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": true,
+              "brandedFareSeparate": true,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "17"
+              },
+              "fare": {
+                "baseFare": "68040.00",
+                "tax": "26703.00",
+                "total": 94743.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "68040.0",
+                    "tax": "26703.0",
+                    "total": "94743.00",
+                    "fareBasis": "TAOXPKB4"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "1055",
+                    "issuingAirline": "SV"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "0305",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "0540"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "JED",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "SV",
+                          "operAirline": "SV"
+                        },
+                        "flightNo": "705",
+                        "eqpType": "773",
+                        "rbd": "T",
+                        "duration": "0435",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "1",
+                            "unit": "PC"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "4",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "0915",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1300"
+                        },
+                        "location": {
+                          "depAirport": "JED",
+                          "depTerminal": "1",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "SV",
+                          "operAirline": "SV"
+                        },
+                        "flightNo": "568",
+                        "eqpType": "321",
+                        "rbd": "T",
+                        "duration": "0245",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "1",
+                            "unit": "PC"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAHMQQBAAAAA==|DurmnvUqWDKArMQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "773",
+                  "0-1": "321"
+                },
+                "depTerminalMap": {
+                  "0-0": "M",
+                  "0-1": "1"
+                },
+                "arrTerminalMap": {
+                  "0-0": "1",
+                  "0-1": "1"
+                },
+                "issuingAirline": "SV",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAHMQQBAAAAA==": "A",
+                  "DurmnvUqWDKArMQQBAAAAA==": "A"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": true,
+              "brandedFareSeparate": true,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "18"
+              },
+              "fare": {
+                "baseFare": "68040.00",
+                "tax": "26703.00",
+                "total": 94743.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "68040.0",
+                    "tax": "26703.0",
+                    "total": "94743.00",
+                    "fareBasis": "TAOXPKB4"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "1355",
+                    "issuingAirline": "SV"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "0305",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "0540"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "JED",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "SV",
+                          "operAirline": "SV"
+                        },
+                        "flightNo": "705",
+                        "eqpType": "773",
+                        "rbd": "T",
+                        "duration": "0435",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "1",
+                            "unit": "PC"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "4",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1215",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1600"
+                        },
+                        "location": {
+                          "depAirport": "JED",
+                          "depTerminal": "1",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "SV",
+                          "operAirline": "SV"
+                        },
+                        "flightNo": "588",
+                        "eqpType": "330",
+                        "rbd": "T",
+                        "duration": "0245",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "1",
+                            "unit": "PC"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAHMQQBAAAAA==|DurmnvUqWDKA5MQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "773",
+                  "0-1": "330"
+                },
+                "depTerminalMap": {
+                  "0-0": "M",
+                  "0-1": "1"
+                },
+                "arrTerminalMap": {
+                  "0-0": "1",
+                  "0-1": "1"
+                },
+                "issuingAirline": "SV",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKA5MQQBAAAAA==": "A",
+                  "DurmnvUqWDKAHMQQBAAAAA==": "A"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": true,
+              "brandedFareSeparate": true,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "19"
+              },
+              "fare": {
+                "baseFare": "68040.00",
+                "tax": "26703.00",
+                "total": 94743.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "68040.0",
+                    "tax": "26703.0",
+                    "total": "94743.00",
+                    "fareBasis": "TAOXPKB4"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "1725",
+                    "issuingAirline": "SV"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "0305",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "0540"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "JED",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "SV",
+                          "operAirline": "SV"
+                        },
+                        "flightNo": "705",
+                        "eqpType": "773",
+                        "rbd": "T",
+                        "duration": "0435",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "1",
+                            "unit": "PC"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "4",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1545",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1930"
+                        },
+                        "location": {
+                          "depAirport": "JED",
+                          "depTerminal": "1",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "SV",
+                          "operAirline": "SV"
+                        },
+                        "flightNo": "550",
+                        "eqpType": "321",
+                        "rbd": "T",
+                        "duration": "0245",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "1",
+                            "unit": "PC"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAHMQQBAAAAA==|DurmnvUqWDKAKMQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "773",
+                  "0-1": "321"
+                },
+                "depTerminalMap": {
+                  "0-0": "M",
+                  "0-1": "1"
+                },
+                "arrTerminalMap": {
+                  "0-0": "1",
+                  "0-1": "1"
+                },
+                "issuingAirline": "SV",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAKMQQBAAAAA==": "A",
+                  "DurmnvUqWDKAHMQQBAAAAA==": "A"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": true,
+              "brandedFareSeparate": true,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "20"
+              },
+              "fare": {
+                "baseFare": "77450.00",
+                "tax": "17685.00",
+                "total": 95135.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "77450.0",
+                    "tax": "17685.0",
+                    "total": "95135.00",
+                    "fareBasis": "KSSOSPK1"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "0215",
+                    "issuingAirline": "EK"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "0300",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "0415"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "3"
+                        },
+                        "companyId": {
+                          "mktgAirline": "EK",
+                          "operAirline": "EK"
+                        },
+                        "flightNo": "607",
+                        "eqpType": "77L",
+                        "rbd": "K",
+                        "duration": "0215",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAINQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "77L"
+                },
+                "arrTerminalMap": {
+                  "0-0": "3"
+                },
+                "issuingAirline": "EK",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAINQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": true,
+              "brandedFareSeparate": true,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "21"
+              },
+              "fare": {
+                "baseFare": "77450.00",
+                "tax": "17685.00",
+                "total": 95135.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "77450.0",
+                    "tax": "17685.0",
+                    "total": "95135.00",
+                    "fareBasis": "KSSOSPK1"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "0220",
+                    "issuingAirline": "EK"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1200",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1320"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "3"
+                        },
+                        "companyId": {
+                          "mktgAirline": "EK",
+                          "operAirline": "EK"
+                        },
+                        "flightNo": "601",
+                        "eqpType": "77W",
+                        "rbd": "K",
+                        "duration": "0220",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAbNQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "77W"
+                },
+                "arrTerminalMap": {
+                  "0-0": "3"
+                },
+                "issuingAirline": "EK",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAbNQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": true,
+              "brandedFareSeparate": true,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "22"
+              },
+              "fare": {
+                "baseFare": "77450.00",
+                "tax": "17685.00",
+                "total": 95135.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "77450.0",
+                    "tax": "17685.0",
+                    "total": "95135.00",
+                    "fareBasis": "KSSOSPK1"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "0225",
+                    "issuingAirline": "EK"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "2240",
+                          "arrDate": "11-02-2026",
+                          "arrTime": "0005"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "3"
+                        },
+                        "companyId": {
+                          "mktgAirline": "EK",
+                          "operAirline": "EK"
+                        },
+                        "flightNo": "603",
+                        "eqpType": "77W",
+                        "rbd": "K",
+                        "duration": "0225",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAWNQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "77W"
+                },
+                "arrTerminalMap": {
+                  "0-0": "3"
+                },
+                "issuingAirline": "EK",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAWNQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": true,
+              "brandedFareSeparate": true,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "23"
+              },
+              "fare": {
+                "baseFare": "55340.00",
+                "tax": "47037.00",
+                "total": 102377.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "55340.0",
+                    "tax": "47037.0",
+                    "total": "102377.00",
+                    "fareBasis": "VBLIT3PK"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "0830",
+                    "issuingAirline": "GF"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "2005",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "2105"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "arrAirport": "BAH"
+                        },
+                        "companyId": {
+                          "mktgAirline": "GF",
+                          "operAirline": "GF"
+                        },
+                        "flightNo": "753",
+                        "eqpType": "32Q",
+                        "rbd": "V",
+                        "duration": "0300",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "25",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "11-02-2026",
+                          "depTime": "0120",
+                          "arrDate": "11-02-2026",
+                          "arrTime": "0335"
+                        },
+                        "location": {
+                          "depAirport": "BAH",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "GF",
+                          "operAirline": "GF"
+                        },
+                        "flightNo": "500",
+                        "eqpType": "320",
+                        "rbd": "V",
+                        "duration": "0115",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "25",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAlNQQBAAAAA==|DurmnvUqWDKAnNQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "32Q",
+                  "0-1": "320"
+                },
+                "arrTerminalMap": {
+                  "0-1": "1"
+                },
+                "issuingAirline": "GF",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAnNQQBAAAAA==": "S",
+                  "DurmnvUqWDKAlNQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": true,
+              "brandedFareSeparate": true,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "24"
+              },
+              "fare": {
+                "baseFare": "55340.00",
+                "tax": "47037.00",
+                "total": 102377.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "55340.0",
+                    "tax": "47037.0",
+                    "total": "102377.00",
+                    "fareBasis": "VBLIT3PK"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "2310",
+                    "issuingAirline": "GF"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "2005",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "2105"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "arrAirport": "BAH"
+                        },
+                        "companyId": {
+                          "mktgAirline": "GF",
+                          "operAirline": "GF"
+                        },
+                        "flightNo": "753",
+                        "eqpType": "32Q",
+                        "rbd": "V",
+                        "duration": "0300",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "25",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "11-02-2026",
+                          "depTime": "1550",
+                          "arrDate": "11-02-2026",
+                          "arrTime": "1815"
+                        },
+                        "location": {
+                          "depAirport": "BAH",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "GF",
+                          "operAirline": "GF"
+                        },
+                        "flightNo": "508",
+                        "eqpType": "320",
+                        "rbd": "V",
+                        "duration": "0125",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "25",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAlNQQBAAAAA==|DurmnvUqWDKABOQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "32Q",
+                  "0-1": "320"
+                },
+                "arrTerminalMap": {
+                  "0-1": "1"
+                },
+                "issuingAirline": "GF",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKABOQQBAAAAA==": "S",
+                  "DurmnvUqWDKAlNQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": true,
+              "brandedFareSeparate": true,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "25"
+              },
+              "fare": {
+                "baseFare": "55340.00",
+                "tax": "47037.00",
+                "total": 102377.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "55340.0",
+                    "tax": "47037.0",
+                    "total": "102377.00",
+                    "fareBasis": "VBLIT3PK"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "2530",
+                    "issuingAirline": "GF"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "2005",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "2105"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "arrAirport": "BAH"
+                        },
+                        "companyId": {
+                          "mktgAirline": "GF",
+                          "operAirline": "GF"
+                        },
+                        "flightNo": "753",
+                        "eqpType": "32Q",
+                        "rbd": "V",
+                        "duration": "0300",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "25",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "6",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "11-02-2026",
+                          "depTime": "1810",
+                          "arrDate": "11-02-2026",
+                          "arrTime": "2035"
+                        },
+                        "location": {
+                          "depAirport": "BAH",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "GF",
+                          "operAirline": "GF"
+                        },
+                        "flightNo": "510",
+                        "eqpType": "32N",
+                        "rbd": "V",
+                        "duration": "0125",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "25",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "6",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAlNQQBAAAAA==|DurmnvUqWDKA8NQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "32Q",
+                  "0-1": "32N"
+                },
+                "arrTerminalMap": {
+                  "0-1": "1"
+                },
+                "issuingAirline": "GF",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKA8NQQBAAAAA==": "S",
+                  "DurmnvUqWDKAlNQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": true,
+              "brandedFareSeparate": true,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "26"
+              },
+              "fare": {
+                "baseFare": "69450.00",
+                "tax": "47037.00",
+                "total": 116487.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "69450.0",
+                    "tax": "47037.0",
+                    "total": "116487.00",
+                    "fareBasis": "QBLIT3PK"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "1705",
+                    "issuingAirline": "GF"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "2005",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "2105"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "arrAirport": "BAH"
+                        },
+                        "companyId": {
+                          "mktgAirline": "GF",
+                          "operAirline": "GF"
+                        },
+                        "flightNo": "753",
+                        "eqpType": "32Q",
+                        "rbd": "Q",
+                        "duration": "0300",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "25",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "3",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "11-02-2026",
+                          "depTime": "0950",
+                          "arrDate": "11-02-2026",
+                          "arrTime": "1210"
+                        },
+                        "location": {
+                          "depAirport": "BAH",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "GF",
+                          "operAirline": "GF"
+                        },
+                        "flightNo": "504",
+                        "eqpType": "320",
+                        "rbd": "Q",
+                        "duration": "0120",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "25",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "3",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAlNQQBAAAAA==|DurmnvUqWDKAPOQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "32Q",
+                  "0-1": "320"
+                },
+                "arrTerminalMap": {
+                  "0-1": "1"
+                },
+                "issuingAirline": "GF",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAPOQQBAAAAA==": "S",
+                  "DurmnvUqWDKAlNQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": true,
+              "brandedFareSeparate": true,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "27"
+              },
+              "fare": {
+                "baseFare": "69450.00",
+                "tax": "47037.00",
+                "total": 116487.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "69450.0",
+                    "tax": "47037.0",
+                    "total": "116487.00",
+                    "fareBasis": "QBLIT3PK"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "2730",
+                    "issuingAirline": "GF"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "2005",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "2105"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "arrAirport": "BAH"
+                        },
+                        "companyId": {
+                          "mktgAirline": "GF",
+                          "operAirline": "GF"
+                        },
+                        "flightNo": "753",
+                        "eqpType": "32Q",
+                        "rbd": "Q",
+                        "duration": "0300",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "25",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "11-02-2026",
+                          "depTime": "2020",
+                          "arrDate": "11-02-2026",
+                          "arrTime": "2235"
+                        },
+                        "location": {
+                          "depAirport": "BAH",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "GF",
+                          "operAirline": "GF"
+                        },
+                        "flightNo": "512",
+                        "eqpType": "32Q",
+                        "rbd": "Q",
+                        "duration": "0115",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "25",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAlNQQBAAAAA==|DurmnvUqWDKAkOQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "32Q",
+                  "0-1": "32Q"
+                },
+                "arrTerminalMap": {
+                  "0-1": "1"
+                },
+                "issuingAirline": "GF",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAkOQQBAAAAA==": "S",
+                  "DurmnvUqWDKAlNQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": false,
+              "brandedFareSeparate": false,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "28"
+              },
+              "fare": {
+                "baseFare": "91190.00",
+                "tax": "26703.00",
+                "total": 117893.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "91190.0",
+                    "tax": "26703.0",
+                    "total": "117893.00",
+                    "fareBasis": "VLOTSAB4"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "0850",
+                    "issuingAirline": "SV"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "0810",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1100"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "JED",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "SV",
+                          "operAirline": "F3"
+                        },
+                        "flightNo": "6902",
+                        "eqpType": "320",
+                        "rbd": "V",
+                        "duration": "0450",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "2",
+                            "unit": "PC"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1215",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1600"
+                        },
+                        "location": {
+                          "depAirport": "JED",
+                          "depTerminal": "1",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "SV",
+                          "operAirline": "SV"
+                        },
+                        "flightNo": "588",
+                        "eqpType": "330",
+                        "rbd": "V",
+                        "duration": "0245",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "2",
+                            "unit": "PC"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAqOQQBAAAAA==|DurmnvUqWDKA5MQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "320",
+                  "0-1": "330"
+                },
+                "depTerminalMap": {
+                  "0-0": "M",
+                  "0-1": "1"
+                },
+                "arrTerminalMap": {
+                  "0-0": "1",
+                  "0-1": "1"
+                },
+                "issuingAirline": "SV",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKA5MQQBAAAAA==": "A",
+                  "DurmnvUqWDKAqOQQBAAAAA==": "A"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": false,
+              "brandedFareSeparate": false,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "29"
+              },
+              "fare": {
+                "baseFare": "91190.00",
+                "tax": "26703.00",
+                "total": 117893.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "91190.0",
+                    "tax": "26703.0",
+                    "total": "117893.00",
+                    "fareBasis": "VLOTSAB4"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "1220",
+                    "issuingAirline": "SV"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "0810",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1100"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "JED",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "SV",
+                          "operAirline": "F3"
+                        },
+                        "flightNo": "6902",
+                        "eqpType": "320",
+                        "rbd": "V",
+                        "duration": "0450",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "2",
+                            "unit": "PC"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1545",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1930"
+                        },
+                        "location": {
+                          "depAirport": "JED",
+                          "depTerminal": "1",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "SV",
+                          "operAirline": "SV"
+                        },
+                        "flightNo": "550",
+                        "eqpType": "321",
+                        "rbd": "V",
+                        "duration": "0245",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "2",
+                            "unit": "PC"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAqOQQBAAAAA==|DurmnvUqWDKAKMQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "320",
+                  "0-1": "321"
+                },
+                "depTerminalMap": {
+                  "0-0": "M",
+                  "0-1": "1"
+                },
+                "arrTerminalMap": {
+                  "0-0": "1",
+                  "0-1": "1"
+                },
+                "issuingAirline": "SV",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAKMQQBAAAAA==": "A",
+                  "DurmnvUqWDKAqOQQBAAAAA==": "A"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": false,
+              "brandedFareSeparate": false,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "30"
+              },
+              "fare": {
+                "baseFare": "91190.00",
+                "tax": "26703.00",
+                "total": 117893.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "91190.0",
+                    "tax": "26703.0",
+                    "total": "117893.00",
+                    "fareBasis": "VLOTSAB4"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "1420",
+                    "issuingAirline": "SV"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "0810",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1100"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "JED",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "SV",
+                          "operAirline": "F3"
+                        },
+                        "flightNo": "6902",
+                        "eqpType": "320",
+                        "rbd": "V",
+                        "duration": "0450",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "2",
+                            "unit": "PC"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1745",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "2130"
+                        },
+                        "location": {
+                          "depAirport": "JED",
+                          "depTerminal": "1",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "SV",
+                          "operAirline": "SV"
+                        },
+                        "flightNo": "594",
+                        "eqpType": "321",
+                        "rbd": "V",
+                        "duration": "0245",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "2",
+                            "unit": "PC"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAqOQQBAAAAA==|DurmnvUqWDKACPQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "320",
+                  "0-1": "321"
+                },
+                "depTerminalMap": {
+                  "0-0": "M",
+                  "0-1": "1"
+                },
+                "arrTerminalMap": {
+                  "0-0": "1",
+                  "0-1": "1"
+                },
+                "issuingAirline": "SV",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAqOQQBAAAAA==": "A",
+                  "DurmnvUqWDKACPQQBAAAAA==": "A"
+                }
+              }
+            }
+          ],
+          "paxQuantity": {
+            "adt": 1,
+            "chd": 0,
+            "inf": 0
+          }
+        }
+      },
+      "searchKey": "search:response:KHI-DXB-10|02|2026/1-0-0/Y/50/-/ID/2/33/24/CLI_10000-CAT-1",
+      "hubUuid": "P6kZf4bOYWiTFE3kr98TerQlMrpJmBVs-WsgA9Tf",
+      "node": {
+        "currency": "PKR",
+        "agencyCode": "CLI_11078"
+      },
+      "selectCredential": {
+        "id": 33,
+        "officeIdList": [
+          {
+            "id": 24
+          }
+        ]
+      },
+      "supplierCode": 2,
+      "service": "FlightRS"
+    }
+  },
+  {
+    "response": {
+      "content": {
+        "command": "FlightSearchRS",
+        "totalPages": "2",
+        "currentPage": "2",
+        "searchResponse": {
+          "flightIndex": [
+            {
+              "refundable": false,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": false,
+              "brandedFareSeparate": false,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "31"
+              },
+              "fare": {
+                "baseFare": "92870.00",
+                "tax": "37646.00",
+                "total": 130516.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "92870.0",
+                    "tax": "37646.0",
+                    "total": "130516.00",
+                    "fareBasis": "ALIGOW"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "1405",
+                    "issuingAirline": "XY"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1315",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1605"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "JED",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "XY",
+                          "operAirline": "XY"
+                        },
+                        "flightNo": "638",
+                        "eqpType": "32N",
+                        "rbd": "E",
+                        "duration": "0450",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "0",
+                            "unit": "PC"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "2235",
+                          "arrDate": "11-02-2026",
+                          "arrTime": "0220"
+                        },
+                        "location": {
+                          "depAirport": "JED",
+                          "depTerminal": "1",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "XY",
+                          "operAirline": "XY"
+                        },
+                        "flightNo": "505",
+                        "eqpType": "32N",
+                        "rbd": "A",
+                        "duration": "0245",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "0",
+                            "unit": "PC"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAUPQQBAAAAA==|DurmnvUqWDKAWPQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "32N",
+                  "0-1": "32N"
+                },
+                "depTerminalMap": {
+                  "0-0": "M",
+                  "0-1": "1"
+                },
+                "arrTerminalMap": {
+                  "0-0": "1",
+                  "0-1": "1"
+                },
+                "issuingAirline": "XY",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAWPQQBAAAAA==": "A",
+                  "DurmnvUqWDKAUPQQBAAAAA==": "A"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": true,
+              "brandedFareSeparate": true,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "32"
+              },
+              "fare": {
+                "baseFare": "99940.00",
+                "tax": "48516.00",
+                "total": 148456.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "99940.0",
+                    "tax": "48516.0",
+                    "total": "148456.00",
+                    "fareBasis": "LJR4R1SI"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "1225",
+                    "issuingAirline": "QR"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "0930",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1020"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "DOH"
+                        },
+                        "companyId": {
+                          "mktgAirline": "QR",
+                          "operAirline": "QR"
+                        },
+                        "flightNo": "611",
+                        "eqpType": "359",
+                        "rbd": "L",
+                        "duration": "0250",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "5",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1840",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "2055"
+                        },
+                        "location": {
+                          "depAirport": "DOH",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "QR",
+                          "operAirline": "QR"
+                        },
+                        "flightNo": "1014",
+                        "eqpType": "789",
+                        "rbd": "L",
+                        "duration": "0115",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "5",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAnPQQBAAAAA==|DurmnvUqWDKApPQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "359",
+                  "0-1": "789"
+                },
+                "depTerminalMap": {
+                  "0-0": "M"
+                },
+                "arrTerminalMap": {
+                  "0-1": "1"
+                },
+                "issuingAirline": "QR",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKApPQQBAAAAA==": "S",
+                  "DurmnvUqWDKAnPQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": true,
+              "brandedFareSeparate": true,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "33"
+              },
+              "fare": {
+                "baseFare": "99940.00",
+                "tax": "48516.00",
+                "total": 148456.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "99940.0",
+                    "tax": "48516.0",
+                    "total": "148456.00",
+                    "fareBasis": "LJR4R1SI"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "1245",
+                    "issuingAirline": "QR"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "0930",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1020"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "DOH"
+                        },
+                        "companyId": {
+                          "mktgAirline": "QR",
+                          "operAirline": "QR"
+                        },
+                        "flightNo": "611",
+                        "eqpType": "359",
+                        "rbd": "L",
+                        "duration": "0250",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1900",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "2115"
+                        },
+                        "location": {
+                          "depAirport": "DOH",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "QR",
+                          "operAirline": "QR"
+                        },
+                        "flightNo": "1018",
+                        "eqpType": "77W",
+                        "rbd": "L",
+                        "duration": "0115",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAnPQQBAAAAA==|DurmnvUqWDKAJQQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "359",
+                  "0-1": "77W"
+                },
+                "depTerminalMap": {
+                  "0-0": "M"
+                },
+                "arrTerminalMap": {
+                  "0-1": "1"
+                },
+                "issuingAirline": "QR",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAJQQQBAAAAA==": "S",
+                  "DurmnvUqWDKAnPQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": true,
+              "brandedFareSeparate": true,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "34"
+              },
+              "fare": {
+                "baseFare": "99940.00",
+                "tax": "49250.00",
+                "total": 149190.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "99940.0",
+                    "tax": "49250.0",
+                    "total": "149190.00",
+                    "fareBasis": "LJR4R1SI"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "1920",
+                    "issuingAirline": "QR"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "0930",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1020"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "DOH"
+                        },
+                        "companyId": {
+                          "mktgAirline": "QR",
+                          "operAirline": "QR"
+                        },
+                        "flightNo": "611",
+                        "eqpType": "359",
+                        "rbd": "L",
+                        "duration": "0250",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "2",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "11-02-2026",
+                          "depTime": "0135",
+                          "arrDate": "11-02-2026",
+                          "arrTime": "0350"
+                        },
+                        "location": {
+                          "depAirport": "DOH",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "QR",
+                          "operAirline": "QR"
+                        },
+                        "flightNo": "1002",
+                        "eqpType": "77W",
+                        "rbd": "L",
+                        "duration": "0115",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "2",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAnPQQBAAAAA==|DurmnvUqWDKAEQQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "359",
+                  "0-1": "77W"
+                },
+                "depTerminalMap": {
+                  "0-0": "M"
+                },
+                "arrTerminalMap": {
+                  "0-1": "1"
+                },
+                "issuingAirline": "QR",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAEQQQBAAAAA==": "S",
+                  "DurmnvUqWDKAnPQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": false,
+              "brandedFareSeparate": false,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "35"
+              },
+              "fare": {
+                "baseFare": "123370.00",
+                "tax": "26703.00",
+                "total": 150073.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "123370.0",
+                    "tax": "26703.0",
+                    "total": "150073.00",
+                    "fareBasis": "VAO6F3C4"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "0720",
+                    "issuingAirline": "SV"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1330",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1520"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "RUH",
+                          "arrTerminal": "4"
+                        },
+                        "companyId": {
+                          "mktgAirline": "SV",
+                          "operAirline": "SV"
+                        },
+                        "flightNo": "709",
+                        "eqpType": "330",
+                        "rbd": "T",
+                        "duration": "0350",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "1",
+                            "unit": "PC"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1655",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1950"
+                        },
+                        "location": {
+                          "depAirport": "RUH",
+                          "depTerminal": "3",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "SV",
+                          "operAirline": "F3"
+                        },
+                        "flightNo": "6534",
+                        "eqpType": "320",
+                        "rbd": "V",
+                        "duration": "0155",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "1",
+                            "unit": "PC"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAvLQQBAAAAA==|DurmnvUqWDKAaQQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "330",
+                  "0-1": "320"
+                },
+                "depTerminalMap": {
+                  "0-0": "M",
+                  "0-1": "3"
+                },
+                "arrTerminalMap": {
+                  "0-0": "4",
+                  "0-1": "1"
+                },
+                "issuingAirline": "SV",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAaQQQBAAAAA==": "A",
+                  "DurmnvUqWDKAvLQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": false,
+              "brandedFareSeparate": false,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "36"
+              },
+              "fare": {
+                "baseFare": "123370.00",
+                "tax": "26703.00",
+                "total": 150073.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "123370.0",
+                    "tax": "26703.0",
+                    "total": "150073.00",
+                    "fareBasis": "VAO6F3C4"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "0755",
+                    "issuingAirline": "SV"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1330",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1520"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "RUH",
+                          "arrTerminal": "4"
+                        },
+                        "companyId": {
+                          "mktgAirline": "SV",
+                          "operAirline": "SV"
+                        },
+                        "flightNo": "709",
+                        "eqpType": "330",
+                        "rbd": "T",
+                        "duration": "0350",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "1",
+                            "unit": "PC"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1730",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "2025"
+                        },
+                        "location": {
+                          "depAirport": "RUH",
+                          "depTerminal": "3",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "SV",
+                          "operAirline": "F3"
+                        },
+                        "flightNo": "6666",
+                        "eqpType": "320",
+                        "rbd": "V",
+                        "duration": "0155",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "1",
+                            "unit": "PC"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "7",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAvLQQBAAAAA==|DurmnvUqWDKAyQQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "330",
+                  "0-1": "320"
+                },
+                "depTerminalMap": {
+                  "0-0": "M",
+                  "0-1": "3"
+                },
+                "arrTerminalMap": {
+                  "0-0": "4",
+                  "0-1": "1"
+                },
+                "issuingAirline": "SV",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAyQQQBAAAAA==": "A",
+                  "DurmnvUqWDKAvLQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": true,
+              "brandedFareSeparate": true,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "37"
+              },
+              "fare": {
+                "baseFare": "126190.00",
+                "tax": "49250.00",
+                "total": 175440.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "126190.0",
+                    "tax": "49250.0",
+                    "total": "175440.00",
+                    "fareBasis": "MJR4R1SI"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "1755",
+                    "issuingAirline": "QR"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "0420",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "0510"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "DOH"
+                        },
+                        "companyId": {
+                          "mktgAirline": "QR",
+                          "operAirline": "QR"
+                        },
+                        "flightNo": "605",
+                        "eqpType": "351",
+                        "rbd": "M",
+                        "duration": "0250",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "4",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1900",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "2115"
+                        },
+                        "location": {
+                          "depAirport": "DOH",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "QR",
+                          "operAirline": "QR"
+                        },
+                        "flightNo": "1018",
+                        "eqpType": "77W",
+                        "rbd": "M",
+                        "duration": "0115",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "4",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKA4QQQBAAAAA==|DurmnvUqWDKAJQQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "351",
+                  "0-1": "77W"
+                },
+                "depTerminalMap": {
+                  "0-0": "M"
+                },
+                "arrTerminalMap": {
+                  "0-1": "1"
+                },
+                "issuingAirline": "QR",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAJQQQBAAAAA==": "S",
+                  "DurmnvUqWDKA4QQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": true,
+              "brandedFareSeparate": true,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "38"
+              },
+              "fare": {
+                "baseFare": "159220.00",
+                "tax": "49250.00",
+                "total": 208470.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "159220.0",
+                    "tax": "49250.0",
+                    "total": "208470.00",
+                    "fareBasis": "KJR4R1SI"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "1735",
+                    "issuingAirline": "QR"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "0420",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "0510"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "DOH"
+                        },
+                        "companyId": {
+                          "mktgAirline": "QR",
+                          "operAirline": "QR"
+                        },
+                        "flightNo": "605",
+                        "eqpType": "351",
+                        "rbd": "K",
+                        "duration": "0250",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1840",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "2055"
+                        },
+                        "location": {
+                          "depAirport": "DOH",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "QR",
+                          "operAirline": "QR"
+                        },
+                        "flightNo": "1014",
+                        "eqpType": "789",
+                        "rbd": "K",
+                        "duration": "0115",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "30",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKA4QQQBAAAAA==|DurmnvUqWDKApPQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "351",
+                  "0-1": "789"
+                },
+                "depTerminalMap": {
+                  "0-0": "M"
+                },
+                "arrTerminalMap": {
+                  "0-1": "1"
+                },
+                "issuingAirline": "QR",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKApPQQBAAAAA==": "S",
+                  "DurmnvUqWDKA4QQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": true,
+              "brandedFareSeparate": true,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "39"
+              },
+              "fare": {
+                "baseFare": "203820.00",
+                "tax": "49250.00",
+                "total": 253070.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "203820.0",
+                    "tax": "49250.0",
+                    "total": "253070.00",
+                    "fareBasis": "HJR4R1FI"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "2555",
+                    "issuingAirline": "QR"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "0930",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1020"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "DOH"
+                        },
+                        "companyId": {
+                          "mktgAirline": "QR",
+                          "operAirline": "QR"
+                        },
+                        "flightNo": "611",
+                        "eqpType": "359",
+                        "rbd": "H",
+                        "duration": "0250",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "35",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    },
+                    {
+                      "segID": 1,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "11-02-2026",
+                          "depTime": "0810",
+                          "arrDate": "11-02-2026",
+                          "arrTime": "1025"
+                        },
+                        "location": {
+                          "depAirport": "DOH",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "1"
+                        },
+                        "companyId": {
+                          "mktgAirline": "QR",
+                          "operAirline": "QR"
+                        },
+                        "flightNo": "1006",
+                        "eqpType": "77W",
+                        "rbd": "H",
+                        "duration": "0115",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "35",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAnPQQBAAAAA==|DurmnvUqWDKAYRQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "359",
+                  "0-1": "77W"
+                },
+                "depTerminalMap": {
+                  "0-0": "M"
+                },
+                "arrTerminalMap": {
+                  "0-1": "1"
+                },
+                "issuingAirline": "QR",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAYRQQBAAAAA==": "S",
+                  "DurmnvUqWDKAnPQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": false,
+              "brandedFareSeparate": false,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "40"
+              },
+              "fare": {
+                "baseFare": "514450.00",
+                "tax": "17685.00",
+                "total": 532135.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "514450.0",
+                    "tax": "17685.0",
+                    "total": "532135.00",
+                    "fareBasis": "YOWPK7"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "0215",
+                    "issuingAirline": "EK"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "2355",
+                          "arrDate": "11-02-2026",
+                          "arrTime": "0110"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "2"
+                        },
+                        "companyId": {
+                          "mktgAirline": "EK",
+                          "operAirline": "FZ"
+                        },
+                        "flightNo": "2107",
+                        "eqpType": "7M8",
+                        "rbd": "Y",
+                        "duration": "0215",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "35",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAkLQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "7M8"
+                },
+                "depTerminalMap": {
+                  "0-0": "M"
+                },
+                "arrTerminalMap": {
+                  "0-0": "2"
+                },
+                "issuingAirline": "EK",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAkLQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": false,
+              "brandedFareSeparate": false,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "41"
+              },
+              "fare": {
+                "baseFare": "514450.00",
+                "tax": "17685.00",
+                "total": 532135.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "514450.0",
+                    "tax": "17685.0",
+                    "total": "532135.00",
+                    "fareBasis": "YOWPK7"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "0225",
+                    "issuingAirline": "EK"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "0330",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "0455"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "2"
+                        },
+                        "companyId": {
+                          "mktgAirline": "EK",
+                          "operAirline": "FZ"
+                        },
+                        "flightNo": "2109",
+                        "eqpType": "73H",
+                        "rbd": "Y",
+                        "duration": "0225",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "35",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAAKQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "73H"
+                },
+                "depTerminalMap": {
+                  "0-0": "M"
+                },
+                "arrTerminalMap": {
+                  "0-0": "2"
+                },
+                "issuingAirline": "EK",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAAKQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": false,
+              "brandedFareSeparate": false,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "42"
+              },
+              "fare": {
+                "baseFare": "514450.00",
+                "tax": "17685.00",
+                "total": 532135.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "514450.0",
+                    "tax": "17685.0",
+                    "total": "532135.00",
+                    "fareBasis": "YOWPK7"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "0225",
+                    "issuingAirline": "EK"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1000",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1125"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "2"
+                        },
+                        "companyId": {
+                          "mktgAirline": "EK",
+                          "operAirline": "FZ"
+                        },
+                        "flightNo": "2111",
+                        "eqpType": "7M8",
+                        "rbd": "Y",
+                        "duration": "0225",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "35",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKAXKQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "7M8"
+                },
+                "depTerminalMap": {
+                  "0-0": "M"
+                },
+                "arrTerminalMap": {
+                  "0-0": "2"
+                },
+                "issuingAirline": "EK",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKAXKQQBAAAAA==": "S"
+                }
+              }
+            },
+            {
+              "refundable": true,
+              "instantTicketing": false,
+              "bookOnHold": true,
+              "brandedFareSupported": false,
+              "brandedFareSeparate": false,
+              "fareRuleOffered": true,
+              "resultCount": {
+                "id": "43"
+              },
+              "fare": {
+                "baseFare": "514450.00",
+                "tax": "17685.00",
+                "total": 532135.0,
+                "currency": "PKR"
+              },
+              "fareDetails": {
+                "fareBreakup": [
+                  {
+                    "paxType": "ADT",
+                    "baseFare": "514450.0",
+                    "tax": "17685.0",
+                    "total": "532135.00",
+                    "fareBasis": "YOWPK7"
+                  }
+                ]
+              },
+              "ondPairs": [
+                {
+                  "ond": {
+                    "ondID": 0,
+                    "duration": "0230",
+                    "issuingAirline": "EK"
+                  },
+                  "flightDetails": [
+                    {
+                      "segID": 0,
+                      "flifo": {
+                        "dateTime": {
+                          "depDate": "10-02-2026",
+                          "depTime": "1640",
+                          "arrDate": "10-02-2026",
+                          "arrTime": "1810"
+                        },
+                        "location": {
+                          "depAirport": "KHI",
+                          "depTerminal": "M",
+                          "arrAirport": "DXB",
+                          "arrTerminal": "2"
+                        },
+                        "companyId": {
+                          "mktgAirline": "EK",
+                          "operAirline": "FZ"
+                        },
+                        "flightNo": "2113",
+                        "eqpType": "7M8",
+                        "rbd": "Y",
+                        "duration": "0230",
+                        "cabin": "Y",
+                        "baggageAllowance": [
+                          {
+                            "type": "checkIn",
+                            "paxType": "ADT",
+                            "value": "35",
+                            "unit": "KG"
+                          }
+                        ],
+                        "stops": 0,
+                        "seatsAvlbl": "9",
+                        "eTicketing": "TRUE"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "supplierSpecific": {
+                "traceId": "d1a32177-9fee-497a-9540-6e9dbb3facf0",
+                "segRef": "DurmnvUqWDKARKQQBAAAAA==",
+                "segIdEqpTypeMap": {
+                  "0-0": "7M8"
+                },
+                "depTerminalMap": {
+                  "0-0": "M"
+                },
+                "arrTerminalMap": {
+                  "0-0": "2"
+                },
+                "issuingAirline": "EK",
+                "availabilitySourceMap": {
+                  "DurmnvUqWDKARKQQBAAAAA==": "S"
+                }
+              }
+            }
+          ],
+          "paxQuantity": {
+            "adt": 1,
+            "chd": 0,
+            "inf": 0
+          }
+        }
+      },
+      "searchKey": "search:response:KHI-DXB-10|02|2026/1-0-0/Y/50/-/ID/2/33/24/CLI_10000-CAT-1",
+      "hubUuid": "P6kZf4bOYWiTFE3kr98TerQlMrpJmBVs-WsgA9Tf",
+      "node": {
+        "currency": "PKR",
+        "agencyCode": "CLI_11078"
+      },
+      "selectCredential": {
+        "id": 33,
+        "officeIdList": [
+          {
+            "id": 24
+          }
+        ]
+      },
+      "supplierCode": 2,
+      "service": "FlightRS"
+    }
+  },
+  {
+    "response": {
+      "content": {
+        "command": "FlightSearchRS",
+        "error": {
+          "message": "FLIGHTS NOT_AVAILABLE"
+        }
+      },
+      "hubUuid": "S4QRuZaVqKN4bUrE_cF7jMde51nQkvcS6i5FC5-m",
+      "node": {
+        "currency": "PKR",
+        "agencyCode": "CLI_11078"
+      },
+      "selectCredential": {
+        "id": 137
+      },
+      "supplierCode": 17,
+      "service": "FlightRS"
+    }
+  },
+  {
+    "response": {
+      "content": {
+        "command": "FlightSearchRS",
+        "error": {
+          "message": "The market KHI - DXB does not exist"
+        }
+      },
+      "searchKey": "search:response:KHI-DXB-10|02|2026/1-0-0/Y/50/-/ID/11/167/-/CLI_10000-CAT-1",
+      "hubUuid": "S4QRuZaVqKN4bUrE_cF7jMde51nQkvcS6i5FC5-m",
+      "node": {
+        "currency": "PKR",
+        "agencyCode": "CLI_11078"
+      },
+      "selectCredential": {
+        "id": 167
+      },
+      "supplierCode": 11,
+      "service": "FlightRS"
+    }
+  }
+]

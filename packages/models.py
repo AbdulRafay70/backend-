@@ -269,12 +269,12 @@ class TransportSectorPrice(models.Model):
     only_transport_charge = models.BooleanField(default=False)
 
         # New explicit per-person selling/purchase fields
-    adult_selling_price = models.FloatField(default=0)
-    adult_purchase_price = models.FloatField(default=0)
-    child_selling_price = models.FloatField(default=0)
-    child_purchase_price = models.FloatField(default=0)
-    infant_selling_price = models.FloatField(default=0)
-    infant_purchase_price = models.FloatField(default=0)
+    # adult_selling_price = models.FloatField(default=0)
+    # adult_purchase_price = models.FloatField(default=0)
+    # child_selling_price = models.FloatField(default=0)
+    # child_purchase_price = models.FloatField(default=0)
+    # infant_selling_price = models.FloatField(default=0)
+    # infant_purchase_price = models.FloatField(default=0)
 
 
     def __str__(self):
@@ -480,6 +480,198 @@ class UmrahPackage(models.Model):
     # Transport (selling/purchase)
     transport_selling_price = models.FloatField(default=0)
     transport_purchase_price = models.FloatField(default=0)
+
+    # --- Calculated Total Package Prices (per occupancy) ---
+    # Adult Occupancies
+    sharing_selling_price = models.FloatField(default=0)
+    sharing_purchase_price = models.FloatField(default=0)
+    double_selling_price = models.FloatField(default=0)
+    double_purchase_price = models.FloatField(default=0)
+    triple_selling_price = models.FloatField(default=0)
+    triple_purchase_price = models.FloatField(default=0)
+    quad_selling_price = models.FloatField(default=0)
+    quad_purchase_price = models.FloatField(default=0)
+    quaint_selling_price = models.FloatField(default=0)
+    quaint_purchase_price = models.FloatField(default=0)
+    
+    # Child Without Bed (Extras Only)
+    child_without_bed_selling_price = models.FloatField(default=0)
+    child_without_bed_purchase_price = models.FloatField(default=0)
+
+    # Child With Bed (Occupancy Based)
+    child_sharing_selling_price = models.FloatField(default=0)
+    child_sharing_purchase_price = models.FloatField(default=0)
+    child_double_selling_price = models.FloatField(default=0)
+    child_double_purchase_price = models.FloatField(default=0)
+    child_triple_selling_price = models.FloatField(default=0)
+    child_triple_purchase_price = models.FloatField(default=0)
+    child_quad_selling_price = models.FloatField(default=0)
+    child_quad_purchase_price = models.FloatField(default=0)
+    child_quaint_selling_price = models.FloatField(default=0)
+    child_quaint_purchase_price = models.FloatField(default=0)
+
+    # Infant (Single calculated price = Infant Visa + Infant Ticket)
+    infant_package_selling_price = models.FloatField(default=0)
+    infant_package_purchase_price = models.FloatField(default=0)
+
+    def calculate_and_save_prices(self):
+        """
+        Calculate total package prices based on components and save to DB fields.
+        Formula:
+          Adult Total(Occupancy) = Sum(Hotel_Price(Occupancy) * Nights) + Transport + Adult_Extras
+          Child With Bed Total(Occupancy) = Sum(Hotel_Price(Occupancy) * Nights) + Transport + Child_Extras
+          Child Without Bed Total = Transport + Child_Extras (No Hotel)
+          Infant Total = Infant_Ticket + Infant_Visa
+        """
+        # 1. Calculate Component Totals
+        
+        # A. Hotels (Selling & Purchase)
+        hotel_selling = {
+            'sharing': 0, 'double': 0, 'triple': 0, 'quad': 0, 'quaint': 0
+        }
+        hotel_purchase = {
+            'sharing': 0, 'double': 0, 'triple': 0, 'quad': 0, 'quaint': 0
+        }
+        
+        for hd in self.hotel_details.all():
+            nights = hd.number_of_nights or 0
+            
+            # Selling
+            hotel_selling['sharing'] += (hd.sharing_bed_selling_price or 0) * nights
+            hotel_selling['double'] += (hd.double_bed_selling_price or 0) * nights
+            hotel_selling['triple'] += (hd.triple_bed_selling_price or 0) * nights
+            hotel_selling['quad'] += (hd.quad_bed_selling_price or 0) * nights
+            hotel_selling['quaint'] += (hd.quaint_bed_selling_price or 0) * nights
+            
+            # Purchase
+            hotel_purchase['sharing'] += (hd.sharing_bed_purchase_price or 0) * nights
+            hotel_purchase['double'] += (hd.double_bed_purchase_price or 0) * nights
+            hotel_purchase['triple'] += (hd.triple_bed_purchase_price or 0) * nights
+            hotel_purchase['quad'] += (hd.quad_bed_purchase_price or 0) * nights
+            hotel_purchase['quaint'] += (hd.quaint_bed_purchase_price or 0) * nights
+
+        # B. Transport
+        transport_selling_total = 0
+        transport_purchase_total = 0
+        for td in self.transport_details.all():
+             transport_selling_total += (td.transport_selling_price or 0)
+             transport_purchase_total += (td.transport_purchase_price or 0)
+        
+        self.transport_selling_price = transport_selling_total
+        self.transport_purchase_price = transport_purchase_total
+
+        # C. Fixed Costs
+        
+        # 1. Visa
+        # Adult
+        adult_visa_selling = self.adault_visa_selling_price or 0
+        adult_visa_purchase = self.adault_visa_purchase_price or 0
+        # Child
+        child_visa_selling = self.child_visa_selling_price or 0
+        child_visa_purchase = self.child_visa_purchase_price or 0
+        # Infant
+        infant_visa_selling = self.infant_visa_selling_price or 0
+        infant_visa_purchase = self.infant_visa_purchase_price or 0
+        
+        # 2. Food (Adult & Child)
+        food_selling = self.food_selling_price or 0
+        food_purchase = self.food_purchase_price or 0
+        
+        # 3. Ziyarat (Adult & Child)
+        makkah_selling = self.makkah_ziyarat_selling_price or 0
+        makkah_purchase = self.makkah_ziyarat_purchase_price or 0
+        madinah_selling = self.madinah_ziyarat_selling_price or 0
+        madinah_purchase = self.madinah_ziyarat_purchase_price or 0
+        
+        ziarat_selling = makkah_selling + madinah_selling
+        ziarat_purchase = makkah_purchase + madinah_purchase
+        
+        # 4. Ticket (First ticket found)
+        # Adult
+        adult_ticket_selling = 0
+        adult_ticket_purchase = 0
+        # Child
+        child_ticket_selling = 0
+        child_ticket_purchase = 0
+        # Infant
+        infant_ticket_selling = 0
+        infant_ticket_purchase = 0
+
+        first_ticket_detail = self.ticket_details.first()
+        if first_ticket_detail and first_ticket_detail.ticket:
+             ticket = first_ticket_detail.ticket
+             # Adult (uses adult_price)
+             adult_ticket_selling = ticket.adult_price or 0
+             adult_ticket_purchase = ticket.adult_purchase_price or 0
+             
+             # Child Logic: Adult Price - Child Price (Discount)
+             child_discount_selling = ticket.child_price or 0
+             child_discount_purchase = ticket.child_purchase_price or 0
+             
+             child_ticket_selling = max(0, adult_ticket_selling - child_discount_selling)
+             child_ticket_purchase = max(0, adult_ticket_purchase - child_discount_purchase)
+             
+             # Infant Logic
+             infant_ticket_selling = ticket.infant_price or 0
+             infant_ticket_purchase = ticket.infant_purchase_price or 0
+
+        # --- Base Extras Sums ---
+        
+        # Common (Transport + Food + Ziyarat) - Applies to Adult and Child
+        common_selling = transport_selling_total + food_selling + ziarat_selling
+        common_purchase = transport_purchase_total + food_purchase + ziarat_purchase
+
+        # Adult Extras
+        adult_extras_selling = common_selling + adult_visa_selling + adult_ticket_selling
+        adult_extras_purchase = common_purchase + adult_visa_purchase + adult_ticket_purchase
+
+        # Child Extras
+        child_extras_selling = common_selling + child_visa_selling + child_ticket_selling
+        child_extras_purchase = common_purchase + child_visa_purchase + child_ticket_purchase
+
+        # Infant Total (Ticket + Visa Only)
+        self.infant_package_selling_price = infant_ticket_selling + infant_visa_selling
+        self.infant_package_purchase_price = infant_ticket_purchase + infant_visa_purchase
+
+        # 2. Set Totals
+        
+        # Adult Occupancies
+        self.sharing_selling_price = hotel_selling['sharing'] + adult_extras_selling
+        self.sharing_purchase_price = hotel_purchase['sharing'] + adult_extras_purchase
+        
+        self.double_selling_price = hotel_selling['double'] + adult_extras_selling
+        self.double_purchase_price = hotel_purchase['double'] + adult_extras_purchase
+        
+        self.triple_selling_price = hotel_selling['triple'] + adult_extras_selling
+        self.triple_purchase_price = hotel_purchase['triple'] + adult_extras_purchase
+        
+        self.quad_selling_price = hotel_selling['quad'] + adult_extras_selling
+        self.quad_purchase_price = hotel_purchase['quad'] + adult_extras_purchase
+        
+        self.quaint_selling_price = hotel_selling['quaint'] + adult_extras_selling
+        self.quaint_purchase_price = hotel_purchase['quaint'] + adult_extras_purchase
+
+        # Child Without Bed (Extras Only)
+        self.child_without_bed_selling_price = child_extras_selling
+        self.child_without_bed_purchase_price = child_extras_purchase
+
+        # Child With Bed (Occupancy Based)
+        self.child_sharing_selling_price = hotel_selling['sharing'] + child_extras_selling
+        self.child_sharing_purchase_price = hotel_purchase['sharing'] + child_extras_purchase
+        
+        self.child_double_selling_price = hotel_selling['double'] + child_extras_selling
+        self.child_double_purchase_price = hotel_purchase['double'] + child_extras_purchase
+        
+        self.child_triple_selling_price = hotel_selling['triple'] + child_extras_selling
+        self.child_triple_purchase_price = hotel_purchase['triple'] + child_extras_purchase
+        
+        self.child_quad_selling_price = hotel_selling['quad'] + child_extras_selling
+        self.child_quad_purchase_price = hotel_purchase['quad'] + child_extras_purchase
+        
+        self.child_quaint_selling_price = hotel_selling['quaint'] + child_extras_selling
+        self.child_quaint_purchase_price = hotel_purchase['quaint'] + child_extras_purchase
+
+        self.save()
 
     # Selected option IDs (persist which dropdown option was chosen)
     food_price_id = models.IntegerField(blank=True, null=True)
@@ -779,7 +971,7 @@ class UmrahPackageTransportDetails(models.Model):
         UmrahPackage, on_delete=models.CASCADE, related_name="transport_details"
     )
     transport_sector = models.ForeignKey(
-        TransportSectorPrice, on_delete=models.PROTECT, blank=True, null=True
+        "booking.VehicleType", on_delete=models.PROTECT, blank=True, null=True
     )   
     vehicle_type = models.CharField(max_length=50, choices=VEHICLE_TYPE_CHOICES, blank=True, null=True)
     transport_type = models.CharField(max_length=50, choices=TRANSPORT_TYPE_CHOICES, blank=True, null=True)

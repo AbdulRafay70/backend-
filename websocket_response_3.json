@@ -1,0 +1,21 @@
+{
+  "response": {
+    "content": {
+      "command": "FlightSearchRS",
+      "error": {
+        "message": "The market KHI - KHI does not exist"
+      }
+    },
+    "searchKey": "search:response:KHI-KHI-26|01|2026/KHI-KHI-28|01|2026/1-0-0/-/50/-/ID/11/167/-/CLI_10000-CAT-1",
+    "hubUuid": "X1kv4aDvK3zHQpz6wjfGFvLtyMMQyYftit55PpxW",
+    "node": {
+      "currency": "PKR",
+      "agencyCode": "CLI_11078"
+    },
+    "selectCredential": {
+      "id": 167
+    },
+    "supplierCode": 11,
+    "service": "FlightRS"
+  }
+}

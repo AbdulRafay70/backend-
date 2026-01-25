@@ -129,25 +129,23 @@ def booking_post_save(sender, instance, created, **kwargs):
     # On creation: if pending/unpaid -> mark booked seats
     if created:
         if str(new_status).lower() in ['pending', 'unpaid']:
-            # tickets: use ticket_included_count if available, otherwise use ticket_details.seats
-            if ticket_included_count is not None:
-                # allocate included pax across ticket_details: simple allocation proportional to seats
-                # fallback: if no ticket_details, skip
-                tds = list(instance.ticket_details.all())
-                if tds and ticket_included_count > 0:
-                    remaining = ticket_included_count
-                    for td in tds:
-                        assign = min(remaining, td.seats or 0)
-                        if assign > 0:
-                            _apply_ticket_changes(td.ticket_id, booked_delta=assign, left_delta=-assign)
-                            remaining -= assign
-                        if remaining <= 0:
-                            break
-            else:
-                for td in instance.ticket_details.all():
-                    seats = td.seats or 0
-                    if seats > 0:
-                        _apply_ticket_changes(td.ticket_id, booked_delta=seats, left_delta=-seats)
+            # tickets: deduplicate by ticket_id and take max seats
+            ticket_seat_map = {}
+            # effective pax count fallback if td.seats is missing
+            eff_pax = (ticket_included_count if ticket_included_count is not None and ticket_included_count > 0 else 0)
+            if eff_pax == 0:
+                eff_pax = (instance.total_adult or 0) + (instance.total_child or 0)
+            if eff_pax == 0:
+                eff_pax = instance.total_pax or 0
+
+            for td in instance.ticket_details.all():
+                seats = td.seats if (td.seats and td.seats > 0) else eff_pax
+                if seats > 0:
+                    curr = ticket_seat_map.get(td.ticket_id, 0)
+                    ticket_seat_map[td.ticket_id] = max(curr, seats)
+            
+            for tid, quantity in ticket_seat_map.items():
+                _apply_ticket_changes(tid, booked_delta=quantity, left_delta=-quantity)
             # umrah package: always apply using total_pax
             if instance.umrah_package_id:
                 _apply_package_changes(instance.umrah_package_id, booked_delta=new_total_pax, left_delta=-new_total_pax)
@@ -219,8 +217,12 @@ def booking_post_save(sender, instance, created, **kwargs):
                     _apply_package_changes(instance.umrah_package_id, confirmed_delta=-new_total_pax)
 
         # 4️⃣ Passenger count change (total_pax diff)
+        # Check if total_pax is actually being updated
+        update_fields = kwargs.get('update_fields')
+        should_process_pax = update_fields is None or 'total_pax' in update_fields
+        
         pax_diff = new_total_pax - old_total_pax
-        if pax_diff != 0:
+        if should_process_pax and pax_diff != 0:
             # Positive diff -> reserve more seats (booked +, left -)
             if pax_diff > 0:
                 # distribute across umrah package (if exists) and tickets proportionally is complex

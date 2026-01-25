@@ -94,6 +94,11 @@ class LedgerEntrySerializer(serializers.ModelSerializer):
             "umrah_visa_count",
             "hotel_nights_count",
             
+            # NEW: Profit tracking fields
+            "income_amount",
+            "expense_amount",
+            "profit",
+            
             # Timestamps
             "creation_datetime",  # Auto set (timezone aware)
             "created_at",

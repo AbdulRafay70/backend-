@@ -229,8 +229,8 @@ class TicketViewSet(ModelViewSet):
         # Exclude inactive tickets (status == 'inactive')
         queryset = queryset.exclude(status="inactive")
 
-        # Exclude tickets with no available seats
-        queryset = queryset.filter(left_seats__gt=0)
+        # Exclude tickets with no available seats - DISABLED: Show sold out tickets
+        # queryset = queryset.filter(left_seats__gt=0)
 
         # Exclude tickets with passed departure dates by default. Accept tickets that either
         # have future trip_details departure datetimes or have a ticket-level

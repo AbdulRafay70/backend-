@@ -62,6 +62,7 @@ urlpatterns = [
     path("api/", include("pax_movements.urls")),
     path("api/", include("passport_leads.urls")),  # Passport Leads & Follow-up Module
     path("api/", include("customers.urls")),  # Customer Auto-Collection API
+    path("api/flights/", include("flights.urls")),  # AIQS Flight Search & Booking
     path("", include("forms.urls")),  # Dynamic Forms for Lead Generation
 
     # ✅ Debug & API Docs

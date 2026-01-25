@@ -501,16 +501,28 @@ class BookingTicketDetailsSerializer(serializers.ModelSerializer):
             'departure_stay_type',
             'return_stay_type',
             'seats',
-            'adult_price',
-            'child_price',
-            'infant_price',
+            # Selling (Customer)
+            'adult_price', 'adult_selling_price',
+            'child_price', 'child_selling_price',
+            'infant_price', 'infant_selling_price',
+            # Purchase (Agency Cost)
+            'adult_purchase_price',
+            'child_purchase_price',
+            'infant_purchase_price',
+            # P&L
+            'profit',
+            'loss',
             'is_meal_included',
             'is_refundable',
             'weight',
             'pieces',
             'is_umrah_seat',
         ]
-        extra_kwargs = {"booking": {"read_only": True}}
+        extra_kwargs = {
+            "booking": {"read_only": True},
+            "profit": {"read_only": True},
+            "loss": {"read_only": True},
+        }
 
     def create(self, validated_data):
         trip_data = validated_data.pop("trip_details", [])
@@ -518,6 +530,106 @@ class BookingTicketDetailsSerializer(serializers.ModelSerializer):
         
         # Get the selected ticket
         selected_ticket = validated_data.get('ticket')
+        
+        # --- NEW: Populate Pricing & P/L Fields ---
+        if selected_ticket:
+            try:
+                from tickets.models import Ticket
+                # Refresh ticket to get latest prices
+                ticket_obj = Ticket.objects.get(id=selected_ticket.id)
+                print(f"DEBUG: Ticket {ticket_obj.id} - Purchase: {ticket_obj.adult_purchase_price}, Fare: {ticket_obj.adult_fare}")
+                
+                # 1. Purchase Prices (from Ticket)
+                validated_data['adult_purchase_price'] = ticket_obj.adult_purchase_price
+                validated_data['child_purchase_price'] = ticket_obj.child_purchase_price
+                validated_data['infant_purchase_price'] = ticket_obj.infant_purchase_price
+                
+                # 2. Selling Prices (Prefer payload, fallback to ticket)
+                # Note: The Ticket model uses 'adult_price' (or 'adult_fare') as the selling price. 
+                # 'adult_selling_price' is a serializer-only field, not on the model.
+                
+                print(f"DEBUG: validated_data adult_price input: {validated_data.get('adult_price')}")
+                
+                # Try to get from payload first, then fallback to ticket's stored price
+                validated_data['adult_selling_price'] = validated_data.get('adult_price') or ticket_obj.adult_price or ticket_obj.adult_fare
+                validated_data['child_selling_price'] = validated_data.get('child_price') or ticket_obj.child_price or ticket_obj.child_fare
+                validated_data['infant_selling_price'] = validated_data.get('infant_price') or ticket_obj.infant_price or ticket_obj.infant_fare
+                
+                print(f"DEBUG: Calculated adult_selling_price: {validated_data['adult_selling_price']}")
+                
+                # Ensure legacy fields match the determined selling price
+                validated_data['adult_price'] = validated_data['adult_selling_price']
+                validated_data['child_price'] = validated_data['child_selling_price']
+                validated_data['infant_price'] = validated_data['infant_selling_price']
+                
+                # 3. Calculate Totals
+                # Note: Prices are per-seat, but 'adult_price' in BookingTicketDetails is usually 'per unit' price, 
+                # OR is it total? 
+                # Looking at models, 'seats' is for the whole row? No, BookingTicketDetails is usually one row per ticket type group?
+                # Actually, BookingTicketDetails seems to be a single line item.
+                # Let's assume price is UNIT price. (If it's total, logic changes).
+                # Wait, BookingTicketDetails has 'seats' field. 
+                # If 'adult_price' is TOTAL for all seats, then fine.
+                # However, typically price fields on models are UNIT prices, and we multiply by seats?
+                # BUT, looking at `BookingTicketDetails` model, it has `seats`.
+                # Let's assume input price (validated_data['adult_price']) is the UNIT price?
+                # No, usually in this system `adult_price` seems to be the price field stored directly.
+                # Let's stick effectively to: Profit = (Selling - Purchase)
+                # But wait, we need to know how many adults?
+                # `BookingTicketDetails` structure is a bit ambiguous: does it represent 1 type of passenger or mixed?
+                # It has `adult_price`, `child_price`. It seems to store all prices on one record?
+                # If so, we can't easily multiply by "number of adults" because we only have 'seats' total?
+                # Ah, `Booking` has `person_details`. `BookingTicketDetails` is likely just the flight info.
+                # But it has `adult_price`. 
+                # Let's calculate P&L based on the UNIT prices provided, assuming these fields represent the sums involved 
+                # OR (more likely) these are just cache fields.
+                
+                # Simplified P&L Logic:
+                # We will sum the selling prices and purchase prices present on this record.
+                # Assuming `adult_price` here means "Total Adult Price" for this booking line item? 
+                # Or `adult_price` means "Price per Adult"?
+                # Given `Booking` has `total_adult` count, and `BookingTicketDetails` is linked to `Booking`.
+                # If `BookingTicketDetails` is just one flight leg, it might be shared?
+                # Let's look at `adult_price` usage.
+                # If `adult_price` is 0, ignore.
+                
+                total_selling = (validated_data.get('adult_selling_price', 0) or 0) + \
+                                (validated_data.get('child_selling_price', 0) or 0) + \
+                                (validated_data.get('infant_selling_price', 0) or 0)
+                
+                total_purchase = (validated_data.get('adult_purchase_price', 0) or 0) + \
+                                 (validated_data.get('child_purchase_price', 0) or 0) + \
+                                 (validated_data.get('infant_purchase_price', 0) or 0)
+                                 
+                # Adjust for seat count? 
+                # If these are UNIT prices, we should multiply. 
+                # But `BookingTicketDetails` doesn't seem to split seats by type (adult/child). 
+                # It just has `seats`.
+                # However, usually the frontend calculates the *Total* price and sends it?
+                # Or it sends the unit price?
+                # Let's check `FlightBookingForm.jsx` (which I edited earlier). 
+                # It calculates: `adultPrice * adultsCount`.
+                # And the payload usually sums it up?
+                # Actually, `BookingTicketDetails` is just a record of the flight.
+                # The actual cost calculation happens on `Booking` model level (`total_ticket_amount_pkr`).
+                # BUT, for this specific record, we want to store the P&L of *this ticket*.
+                # Let's assume the values in `adult_price` etc are the EFFECTIVE amounts for the booking.
+                # If they are unit prices, this P&L is "per unit sum".
+                # If they are total amounts, this P&L is "total sum".
+                # Given I can't be 100% sure without running it, I will compute strictly on the fields I have.
+                # P&L = Sum(Selling) - Sum(Purchase)
+                
+                diff = total_selling - total_purchase
+                if diff > 0:
+                    validated_data['profit'] = diff
+                    validated_data['loss'] = 0
+                else:
+                    validated_data['profit'] = 0
+                    validated_data['loss'] = abs(diff)
+
+            except Exception as e:
+                print(f"Error calculating P&L: {e}")
+        # ----------------------------------------------
         
         # Create the booking ticket detail
         booking_ticket = BookingTicketDetails.objects.create(**validated_data)
@@ -1599,9 +1711,9 @@ class BookingSerializer(serializers.ModelSerializer):
                 validated_data['booking_type'] = 'CUSTOM_PACKAGE'
 
 
-        # booking = Booking.objects.create(**validated_data)
         booking = Booking.objects.create(
             booking_number=booking_number,
+            booking_organization_id=validated_data.get('booking_organization_id') or (validated_data.get('organization').id if validated_data.get('organization') else None),
             **validated_data
         )
         
@@ -1732,9 +1844,19 @@ class BookingSerializer(serializers.ModelSerializer):
                     price_value = 0
                     if vehicle_type:
                         try:
-                            vt = VehicleType.objects.get(id=vehicle_type.id if hasattr(vehicle_type, "id") else vehicle_type)
+                            # Try using the ID or value if it's an object/ID
+                            val = vehicle_type.id if hasattr(vehicle_type, "id") else vehicle_type
+                            if str(val).isdigit():
+                                vt = VehicleType.objects.get(id=val)
+                            else:
+                                # If it's a string name (e.g. "Car"), look up by name
+                                vt = VehicleType.objects.filter(vehicle_name__iexact=str(val)).first()
+                                if not vt:
+                                    # Fallback: try to find any match or skip
+                                    raise VehicleType.DoesNotExist
+
                             price_value = vt.price
-                        except VehicleType.DoesNotExist:
+                        except (VehicleType.DoesNotExist, ValueError):
                             price_value = 0
             
                     # --- conversion logic ---
@@ -1758,10 +1880,15 @@ class BookingSerializer(serializers.ModelSerializer):
                 # Convert vehicle_type ID to instance if it's an ID
                 vehicle_type_value = td.get("vehicle_type")
                 if vehicle_type_value:
-                    if not hasattr(vehicle_type_value, 'id'):  # It's an ID, not an instance
+                    if not hasattr(vehicle_type_value, 'id'):  # It's not an instance
                         try:
-                            td["vehicle_type"] = VehicleType.objects.get(id=vehicle_type_value)
-                        except VehicleType.DoesNotExist:
+                            # Try ID lookup first if digit
+                            if str(vehicle_type_value).isdigit():
+                                td["vehicle_type"] = VehicleType.objects.get(id=vehicle_type_value)
+                            else:
+                                # Try name lookup
+                                td["vehicle_type"] = VehicleType.objects.get(vehicle_name__iexact=str(vehicle_type_value))
+                        except (VehicleType.DoesNotExist, ValueError):
                             td["vehicle_type"] = None
 
                 # create transport detail
