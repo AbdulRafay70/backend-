@@ -181,6 +181,7 @@ def ledger_by_service(request):
             'booking_id': fr.booking_id,
             'reference_no': fr.reference_no or (fr.metadata.get('booking_number') if fr.metadata else None),
             'income_amount': fr.income_amount,
+            'purchase_cost': fr.purchase_cost,
             'expense_amount': fr.expenses_amount,
             'profit': fr.profit_loss,
             'record_date': fr.created_at.date() if fr.created_at else None,
@@ -684,3 +685,21 @@ def audit_trail(request):
         'logs': logs,
         'count': len(logs),
     })
+
+
+@extend_schema(summary="Booking Profit & Loss (Strict Package Calculation)")
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def booking_pnl_view(request, booking_id):
+    """
+    Get strict P&L for a booking based on package prices.
+    Calculates on-the-fly and updates FinancialRecord.
+    """
+    from .utils import calculate_booking_pnl
+    
+    result = calculate_booking_pnl(booking_id)
+    
+    if result is None:
+        return Response({'error': 'Booking not found or Package missing'}, status=404)
+        
+    return Response(result)

@@ -4,7 +4,7 @@ import uuid
 from django.utils.timezone import now
 from organization.serializers import OrganizationSerializer, AgencySerializer, BranchSerializer
 from packages.serializers import RiyalRateSerializer, UmrahPackageSerializer
-from tickets.serializers import HotelsSerializer
+from tickets.serializers import HotelsSerializer, TicketSerializer
 from users.serializers import UserSerializer
 from organization.models import Organization, Agency, Branch
 from users.models import UserProfile
@@ -37,6 +37,7 @@ from .models import (
     DiscountGroup,
     Discount,
     Markup,
+    MarkupHotel,
     BookingCallRemark,
     BookingItem,
     BookingPax,
@@ -524,6 +525,13 @@ class BookingTicketDetailsSerializer(serializers.ModelSerializer):
             "loss": {"read_only": True},
         }
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if instance.ticket:
+            # Replace ticket ID with full ticket object
+            data['ticket'] = TicketSerializer(instance.ticket).data
+        return data
+
     def create(self, validated_data):
         trip_data = validated_data.pop("trip_details", [])
         stopover_data = validated_data.pop("stopover_details", [])
@@ -531,115 +539,70 @@ class BookingTicketDetailsSerializer(serializers.ModelSerializer):
         # Get the selected ticket
         selected_ticket = validated_data.get('ticket')
         
-        # --- NEW: Populate Pricing & P/L Fields ---
+        # --- NEW: Copy Full Ticket Details from Selected Ticket ---
         if selected_ticket:
             try:
                 from tickets.models import Ticket
-                # Refresh ticket to get latest prices
-                ticket_obj = Ticket.objects.get(id=selected_ticket.id)
-                print(f"DEBUG: Ticket {ticket_obj.id} - Purchase: {ticket_obj.adult_purchase_price}, Fare: {ticket_obj.adult_fare}")
+                # Refresh ticket to get latest details
+                ticket_obj = Ticket.objects.prefetch_related('trip_details', 'stopover_details').get(id=selected_ticket.id)
+                print(f"DEBUG: Syncing details from Ticket {ticket_obj.id}")
                 
-                # 1. Purchase Prices (from Ticket)
+                # 1. Copy Basic Fields
+                validated_data['pnr'] = validated_data.get('pnr') or ticket_obj.pnr
+                validated_data['is_meal_included'] = ticket_obj.is_meal_included
+                validated_data['is_refundable'] = ticket_obj.is_refundable
+                validated_data['weight'] = ticket_obj.baggage_weight
+                validated_data['pieces'] = ticket_obj.baggage_pieces
+                validated_data['is_umrah_seat'] = ticket_obj.is_umrah_seat
+                validated_data['trip_type'] = ticket_obj.trip_type
+                
+                # 2. Copy Prices (Purchase & Selling)
+                # Purchase Prices (Agency Cost)
                 validated_data['adult_purchase_price'] = ticket_obj.adult_purchase_price
                 validated_data['child_purchase_price'] = ticket_obj.child_purchase_price
                 validated_data['infant_purchase_price'] = ticket_obj.infant_purchase_price
                 
-                # 2. Selling Prices (Prefer payload, fallback to ticket)
-                # Note: The Ticket model uses 'adult_price' (or 'adult_fare') as the selling price. 
-                # 'adult_selling_price' is a serializer-only field, not on the model.
+                # Selling Prices (Customer Price)
+                # Prioritize explicit input, else fall back to ticket's stored selling prices
+                validated_data['adult_selling_price'] = validated_data.get('adult_price') or ticket_obj.adult_selling_price or ticket_obj.adult_fare
+                validated_data['child_selling_price'] = validated_data.get('child_price') or ticket_obj.child_selling_price or ticket_obj.child_fare
+                validated_data['infant_selling_price'] = validated_data.get('infant_price') or ticket_obj.infant_selling_price or ticket_obj.infant_fare
                 
-                print(f"DEBUG: validated_data adult_price input: {validated_data.get('adult_price')}")
-                
-                # Try to get from payload first, then fallback to ticket's stored price
-                validated_data['adult_selling_price'] = validated_data.get('adult_price') or ticket_obj.adult_price or ticket_obj.adult_fare
-                validated_data['child_selling_price'] = validated_data.get('child_price') or ticket_obj.child_price or ticket_obj.child_fare
-                validated_data['infant_selling_price'] = validated_data.get('infant_price') or ticket_obj.infant_price or ticket_obj.infant_fare
-                
-                print(f"DEBUG: Calculated adult_selling_price: {validated_data['adult_selling_price']}")
-                
-                # Ensure legacy fields match the determined selling price
+                # Sync legacy price fields
                 validated_data['adult_price'] = validated_data['adult_selling_price']
                 validated_data['child_price'] = validated_data['child_selling_price']
                 validated_data['infant_price'] = validated_data['infant_selling_price']
                 
-                # 3. Calculate Totals
-                # Note: Prices are per-seat, but 'adult_price' in BookingTicketDetails is usually 'per unit' price, 
-                # OR is it total? 
-                # Looking at models, 'seats' is for the whole row? No, BookingTicketDetails is usually one row per ticket type group?
-                # Actually, BookingTicketDetails seems to be a single line item.
-                # Let's assume price is UNIT price. (If it's total, logic changes).
-                # Wait, BookingTicketDetails has 'seats' field. 
-                # If 'adult_price' is TOTAL for all seats, then fine.
-                # However, typically price fields on models are UNIT prices, and we multiply by seats?
-                # BUT, looking at `BookingTicketDetails` model, it has `seats`.
-                # Let's assume input price (validated_data['adult_price']) is the UNIT price?
-                # No, usually in this system `adult_price` seems to be the price field stored directly.
-                # Let's stick effectively to: Profit = (Selling - Purchase)
-                # But wait, we need to know how many adults?
-                # `BookingTicketDetails` structure is a bit ambiguous: does it represent 1 type of passenger or mixed?
-                # It has `adult_price`, `child_price`. It seems to store all prices on one record?
-                # If so, we can't easily multiply by "number of adults" because we only have 'seats' total?
-                # Ah, `Booking` has `person_details`. `BookingTicketDetails` is likely just the flight info.
-                # But it has `adult_price`. 
-                # Let's calculate P&L based on the UNIT prices provided, assuming these fields represent the sums involved 
-                # OR (more likely) these are just cache fields.
+                # 3. Calculate P&L based on UNIT prices (Selling - Purchase)
+                total_selling_unit = (validated_data['adult_selling_price'] or 0) + \
+                                     (validated_data['child_selling_price'] or 0) + \
+                                     (validated_data['infant_selling_price'] or 0)
+                                     
+                total_purchase_unit = (validated_data['adult_purchase_price'] or 0) + \
+                                      (validated_data['child_purchase_price'] or 0) + \
+                                      (validated_data['infant_purchase_price'] or 0)
                 
-                # Simplified P&L Logic:
-                # We will sum the selling prices and purchase prices present on this record.
-                # Assuming `adult_price` here means "Total Adult Price" for this booking line item? 
-                # Or `adult_price` means "Price per Adult"?
-                # Given `Booking` has `total_adult` count, and `BookingTicketDetails` is linked to `Booking`.
-                # If `BookingTicketDetails` is just one flight leg, it might be shared?
-                # Let's look at `adult_price` usage.
-                # If `adult_price` is 0, ignore.
-                
-                total_selling = (validated_data.get('adult_selling_price', 0) or 0) + \
-                                (validated_data.get('child_selling_price', 0) or 0) + \
-                                (validated_data.get('infant_selling_price', 0) or 0)
-                
-                total_purchase = (validated_data.get('adult_purchase_price', 0) or 0) + \
-                                 (validated_data.get('child_purchase_price', 0) or 0) + \
-                                 (validated_data.get('infant_purchase_price', 0) or 0)
-                                 
-                # Adjust for seat count? 
-                # If these are UNIT prices, we should multiply. 
-                # But `BookingTicketDetails` doesn't seem to split seats by type (adult/child). 
-                # It just has `seats`.
-                # However, usually the frontend calculates the *Total* price and sends it?
-                # Or it sends the unit price?
-                # Let's check `FlightBookingForm.jsx` (which I edited earlier). 
-                # It calculates: `adultPrice * adultsCount`.
-                # And the payload usually sums it up?
-                # Actually, `BookingTicketDetails` is just a record of the flight.
-                # The actual cost calculation happens on `Booking` model level (`total_ticket_amount_pkr`).
-                # BUT, for this specific record, we want to store the P&L of *this ticket*.
-                # Let's assume the values in `adult_price` etc are the EFFECTIVE amounts for the booking.
-                # If they are unit prices, this P&L is "per unit sum".
-                # If they are total amounts, this P&L is "total sum".
-                # Given I can't be 100% sure without running it, I will compute strictly on the fields I have.
-                # P&L = Sum(Selling) - Sum(Purchase)
-                
-                diff = total_selling - total_purchase
+                diff = total_selling_unit - total_purchase_unit
                 if diff > 0:
                     validated_data['profit'] = diff
                     validated_data['loss'] = 0
                 else:
                     validated_data['profit'] = 0
                     validated_data['loss'] = abs(diff)
+                    
+                # 4. Copy Organization Info
+                validated_data['inventory_owner_organization_id'] = ticket_obj.owner_organization_id
 
             except Exception as e:
-                print(f"Error calculating P&L: {e}")
+                print(f"Error syncing ticket details: {e}")
         # ----------------------------------------------
         
         # Create the booking ticket detail
         booking_ticket = BookingTicketDetails.objects.create(**validated_data)
 
-        # If no trip_data provided, auto-copy from the selected ticket
+        # 5. Sync Trip Details (Flight Legs)
         if not trip_data and selected_ticket:
             try:
-                from tickets.models import Ticket
-                ticket_obj = Ticket.objects.prefetch_related('trip_details').get(id=selected_ticket.id)
-                
                 # Copy trip details from ticket to booking
                 for trip in ticket_obj.trip_details.all():
                     BookingTicketTicketTripDetails.objects.create(
@@ -649,6 +612,10 @@ class BookingTicketDetailsSerializer(serializers.ModelSerializer):
                         departure_date_time=trip.departure_date_time,
                         arrival_date_time=trip.arrival_date_time,
                         trip_type=trip.trip_type,
+                        flight_number=trip.flight_number,
+                        airline_code=trip.airline.name if trip.airline else None,
+                        departure_city_code=trip.departure_city.code if getattr(trip.departure_city, 'code', None) else None,
+                        arrival_city_code=trip.arrival_city.code if getattr(trip.arrival_city, 'code', None) else None
                     )
             except Exception as e:
                 print(f"⚠️ Could not auto-copy trip details: {e}")
@@ -658,23 +625,21 @@ class BookingTicketDetailsSerializer(serializers.ModelSerializer):
                 [
                     BookingTicketTicketTripDetails(
                         ticket=booking_ticket,
-                        departure_city=td["departure_city"],
-                        arrival_city=td["arrival_city"],
-                        departure_date_time=td["departure_date_time"],
-                        arrival_date_time=td["arrival_date_time"],
-                        trip_type=td["trip_type"],
+                        departure_city=td.get("departure_city"),
+                        arrival_city=td.get("arrival_city"),
+                        departure_date_time=td.get("departure_date_time"),
+                        arrival_date_time=td.get("arrival_date_time"),
+                        trip_type=td.get("trip_type"),
+                        flight_number=td.get("flight_number"),
+                        airline_code=td.get("airline_code")
                     )
                     for td in trip_data
                 ]
             )
         
-        # If no stopover_data provided, auto-copy from the selected ticket
+        # 6. Sync Stopover Details
         if not stopover_data and selected_ticket:
             try:
-                from tickets.models import Ticket
-                ticket_obj = Ticket.objects.prefetch_related('stopover_details').get(id=selected_ticket.id)
-                
-                # Copy stopover details from ticket to booking
                 for stopover in ticket_obj.stopover_details.all():
                     BookingTicketStopoverDetails.objects.create(
                         ticket=booking_ticket,
@@ -685,7 +650,6 @@ class BookingTicketDetailsSerializer(serializers.ModelSerializer):
             except Exception as e:
                 print(f"⚠️ Could not auto-copy stopover details: {e}")
         elif stopover_data:
-            # Use provided stopover_data
             BookingTicketStopoverDetails.objects.bulk_create(
                 [
                     BookingTicketStopoverDetails(
@@ -701,25 +665,77 @@ class BookingTicketDetailsSerializer(serializers.ModelSerializer):
         return booking_ticket
 
     def update(self, instance, validated_data):
-        trip_data = validated_data.pop("trip_details", [])
-        stopover_data = validated_data.pop("stopover_details", [])
+        trip_data = validated_data.pop("trip_details", None)
+        stopover_data = validated_data.pop("stopover_details", None)
+        selected_ticket = validated_data.get('ticket')
 
+        # If ticket is changed, re-sync details
+        if selected_ticket and selected_ticket != instance.ticket:
+            try:
+                from tickets.models import Ticket
+                ticket_obj = Ticket.objects.prefetch_related('trip_details', 'stopover_details').get(id=selected_ticket.id)
+                print(f"DEBUG: Updating/Syncing details from Ticket {ticket_obj.id}")
+                
+                validated_data['pnr'] = validated_data.get('pnr') or ticket_obj.pnr
+                validated_data['is_meal_included'] = ticket_obj.is_meal_included
+                validated_data['is_refundable'] = ticket_obj.is_refundable
+                validated_data['weight'] = ticket_obj.baggage_weight
+                validated_data['pieces'] = ticket_obj.baggage_pieces
+                validated_data['is_umrah_seat'] = ticket_obj.is_umrah_seat
+                validated_data['trip_type'] = ticket_obj.trip_type
+                
+                validated_data['adult_purchase_price'] = ticket_obj.adult_purchase_price
+                validated_data['child_purchase_price'] = ticket_obj.child_purchase_price
+                validated_data['infant_purchase_price'] = ticket_obj.infant_purchase_price
+                
+                validated_data['adult_selling_price'] = validated_data.get('adult_price') or ticket_obj.adult_selling_price or ticket_obj.adult_fare
+                validated_data['child_selling_price'] = validated_data.get('child_price') or ticket_obj.child_selling_price or ticket_obj.child_fare
+                validated_data['infant_selling_price'] = validated_data.get('infant_price') or ticket_obj.infant_selling_price or ticket_obj.infant_fare
+                
+                validated_data['adult_price'] = validated_data['adult_selling_price']
+                validated_data['child_price'] = validated_data['child_selling_price']
+                validated_data['infant_price'] = validated_data['infant_selling_price']
+                
+                validated_data['inventory_owner_organization_id'] = ticket_obj.owner_organization_id
+                
+                # Auto-update trip details if not manually provided
+                if trip_data is None:
+                    instance.trip_details.all().delete()
+                    for trip in ticket_obj.trip_details.all():
+                        BookingTicketTicketTripDetails.objects.create(
+                            ticket=instance,
+                            departure_city=trip.departure_city,
+                            arrival_city=trip.arrival_city,
+                            departure_date_time=trip.departure_date_time,
+                            arrival_date_time=trip.arrival_date_time,
+                            trip_type=trip.trip_type,
+                            flight_number=trip.flight_number,
+                            airline_code=trip.airline.name if trip.airline else None,
+                            departure_city_code=trip.departure_city.code if getattr(trip.departure_city, 'code', None) else None,
+                            arrival_city_code=trip.arrival_city.code if getattr(trip.arrival_city, 'code', None) else None
+                        )
+            except Exception as e:
+                print(f"Error syncing ticket on update: {e}")
+
+        # Standard update
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
 
-
+        # Handle explicit updates to nested data
         if trip_data is not None:
             instance.trip_details.all().delete()
             BookingTicketTicketTripDetails.objects.bulk_create(
                 [
                     BookingTicketTicketTripDetails(
                         ticket=instance,
-                        departure_city=td["departure_city"],
-                        arrival_city=td["arrival_city"],
-                        departure_date_time=td["departure_date_time"],
-                        arrival_date_time=td["arrival_date_time"],
-                        trip_type=td["trip_type"],
+                        departure_city=td.get("departure_city"),
+                        arrival_city=td.get("arrival_city"),
+                        departure_date_time=td.get("departure_date_time"),
+                        arrival_date_time=td.get("arrival_date_time"),
+                        trip_type=td.get("trip_type"),
+                        flight_number=td.get("flight_number"),
+                        airline_code=td.get("airline_code")
                     )
                     for td in trip_data
                 ]
@@ -932,7 +948,6 @@ class BookingTicketDetailsSerializer(serializers.ModelSerializer):
 
 
 class BookingPersonDetailSerializer(serializers.ModelSerializer):
-    ticket = NullablePKRelatedField(queryset=Ticket.objects.all(), required=False, allow_null=True)
     contact_details = BookingPersonContactDetailsSerializer(many=True, required=False)
     
     class Meta:
@@ -967,7 +982,6 @@ class BookingPersonDetailSerializer(serializers.ModelSerializer):
             'visa_remarks',
             # Ticket section (grouped)
             'ticket_included',
-            'ticket',
             'ticket_status',
             'ticket_remarks',
             'ticket_price',
@@ -2883,7 +2897,19 @@ class DiscountGroupSerializer(serializers.ModelSerializer):
             "discounts": discounts_obj,
             "hotel_night_discounts": list(grouped.values()),
         }
+class MarkupHotelSerializer(serializers.ModelSerializer):
+    hotel_name = serializers.CharField(source='hotel.name', read_only=True)
+    
+    class Meta:
+        model = MarkupHotel
+        fields = [
+            "id", "markup", "hotel", "hotel_name",
+            "quint", "quad", "triple", "double", "sharing", "other",
+        ]
+
 class MarkupSerializer(serializers.ModelSerializer):
+    hotel_markups = MarkupHotelSerializer(many=True, required=False)
+    
     class Meta:
         model = Markup
         fields = [
@@ -2894,9 +2920,35 @@ class MarkupSerializer(serializers.ModelSerializer):
             "hotel_per_night_markup",
             "umrah_package_markup",
             "organization_id",
+            "hotel_markups",
             "created_at",
             "updated_at",
         ]
+        
+    def create(self, validated_data):
+        hotel_markups_data = validated_data.pop('hotel_markups', [])
+        markup = Markup.objects.create(**validated_data)
+        for hm_data in hotel_markups_data:
+            MarkupHotel.objects.create(markup=markup, **hm_data)
+        return markup
+
+    def update(self, instance, validated_data):
+        hotel_markups_data = validated_data.pop('hotel_markups', None)
+        
+        # update main fields
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        
+        # update nested
+        if hotel_markups_data is not None:
+            # Simple strategy: delete all and recreate (easiest for now)
+            # Or smart update. Let's do delete-recreate for simplicity unless ID provided
+            instance.hotel_markups.all().delete()
+            for hm_data in hotel_markups_data:
+                MarkupHotel.objects.create(markup=instance, **hm_data)
+                
+        return instance
 
 class BookingCallRemarkSerializer(serializers.ModelSerializer):
     created_by = UserSerializer(read_only=True)

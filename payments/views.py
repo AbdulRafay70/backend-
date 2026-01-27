@@ -49,21 +49,43 @@ class ConsumerViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['get'])
     def next_consumer_number(self, request):
-        """Get the next available consumer number"""
-        base_number = 95700000
+        """Get the next available consumer number
+        
+        Generates consumer numbers according to Kuickpay BPS-Rest API specification:
+        - Total length: 18 digits (as per official spec)
+        - Format: [5-digit prefix][13-digit sequence]
+        - Prefix: 09571 (assigned by Kuickpay to institution)
+        - Example: 09571000000000000001 (18 digits total)
+        """
+        # Kuickpay assigned prefix (first 5 digits)
+        KUICKPAY_PREFIX = "09571"
+        CONSUMER_NUMBER_LENGTH = 18  # As per Kuickpay official specification
+        SEQUENCE_LENGTH = 13  # Remaining digits after prefix (18 - 5 = 13)
         
         last_consumer = Consumer.objects.order_by('-consumer_number').first()
         
         if last_consumer:
             try:
-                last_number = int(last_consumer.consumer_number)
-                next_number = last_number + 1
-            except ValueError:
-                next_number = base_number
+                consumer_num = str(last_consumer.consumer_number)
+                
+                # Check if it's in the new format (18 digits with prefix)
+                if len(consumer_num) == CONSUMER_NUMBER_LENGTH and consumer_num.startswith(KUICKPAY_PREFIX):
+                    # Extract sequence part (digits after the 5-digit prefix)
+                    last_sequence = int(consumer_num[5:])
+                    next_sequence = last_sequence + 1
+                else:
+                    # Old format detected, start fresh with sequence 1
+                    next_sequence = 1
+            except (ValueError, IndexError):
+                next_sequence = 1
         else:
-            next_number = base_number
+            next_sequence = 1
         
-        return Response({'next_consumer_number': str(next_number)})
+        # Format: [5-digit prefix][13-digit sequence with leading zeros]
+        # Example: 09571 + 0000000000001 = 095710000000000001 (18 digits)
+        next_number = f"{KUICKPAY_PREFIX}{next_sequence:0{SEQUENCE_LENGTH}d}"
+        
+        return Response({'next_consumer_number': next_number})
     
     @action(detail=True, methods=['patch'])
     def update_status(self, request, pk=None):

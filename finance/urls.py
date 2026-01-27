@@ -19,6 +19,7 @@ urlpatterns = [
     path("api/finance/dashboard", views.compact_dashboard, name="dashboard-compact"),
     path("api/finance/balance-sheet", views.balance_sheet, name="balance-sheet"),
     path("api/finance/audit-trail", views.audit_trail, name="audit-trail"),
+    path("api/finance/booking-pnl/<int:booking_id>/", views.booking_pnl_view, name="booking-pnl"),
     
     # 📊 Reports Module API Endpoints
     path("api/v1/reports/sales-summary/", reports_views.sales_summary_report, name="sales-summary"),

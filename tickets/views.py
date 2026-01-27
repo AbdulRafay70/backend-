@@ -427,8 +427,6 @@ class HotelsViewSet(ModelViewSet):
         
         # Accept either `owner_organization` (preferred) or legacy `organization` query param
         owner_org_id = self.request.query_params.get("owner_organization") or self.request.query_params.get("organization")
-        if not owner_org_id:
-            raise PermissionDenied("Missing 'owner_organization' or 'organization' query parameter.")
 
         # Check if user has access to this organization (including branch/agency linkage)
         user_orgs = self.request.user.organizations.all()
@@ -438,6 +436,12 @@ class HotelsViewSet(ModelViewSet):
         agency_orgs = Organization.objects.filter(branches__agencies__in=user_agencies)
         accessible_orgs = user_orgs | branch_orgs | agency_orgs
         accessible_org_ids = list(accessible_orgs.values_list('id', flat=True))
+
+        if not owner_org_id:
+             # If no specific organization context is provided, return hotels from ALL accessible organizations
+             return Hotels.objects.filter(is_active=True, organization_id__in=accessible_org_ids).prefetch_related('prices', 'contact_details', 'photos')
+        
+        # If the provided ID is an agency ID instead of org ID, resolve it to org ID
         
         # If the provided ID is an agency ID instead of org ID, resolve it to org ID
         # Check if it's an agency the user has access to

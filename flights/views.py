@@ -17,6 +17,35 @@ from .flight_service import FlightService
 from .auth_service import AuthenticationService
 
 
+class FlightWarmupView(APIView):
+    """
+    Warm up AIQS authentication so token is generated and cached in server
+    session before the user initiates a search.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        try:
+            tokens = AuthenticationService.get_tokens()
+            # Mark session so frontend can rely on server-side warmup if needed
+            try:
+                request.session['aiqs_token_ready'] = True
+            except Exception:
+                # session might not be available in some contexts; ignore
+                pass
+
+            return Response({
+                "status": "success",
+                "message": "Authentication warmed up",
+                "token_expires_in": tokens.get('expires_in')
+            }, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                "status": "error",
+                "message": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 class FlightSearchView(APIView):
     """
     Flight Search API

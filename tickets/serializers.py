@@ -12,6 +12,7 @@ from .models import (
     HotelRooms,
     RoomDetails,
 )
+from organization.pricing_utils import get_reseller_markup_group, apply_hotel_markup, apply_ticket_markup
 
 
 class TickerStopoverDetailsSerializer(serializers.ModelSerializer):
@@ -209,7 +210,19 @@ class TicketSerializer(serializers.ModelSerializer):
         ]
         for field in fields_to_remove:
             data.pop(field, None)
+        for field in fields_to_remove:
+            data.pop(field, None)
             
+        # Apply Markup
+        request = self.context.get('request')
+        # Use owner_organization_id or organization_id as semantic owner
+        owner_id = getattr(instance, 'owner_organization_id', None) or getattr(instance, 'organization_id', None)
+        
+        if request and owner_id:
+             markup_group = get_reseller_markup_group(request.user, owner_id)
+             if markup_group:
+                 data = apply_ticket_markup(data, markup_group)
+
         return data
 
     def validate(self, data):
@@ -612,6 +625,19 @@ class HotelPricesSerializer(serializers.ModelSerializer):
         # explicitly list fields so OpenAPI shows `selling_price` instead of `price`
         fields = ('id', 'start_date', 'end_date', 'room_type', 'selling_price', 'price', 'purchase_price', 'is_sharing_allowed')
 
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        
+        # Apply Markup to dynamic HotelPrices list?
+        # NO, HotelPricesSerializer is used inside HotelsSerializer (many=True).
+        # HotelsSerializer.to_representation is better place to handle this because
+        # we need the Hotel ID and the User Context which is easier at Hotel level.
+        # However, passing context down to nested serializers is standard DRF.
+        
+        # But we implemented apply_hotel_markup taking a LIST of prices.
+        # So we should do it in HotelsSerializer.to_representation.
+        return data
+
 
 class HotelCategorySerializer(serializers.ModelSerializer):
     # make slug optional at the serializer level so clients can POST just a name
@@ -679,6 +705,8 @@ class HotelsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Hotels
         fields = "__all__"
+
+
 
     def create(self, validated_data):
         # Allow clients to send a category by id (category_id) or as an object/number
@@ -869,6 +897,14 @@ class HotelsSerializer(serializers.ModelSerializer):
         """
         data = super().to_representation(instance)
         
+        # Apply Reseller Markup
+        request = self.context.get('request')
+        if request and instance.organization_id:
+            markup_group = get_reseller_markup_group(request.user, instance.organization_id)
+            if markup_group:
+                 if 'prices' in data and data['prices']:
+                     data['prices'] = apply_hotel_markup(instance.id, data['prices'], markup_group)
+        
         # Handle owner organization ID
         try:
             owner_id = getattr(instance, 'owner_organization_id', None)
@@ -918,7 +954,7 @@ class HotelsSerializer(serializers.ModelSerializer):
                 # Only add service charges for agent panel AND if not Full Agency
                 should_add_charges = is_agent_panel and not is_admin_panel and not is_full_agency
                 
-                print(f"\n🔍 Hotel {instance.id} - Referer: {referer}")
+                print(f"\n[DEBUG] Hotel {instance.id} - Referer: {referer}")
                 print(f"   Agent panel: {is_agent_panel}, Admin panel: {is_admin_panel}, Full Agency: {is_full_agency}")
                 print(f"   Will add service charges: {should_add_charges}")
             
@@ -934,7 +970,7 @@ class HotelsSerializer(serializers.ModelSerializer):
                         break
                 
                 if service_charge:
-                    print(f"✅ Found service charge record ID: {service_charge.id}")
+                    print(f"[FOUND] Found service charge record ID: {service_charge.id}")
                     print(f"   hotel_ids field: {service_charge.hotel_ids}")
                     
                     # Map room types to their service charge fields (convert Decimal to float)
@@ -960,17 +996,17 @@ class HotelsSerializer(serializers.ModelSerializer):
                                 # Add a flag to indicate service charge was applied
                                 price_entry['service_charge_applied'] = charge
                                 # Debug logging
-                                print(f"   ✅ {room_type.upper()}: {original_price} + {charge} = {new_price}")
+                                print(f"   [OK] {room_type.upper()}: {original_price} + {charge} = {new_price}")
                             else:
                                 if charge == 0:
-                                    print(f"   ⚠️  {room_type.upper()}: No charge configured (0 PKR)")
+                                    print(f"   [WARN]  {room_type.upper()}: No charge configured (0 PKR)")
                 else:
-                    print(f"   ℹ️  No service charge found for Hotel ID: {hotel_id}")
+                    print(f"   [INFO] No service charge found for Hotel ID: {hotel_id}")
             elif not should_add_charges:
-                print(f"   ⏭️  Skipping service charges (admin panel request)")
+                print(f"   [SKIP] Skipping service charges (admin panel request)")
         except Exception as e:
             # Log error but don't fail the serialization
-            print(f"❌ Error adding service charges to hotel {instance.id}: {str(e)}")
+            print(f"Error adding service charges to hotel {instance.id}: {str(e)}")
             import traceback
             traceback.print_exc()
             pass
@@ -1111,6 +1147,21 @@ class TicketListSerializer(serializers.ModelSerializer):
     adult_selling_price = serializers.SerializerMethodField()
     child_selling_price = serializers.SerializerMethodField()
     infant_selling_price = serializers.SerializerMethodField()
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        
+        # Apply Markup
+        request = self.context.get('request')
+        # Use owner_organization_id or organization_id as semantic owner
+        owner_id = getattr(instance, 'owner_organization_id', None) or getattr(instance, 'organization_id', None)
+        
+        if request and owner_id:
+             markup_group = get_reseller_markup_group(request.user, owner_id)
+             if markup_group:
+                 data = apply_ticket_markup(data, markup_group)
+
+        return data
 
     class Meta:
         model = Ticket

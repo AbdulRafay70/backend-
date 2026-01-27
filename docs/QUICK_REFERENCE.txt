@@ -1,0 +1,70 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    KUICKPAY UAT QUICK REFERENCE                              ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+┌─ STATUS ─────────────────────────────────────────────────────────────────────┐
+│ ✅ Format Fixed: 18-digit consumer numbers (09571 prefix)                    │
+│ ✅ Local Consumers Created: 5 test records                                   │
+│ ⚠️  NEXT: Register consumers in Kuickpay Portal                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─ CREDENTIALS ────────────────────────────────────────────────────────────────┐
+│ Test Bank:                                                                   │
+│   https://app2.kuickpay.com/testbank                                         │
+│   User: abc@abc.com | Pass: 123                                              │
+│                                                                               │
+│ Merchant Portal:                                                             │
+│   https://uatmerchantportal.kuickpay.com/                                    │
+│   User: SAERPK | Pass: 123                                                   │
+│                                                                               │
+│ Prefix: 09571 (CONFIRMED ✓)                                                  │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─ TEST CONSUMER NUMBERS ──────────────────────────────────────────────────────┐
+│ 1. 09571000000000001 - Muhammad Ahmed   - PKR 150,000 (Umrah Basic)         │
+│ 2. 09571000000000002 - Fatima Khan      - PKR 250,000 (Umrah Premium)       │
+│ 3. 09571000000000003 - Ali Hassan       - PKR 500,000 (Hajj Economy)        │
+│ 4. 09571000000000004 - Ayesha Malik     - PKR  25,000 (Visa Fee)            │
+│ 5. 09571000000000005 - Usman Farooq     - PKR  75,000 (Hotel Booking)       │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─ TO DO NOW ──────────────────────────────────────────────────────────────────┐
+│ 1. Login to Kuickpay Merchant Portal (https://uatmerchantportal.kuickpay.com)│
+│ 2. Find "Consumer Management" or "Create Bill" section                       │
+│ 3. Add the 5 consumer numbers above (manually or upload CSV)                 │
+│ 4. Wait for confirmation they're active                                      │
+│ 5. Test payment on test bank                                                 │
+│ 6. Verify transaction appears in merchant portal                             │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─ FILES REFERENCE ────────────────────────────────────────────────────────────┐
+│ 📄 CSV for Upload:                                                           │
+│    backend/docs/kuickpay_uat_test_consumers.csv                              │
+│                                                                               │
+│ 📖 Setup Guide:                                                              │
+│    backend/docs/kuickpay_uat_consumer_registration_guide.md                  │
+│                                                                               │
+│ 📊 Full Summary:                                                             │
+│    backend/docs/KUICKPAY_STATUS_SUMMARY.md                                   │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─ WHY "Consumer Number does not exist" ERROR? ────────────────────────────────┐
+│ Consumer numbers are in YOUR database but NOT in Kuickpay's UAT system.     │
+│ You MUST register them in the merchant portal first before testing payments.│
+└──────────────────────────────────────────────────────────────────────────────┘
+
+┌─ TESTING FLOW ───────────────────────────────────────────────────────────────┐
+│ 1. Register consumers in Kuickpay Portal ← YOU ARE HERE                     │
+│ 2. Open Test Bank (https://app2.kuickpay.com/testbank)                      │
+│ 3. Enter consumer number (e.g., 09571000000000001)                          │
+│ 4. Complete payment                                                          │
+│ 5. Check Merchant Portal for transaction                                    │
+│ 6. Verify in your Admin (localhost:3000/admin/kuickpay)                     │
+│ 7. Test Bill Inquiry API                                                    │
+│ 8. Test Bill Payment API                                                    │
+└──────────────────────────────────────────────────────────────────────────────┘
+
+╔══════════════════════════════════════════════════════════════════════════════╗
+║ NEED HELP? Contact Kuickpay Support or check the detailed guide             ║
+║ File: backend/docs/kuickpay_uat_consumer_registration_guide.md              ║
+╚══════════════════════════════════════════════════════════════════════════════╝

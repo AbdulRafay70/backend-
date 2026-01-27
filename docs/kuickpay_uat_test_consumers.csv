@@ -1,0 +1,6 @@
+Consumer Number,Consumer Name,Bill Amount,Due Date,Contact Number,Email Address,Bill Status,Reason
+09571000000000001,Muhammad Ahmed,150000.00,2026-02-25,03001234567,ahmed@example.com,Unpaid,Umrah Package - Basic
+09571000000000002,Fatima Khan,250000.00,2026-03-12,03009876543,fatima@example.com,Unpaid,Umrah Package - Premium
+09571000000000003,Ali Hassan,500000.00,2026-03-27,03112345678,ali@example.com,Unpaid,Hajj Package - Economy
+09571000000000004,Ayesha Malik,25000.00,2026-02-10,03219876543,ayesha@example.com,Unpaid,Visa Processing Fee
+09571000000000005,Usman Farooq,75000.00,2026-02-15,03331234567,usman@example.com,Unpaid,Hotel Booking - Medina

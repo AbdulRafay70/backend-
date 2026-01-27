@@ -24,10 +24,26 @@ class BranchSerializer(serializers.ModelSerializer):
 
 class OrganizationSerializer(serializers.ModelSerializer):
     branches = BranchSerializer(many=True, read_only=True)
+    markup_group_name = serializers.CharField(source='markup_group.name', read_only=True)
+    discount_group_name = serializers.CharField(source='discount_group.name', read_only=True)
 
     class Meta:
         model = Organization
         exclude = ["user"]
+
+    def to_representation(self, instance):
+        response = super().to_representation(instance)
+        if instance.markup_group:
+            response['markup_group'] = {
+                "id": instance.markup_group.id,
+                "name": instance.markup_group.name
+            }
+        if instance.discount_group:
+            response['discount_group'] = {
+                "id": instance.discount_group.id,
+                "name": instance.discount_group.name
+            }
+        return response
 
 
 class AgencyFilesSerializer(serializers.ModelSerializer):

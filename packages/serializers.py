@@ -35,6 +35,7 @@ from rest_framework import serializers
 from tickets.serializers import HotelsSerializer, TicketSerializer
 from tickets.models import Hotels
 from django.db import models
+from organization.pricing_utils import get_reseller_markup_group, apply_package_markup, apply_breakdown_markup
 
 
 class VisaSerializer(serializers.ModelSerializer):
@@ -666,6 +667,13 @@ class UmrahPackageSerializer(ModelSerializer):
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
+        
+        # Determine markup
+        markup_group = None
+        request = self.context.get('request')
+        if request and instance.organization_id:
+             markup_group = get_reseller_markup_group(request.user, instance.organization_id)
+
         # remove legacy top-level numeric organization FK if present
         if 'organization' in data:
             data.pop('organization', None)
@@ -709,6 +717,18 @@ class UmrahPackageSerializer(ModelSerializer):
             },
             "infant": instance.infant_package_purchase_price,
         }
+
+        if 'package_selling_prices' in data:
+            data['package_selling_prices'] = apply_package_markup(
+                data['package_selling_prices'], 
+                markup_group
+            )
+            
+        if 'total_price_breakdown' in data:
+            data['total_price_breakdown'] = apply_breakdown_markup(
+                data['total_price_breakdown'],
+                markup_group
+            )
 
         return data
 

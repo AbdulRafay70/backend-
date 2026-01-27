@@ -47,10 +47,10 @@ class BookingItemInlineForm(forms.ModelForm):
 class BookingForm(forms.ModelForm):
 	"""Custom form to show employees with full details"""
 	employee = forms.ModelChoiceField(
-		queryset=Employee.objects.select_related('agency', 'agency__branch', 'agency__branch__organization').all(),
+		queryset=Employee.objects.select_related('branch', 'branch__organization').all(),
 		required=True,
 		label="Employee",
-		help_text="Select employee - Organization, Branch, and Agency will be filled automatically"
+		help_text="Select employee - Organization and Branch will be filled automatically"
 	)
 
 	class Meta:
@@ -84,7 +84,7 @@ class BookingForm(forms.ModelForm):
 		# Filter employee queryset to only show employees with user accounts
 		self.fields['employee'].queryset = Employee.objects.filter(
 			user__isnull=False
-		).select_related('user', 'agency', 'agency__branch', 'agency__branch__organization')
+		).select_related('user', 'branch', 'branch__organization')
 		
 		# Hide selling/owner organization IDs
 		for field in ['selling_organization_id', 'owner_organization_id']:
@@ -121,22 +121,18 @@ class BookingForm(forms.ModelForm):
 		
 		cleaned_data['user'] = employee.user
 		
-		# Set organization, branch, and agency from employee
-		if not employee.agency:
-			raise forms.ValidationError({
-				'employee': "Selected employee must be linked to an agency."
-			})
+		# Set organization and branch from employee
+		if employee.branch:
+			cleaned_data['branch'] = employee.branch
+			if employee.branch.organization:
+				cleaned_data['organization'] = employee.branch.organization
 		
-		cleaned_data['agency'] = employee.agency
-		
-		if employee.agency.branch:
-			cleaned_data['branch'] = employee.agency.branch
-			if employee.agency.branch.organization:
-				cleaned_data['organization'] = employee.agency.branch.organization
-		else:
-			raise forms.ValidationError({
-				'employee': "Selected employee's agency must be linked to a branch."
-			})
+		# Set agency if possible (optional)
+		if employee.user:
+			# Agency has M2M to User
+			agency = employee.user.agencies.first()
+			if agency:
+				cleaned_data['agency'] = agency
 		
 		return cleaned_data
 	

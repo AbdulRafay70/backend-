@@ -28,37 +28,37 @@ if booking:
     serializer = BookingSerializer(booking)
     data = serializer.data
     
-    print(f"\n📋 Serialized Data Keys:")
-    print(f"  - umrah_package exists: {'umrah_package' in data}")
-    
-    if 'umrah_package' in data and data['umrah_package']:
-        pkg = data['umrah_package']
-        print(f"\n  Package Keys: {list(pkg.keys())}")
+    # 1. Check ticket_details
+    if 'ticket_details' in data and data['ticket_details']:
+        td = data['ticket_details'][0]
+        print(f"\n✅ ticket_details found. Keys: {list(td.keys())}")
         
-        if 'ticket_details' in pkg:
-            print(f"\n  ✅ ticket_details in package: {len(pkg['ticket_details'])} items")
-            
-            if len(pkg['ticket_details']) > 0:
-                td = pkg['ticket_details'][0]
-                print(f"\n  First ticket_detail keys: {list(td.keys())}")
-                
-                if 'ticket' in td:
-                    ticket = td['ticket']
-                    print(f"\n  Ticket keys: {list(ticket.keys())}")
-                    
-                    if 'trip_details' in ticket:
-                        print(f"\n  ✅ trip_details in ticket: {len(ticket['trip_details'])} items")
-                        
-                        if len(ticket['trip_details']) > 0:
-                            trip = ticket['trip_details'][0]
-                            print(f"\n  First trip keys: {list(trip.keys())}")
-                            print(f"  Trip type: {trip.get('trip_type')}")
-                            print(f"  Flight: {trip.get('flight_number')}")
-                    else:
-                        print(f"\n  ❌ NO trip_details in ticket")
-                else:
-                    print(f"\n  ❌ NO ticket in ticket_detail")
+        if 'ticket' in td:
+            ticket_val = td['ticket']
+            if isinstance(ticket_val, dict):
+                print(f"  ✅ 'ticket' field is a DICT (Full Object): {list(ticket_val.keys())}")
+                if 'flight_number' in ticket_val:
+                    print(f"    Flight: {ticket_val['flight_number']}")
+                if 'trip_details' in ticket_val:
+                     print(f"    Trip Details Count: {len(ticket_val['trip_details'])}")
+            elif ticket_val is None:
+                print(f"  ⚠️ 'ticket' field is None (might be expected if no ticket linked)")
+            else:
+                print(f"  ❌ 'ticket' field is NOT a dict. Type: {type(ticket_val)}")
         else:
-            print(f"\n  ❌ NO ticket_details in package")
+            print(f"  ❌ 'ticket' field MISSING in ticket_details")
+    else:
+        print(f"\n⚠️ No ticket_details in this booking")
 
+    # 2. Check person_details (should NOT have ticket)
+    if 'person_details' in data and data['person_details']:
+        pd = data['person_details'][0]
+        print(f"\n👤 Person Details found. Keys: {list(pd.keys())}")
+        
+        if 'ticket' not in pd:
+            print(f"  ✅ 'ticket' field successfully REMOVED from person_details")
+        else:
+            print(f"  ❌ 'ticket' field STILL PRESENT in person_details")
+    else:
+        print(f"\n⚠️ No person_details in this booking")
 print(f"\n{'='*80}")

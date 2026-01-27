@@ -130,6 +130,22 @@ class Organization(models.Model):
     logo = models.ImageField(
         upload_to="media/organization_logos", blank=True, null=True
     )
+    markup_group = models.ForeignKey(
+        'booking.Markup', 
+        on_delete=models.SET_NULL, 
+        null=True, 
+        blank=True, 
+        related_name='assigned_organizations',
+        help_text="Markup group assigned to this organization"
+    )
+    discount_group = models.ForeignKey(
+        'booking.DiscountGroup',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assigned_organizations',
+        help_text="Discount group assigned to this organization"
+    )
 
     def save(self, *args, **kwargs):
         # Auto-generate org_code if not set

@@ -1768,14 +1768,15 @@ class Discount(models.Model):
     def __str__(self):
         return f"{self.discount_group.name} - {self.things}"
 class Markup(models.Model):
-    APPLIES_CHOICES = [
-        ("group_ticket", "Group Ticket"),
-        ("hotel", "Hotel"),
-        ("umrah_package", "Umrah Package"),
-    ]
+    # Removed strict choices to allow any text (e.g. combined types)
+    # APPLIES_CHOICES = [
+    #     ("group_ticket", "Group Ticket"),
+    #     ("hotel", "Hotel"),
+    #     ("umrah_package", "Umrah Package"),
+    # ]
 
     name = models.CharField(max_length=100)
-    applies_to = models.CharField(max_length=20, choices=APPLIES_CHOICES)
+    applies_to = models.CharField(max_length=100, default="group_ticket")
     ticket_markup = models.FloatField(default=0, blank=True, null=True)
     hotel_per_night_markup = models.FloatField(default=0, blank=True, null=True)
     umrah_package_markup = models.FloatField(default=0, blank=True, null=True)
@@ -1788,6 +1789,23 @@ class Markup(models.Model):
 
     def __str__(self):
         return f"{self.name} ({self.applies_to})"
+
+class MarkupHotel(models.Model):
+    markup = models.ForeignKey(Markup, on_delete=models.CASCADE, related_name="hotel_markups")
+    hotel = models.ForeignKey("tickets.Hotels", on_delete=models.CASCADE)
+    
+    quint = models.FloatField(default=0)
+    quad = models.FloatField(default=0)
+    triple = models.FloatField(default=0)
+    double = models.FloatField(default=0)
+    sharing = models.FloatField(default=0)
+    other = models.FloatField(default=0)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.markup.name} - {self.hotel.name}"
 
 
 class BookingItem(models.Model):

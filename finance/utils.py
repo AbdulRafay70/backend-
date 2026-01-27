@@ -6,6 +6,7 @@ from ledger.models import LedgerEntry, LedgerLine, Account
 from .models import TransactionJournal, AuditLog
 from ledger.currency_utils import convert_sar_to_pkr
 from booking.models import Booking
+from packages.models import UmrahPackage
 from .models import FinancialRecord, Expense
 from django.db.models import Sum
 
@@ -104,6 +105,10 @@ def calculate_profit_loss(booking_id: int):
         booking = Booking.objects.get(pk=booking_id)
     except Booking.DoesNotExist:
         return None
+
+    # NEW: Check if this is a Package Booking? If so, use STRICT logic.
+    if getattr(booking, 'umrah_package', None):
+        return calculate_booking_pnl(booking_id)
 
     # income
     income = Decimal(str(getattr(booking, 'total_in_pkr', None) or getattr(booking, 'total_amount', 0) or 0))
@@ -257,4 +262,151 @@ def aggregate_financials_for_booking(booking_id: int):
         'expenses_amount': expenses,
         'profit_loss': profit,
         'count': count,
+
     }
+
+
+def calculate_booking_pnl(booking_id):
+    """
+    Calculate Selling Price, Purchase Price, Profit, and Loss for a booking 
+    STRICTLY from package prices (per user requirement).
+    
+    Rules:
+      - Source of Truth: UmrahPackage prices only.
+      - Pax Logic:
+        - Adults: 
+             If adult_count == 1 -> use sharing price. 
+             If adult_count > 1 -> use room_type price.
+        - Children:
+             Rule: "use flate prices" -> interpreted as child_without_bed (flat) pricing per instruction.
+        - Infants: Use infant_package_selling_price (flat).
+      - No add-ons included.
+    """
+    try:
+        # Simplified query to avoid potential relation resolution errors with prefetch
+        booking = Booking.objects.get(id=booking_id)
+        pkg = booking.umrah_package
+        if not pkg:
+            return None
+
+        # 1. Classify Pax
+        adults = 0
+        children = 0
+        infants = 0
+        
+        # Count based on age_group
+        for person in booking.person_details.all():
+            age = (person.age_group or "").lower()
+            if age == 'adult':
+                adults += 1
+            elif age == 'child':
+                children += 1
+            elif age == 'infant':
+                infants += 1
+            else:
+                # Default to adult if unspecified
+                adults += 1 
+
+        # 2. Determine Room Type
+        # Get representative room type from first hotel detail
+        room_type = 'sharing'
+        first_hotel = booking.hotel_details.first()
+        if first_hotel and first_hotel.room_type:
+            room_type = first_hotel.room_type.lower()
+        
+        # 3. Calculate Prices
+        
+        # Income Source: Direct from Booking Total (per user request)
+        total_selling = Decimal(str(booking.total_amount or 0))
+        
+        # Purchase Cost: Calculated from Package Base Prices
+        total_purchase = Decimal('0.00')
+        
+        # --- ADULTS ---
+        # Rule: If adult_count == 1 -> use sharing price
+        # Rule: If adult_count > 1 -> use price based on room_type
+        
+        target_room_type = room_type
+        if adults == 1:
+            target_room_type = 'sharing' # Force sharing for single pax
+        
+        # Normalize room type string to match model fields
+        # Model fields: sharing_selling_price, double_selling_price, etc.
+        valid_types = ['sharing', 'double', 'triple', 'quad', 'quaint']
+        if target_room_type not in valid_types:
+            # try to map typical variations
+            if 'shar' in target_room_type: target_room_type = 'sharing'
+            elif 'doub' in target_room_type: target_room_type = 'double'
+            elif 'trip' in target_room_type: target_room_type = 'triple'
+            elif 'quad' in target_room_type: target_room_type = 'quad'
+            elif 'quaint' in target_room_type or 'quint' in target_room_type: target_room_type = 'quaint'
+            else: target_room_type = 'sharing' # final fallback
+            
+        adult_selling_unit = Decimal(getattr(pkg, f"{target_room_type}_selling_price", 0) or 0)
+        adult_purchase_unit = Decimal(getattr(pkg, f"{target_room_type}_purchase_price", 0) or 0)
+        
+        # total_selling is fixed from booking.total_amount
+        total_purchase += (adult_purchase_unit * adults)
+        
+        # --- CHILDREN ---
+        # Rule: "use flate prices" -> interpreted as child_without_bed (Extras Only) logic
+        # per "child_without_bed -> use flat child price" instruction
+        
+        child_selling_unit = Decimal(getattr(pkg, "child_without_bed_selling_price", 0) or 0)
+        child_purchase_unit = Decimal(getattr(pkg, "child_without_bed_purchase_price", 0) or 0)
+        
+        total_purchase += (child_purchase_unit * children)
+        
+        # --- INFANTS ---
+        # Rule: Infant flat price
+        infant_selling_unit = Decimal(getattr(pkg, "infant_package_selling_price", 0) or 0)
+        infant_purchase_unit = Decimal(getattr(pkg, "infant_package_purchase_price", 0) or 0)
+        
+        total_purchase += (infant_purchase_unit * infants)
+        
+        # 4. Result
+        profit = total_selling - total_purchase
+        loss = abs(profit) if profit < 0 else Decimal('0.00')
+        
+        # JSON Result
+        result_json = {
+            "booking_id": booking.id,
+            "package_id": pkg.id,
+            "room_type": target_room_type,
+            "adult_count": adults,
+            "child_count": children,
+            "infant_count": infants,
+            "total_selling_price": float(total_selling),
+            "total_purchase_price": float(total_purchase),
+            "profit": float(profit),
+            "loss": float(loss)
+        }
+        
+        # 5. Save to Database (FinancialRecord)
+        # We store the "Net Profit" in profit_loss field (can be negative)
+        # income definition: total_selling
+        # purchase_cost definition: total_purchase
+        # expenses: 0 (since we are strictly using package prices, expenses are implicit in purchase cost or ignored per rule "No add-ons")
+        
+        FinancialRecord.objects.update_or_create(
+            booking_id=booking.id,
+            defaults={
+                'organization_id': booking.organization_id,
+                'branch_id': booking.branch_id,
+                'agent_id': booking.agency_id,
+                'income_amount': total_selling,
+                'purchase_cost': total_purchase,
+                'expenses_amount': 0, 
+                'profit_loss': profit, 
+                'metadata': result_json,
+                'status': 'active',
+                'description': f"Auto-calculated Package P&L for Booking #{booking.booking_number}",
+                'service_type': 'umrah'
+            }
+        )
+        
+        return result_json
+
+    except Exception as e:
+        print(f"Error calculating P&L: {e}")
+        return None
