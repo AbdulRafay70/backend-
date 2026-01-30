@@ -1,0 +1,116 @@
+{
+    "origin": "KHI",
+    "destination": "DXB",
+    "departureDate": "10-02-2026",
+    "flight": {
+        "id": "1",
+        "refundable": true,
+        "instantTicketing": false,
+        "bookOnHold": true,
+        "brandedFareSupported": true,
+        "brandedFareSeparate": true,
+        "fareRuleOffered": true,
+        "fare": {
+            "baseFare": 20330.0,
+            "tax": 35175.0,
+            "total": 55505.0,
+            "currency": "PKR"
+        },
+        "fareDetails": {
+            "fareBreakup": [
+                {
+                    "paxType": "ADT",
+                    "baseFare": "20330.0",
+                    "tax": "35175.0",
+                    "total": "55505.00",
+                    "fareBasis": "TCMOPK"
+                }
+            ]
+        },
+        "segments": [
+            {
+                "ond": {
+                    "duration": "0940",
+                    "issuingAirline": "WY",
+                    "ondID": 0
+                },
+                "flights": [
+                    {
+                        "departureDate": "10-02-2026",
+                        "departureTime": "1130",
+                        "arrivalDate": "10-02-2026",
+                        "arrivalTime": "1225",
+                        "departureLocation": "KHI",
+                        "departureTerminal": "M",
+                        "arrivalLocation": "MCT",
+                        "arrivalTerminal": null,
+                        "airlineCode": "WY",
+                        "operatingAirline": "WY",
+                        "flightNo": "324",
+                        "equipmentType": "738",
+                        "duration": "0155",
+                        "cabin": "Y",
+                        "stops": 0,
+                        "seatsAvailable": "7",
+                        "baggage": [
+                            {
+                                "type": "checkIn",
+                                "paxType": "ADT",
+                                "value": "20",
+                                "unit": "KG"
+                            }
+                        ],
+                        "segID": 0
+                    },
+                    {
+                        "departureDate": "10-02-2026",
+                        "departureTime": "1855",
+                        "arrivalDate": "10-02-2026",
+                        "arrivalTime": "2010",
+                        "departureLocation": "MCT",
+                        "departureTerminal": null,
+                        "arrivalLocation": "DXB",
+                        "arrivalTerminal": "1",
+                        "airlineCode": "WY",
+                        "operatingAirline": "WY",
+                        "flightNo": "623",
+                        "equipmentType": "7M8",
+                        "duration": "0115",
+                        "cabin": "Y",
+                        "stops": 0,
+                        "seatsAvailable": "7",
+                        "baggage": [
+                            {
+                                "type": "checkIn",
+                                "paxType": "ADT",
+                                "value": "20",
+                                "unit": "KG"
+                            }
+                        ],
+                        "segID": 1
+                    }
+                ]
+            }
+        ],
+        "supplierCode": 2,
+        "supplierSpecific": {
+            "traceId": "8f7eb90b-d227-4840-ad54-41265784650e",
+            "segRef": "DurmnvUqWDKAcN0MDAAAAA==|DurmnvUqWDKAeN0MDAAAAA==",
+            "segIdEqpTypeMap": {
+                "0-0": "738",
+                "0-1": "7M8"
+            },
+            "depTerminalMap": {
+                "0-0": "M"
+            },
+            "arrTerminalMap": {
+                "0-1": "1"
+            },
+            "issuingAirline": "WY",
+            "availabilitySourceMap": {
+                "DurmnvUqWDKAcN0MDAAAAA==": "S",
+                "DurmnvUqWDKAeN0MDAAAAA==": "S"
+            }
+        }
+    }
+}

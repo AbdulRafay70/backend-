@@ -12,9 +12,11 @@ from .serializers import (
 )
 from .models import PermissionExtension
 from .permissions import PermissionByAction
+from drf_spectacular.openapi import AutoSchema
 
 
 class UserViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     serializer_class = UserSerializer
     permission_classes = [IsAuthenticated, PermissionByAction]
     
@@ -22,10 +24,10 @@ class UserViewSet(viewsets.ModelViewSet):
     permission_map = {
         'list': 'auth.view_users_admin',
         'retrieve': 'auth.view_users_admin',
-        'create': 'auth.add_users_admin',
-        'update': 'auth.edit_users_admin',
-        'partial_update': 'auth.edit_users_admin',
-        'destroy': 'auth.delete_users_admin',
+        'create': ['auth.add_users_admin', 'auth.view_add_users_admin'],
+        'update': ['auth.edit_users_admin', 'auth.edit_branch_users_admin'],
+        'partial_update': ['auth.edit_users_admin', 'auth.edit_branch_users_admin'],
+        'destroy': ['auth.delete_users_admin', 'auth.delete_branch_users_admin'],
     }
 
     def check_permissions(self, request):
@@ -250,6 +252,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 class GroupViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     serializer_class = GroupSerializer
     permission_classes = [IsAuthenticated, PermissionByAction]
     
@@ -334,6 +337,7 @@ class GroupViewSet(viewsets.ModelViewSet):
 
 
 class PermissionViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     serializer_class = PermissionSerializer
     permission_classes = [IsAuthenticated, PermissionByAction]
     
@@ -397,6 +401,7 @@ class PermissionViewSet(viewsets.ModelViewSet):
 
 
 class PermissionGroupedByTypeAPIView(APIView):
+    schema = AutoSchema()
     def get(self, request, *args, **kwargs):
         grouped_permissions = PermissionExtension.objects.values("type").distinct()
         result = {}
@@ -409,6 +414,7 @@ class PermissionGroupedByTypeAPIView(APIView):
 
 
 class UserPermissionsAPIView(APIView):
+    schema = AutoSchema()
     def get(self, request, user_id):
         try:
             user = User.objects.get(pk=user_id)
@@ -429,6 +435,7 @@ class UserPermissionsAPIView(APIView):
 
 
 class UploadPermissionsFileAPIView(APIView):
+    schema = AutoSchema()
     parser_classes = (MultiPartParser, FormParser)  # Enable file upload handling
 
     def post(self, request):
@@ -490,6 +497,7 @@ class UploadPermissionsFileAPIView(APIView):
 
 
 class CurrentUserAPIView(APIView):
+    schema = AutoSchema()
     """
     GET /api/users/me/
     
@@ -542,6 +550,7 @@ class CurrentUserAPIView(APIView):
 
 
 class SwitchOrganizationAPIView(APIView):
+    schema = AutoSchema()
     """
     POST /api/users/switch-organization/
     
@@ -630,6 +639,7 @@ class SwitchOrganizationAPIView(APIView):
 
 
 class LogoutView(APIView):
+    schema = AutoSchema()
     """
     POST /api/logout/
     

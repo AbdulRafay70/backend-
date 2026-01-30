@@ -3,8 +3,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from .models import BookingPersonDetail
+from drf_spectacular.openapi import AutoSchema
 
 class UpdatePersonDetailView(APIView):
+    schema = AutoSchema()
     permission_classes = [IsAuthenticated]
     
     def patch(self, request, person_id):

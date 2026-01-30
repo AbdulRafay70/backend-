@@ -22,6 +22,8 @@ EXPENSE_CATEGORIES = [
     ("visa_fee", "Visa Fee"),
     ("maintenance", "Maintenance"),
     ("rent", "Rent"),
+    ("office_expense", "Office Expense"),
+    ("subscription", "Subscription"),
     ("other", "Other"),
 ]
 

@@ -3,6 +3,7 @@ from django.urls import reverse
 from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
 from logs.models import SystemLog
+from drf_spectacular.openapi import AutoSchema
 
 
 class LogsAPITest(TestCase):

@@ -7,6 +7,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from operations.models import TransportOperation
 from booking.models import Booking, BookingPersonDetail, VehicleType
+from drf_spectacular.openapi import AutoSchema
 
 
 class Command(BaseCommand):

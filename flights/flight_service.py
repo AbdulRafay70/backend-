@@ -50,6 +50,62 @@ class FlightService:
     @classmethod
     def _build_search_request(cls, params):
         """Build the flight search request structure"""
+        # Determine trip type
+        trip_type = params.get('tripType', 'oneway')
+        if trip_type == 'return':
+            aiqs_trip_type = 'R'
+        elif trip_type == 'multicity':
+            aiqs_trip_type = 'M'
+        else:
+            aiqs_trip_type = 'O'
+        
+        # Build ondPairs based on trip type
+        ond_pairs = []
+        
+        if trip_type == 'return':
+            # Round trip: outbound and return
+            ond_pairs = [
+                {
+                    "departureDate": params['departureDate'],
+                    "originLocation": params['origin'],
+                    "destinationLocation": params['destination']
+                },
+                {
+                    "departureDate": params.get('returnDate', ''),
+                    "originLocation": params['destination'],
+                    "destinationLocation": params['origin']
+                }
+            ]
+        elif trip_type == 'multicity':
+            # Multi-city: multiple segments from multiCitySegments
+            multi_city_segments = params.get('multiCitySegments', [])
+            if multi_city_segments:
+                ond_pairs = []
+                for i, segment in enumerate(multi_city_segments):
+                    ond_pairs.append({
+                        "departureDate": segment.get('departureDate', ''),
+                        "originLocation": segment.get('origin', ''),
+                        "destinationLocation": segment.get('destination', '')
+                    })
+            else:
+                # Fallback: use single segment
+                ond_pairs = [
+                    {
+                        "departureDate": params['departureDate'],
+                        "originLocation": params['origin'],
+                        "destinationLocation": params['destination']
+                    }
+                ]
+        else:
+            # One way
+            ond_pairs = [
+                {
+                    "departureDate": params['departureDate'],
+                    "originLocation": params['origin'],
+                    "destinationLocation": params['destination']
+                }
+            ]
+        
         return {
             "service": "FlightRQ",
             "content": {
@@ -61,18 +117,12 @@ class FlightService:
                         "typeOfUnit": "PX",
                         "resultsCount": str(params.get('maxResults', 50))
                     },
-                    "ondPairs": [
-                        {
-                            "departureDate": params['departureDate'],
-                            "originLocation": params['origin'],
-                            "destinationLocation": params['destination']
-                        }
-                    ],
+                    "ondPairs": ond_pairs,
                     "preferredAirline": params.get('preferredAirlines', []),
                     "nonStop": params.get('nonStop', False),
                     "cabin": params.get('cabinClass', 'Y'),
                     "maxStopQuantity": "Direct" if params.get('nonStop', False) else "All",
-                    "tripType": "O",  # O=Oneway, R=Round, M=Multi City
+                    "tripType": aiqs_trip_type,  # O=Oneway, R=Round, M=Multi City
                     "target": "Test",
                     "paxQuantity": {
                         "adt": params.get('adults', 1),

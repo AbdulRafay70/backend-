@@ -7,9 +7,11 @@ from drf_spectacular.utils import extend_schema
 from django.db import transaction
 from django.db.models import Q
 from datetime import datetime
+from drf_spectacular.openapi import AutoSchema
 
 
 class HotelBookingAPIView(APIView):
+    schema = AutoSchema()
     """
     API for creating hotel room bookings with date ranges.
     Allows multiple bookings on the same bed for different date periods.

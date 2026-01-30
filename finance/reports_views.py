@@ -19,6 +19,7 @@ from booking.models import Booking, BookingHotelDetails
 from ledger.models import LedgerEntry
 from organization.models import Organization, Branch, Agency
 from django.contrib.auth.models import User
+from drf_spectacular.openapi import AutoSchema
 
 
 def get_date_range(date_from=None, date_to=None):

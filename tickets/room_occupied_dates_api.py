@@ -4,9 +4,11 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from tickets.models import HotelRooms, HotelBooking
 from drf_spectacular.utils import extend_schema
+from drf_spectacular.openapi import AutoSchema
 
 
 class RoomOccupiedDatesAPIView(APIView):
+    schema = AutoSchema()
     """
     API to get occupied date ranges for a specific room.
     Returns list of bookings with their date ranges.

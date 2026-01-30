@@ -1,0 +1,103 @@
+{
+    "origin": "DOH",
+    "destination": "KWI",
+    "departureDate": "10-02-2026",
+    "flight": {
+        "id": "1",
+        "refundable": false,
+        "instantTicketing": true,
+        "bookOnHold": true,
+        "brandedFareSupported": true,
+        "brandedFareSeparate": false,
+        "fareRuleOffered": true,
+        "fare": {
+            "baseFare": 161863.0,
+            "tax": 15257.0,
+            "total": 177120.0,
+            "currency": "PKR"
+        },
+        "fareDetails": {
+            "fareBreakup": [
+                {
+                    "paxType": "ADT",
+                    "baseFare": "161863.00",
+                    "tax": "15257.00",
+                    "total": "177120.00"
+                }
+            ]
+        },
+        "segments": [
+            {
+                "ond": {
+                    "duration": "0125",
+                    "issuingAirline": "J9",
+                    "ondID": 0
+                },
+                "flights": [
+                    {
+                        "departureDate": "10-02-2026",
+                        "departureTime": "1800",
+                        "arrivalDate": "10-02-2026",
+                        "arrivalTime": "1925",
+                        "departureLocation": "DOH",
+                        "departureTerminal": null,
+                        "arrivalLocation": "KWI",
+                        "arrivalTerminal": "5",
+                        "airlineCode": "J9",
+                        "operatingAirline": "J9",
+                        "flightNo": "116",
+                        "equipmentType": "320",
+                        "duration": "0125",
+                        "cabin": "Y",
+                        "stops": 0,
+                        "seatsAvailable": "9",
+                        "baggage": [
+                            {
+                                "paxType": "ADT",
+                                "value": "0",
+                                "unit": "KG"
+                            }
+                        ],
+                        "segID": 0
+                    }
+                ]
+            }
+        ],
+        "supplierCode": 11,
+        "supplierSpecific": {
+            "fareKey": "Sjl_IDExNn4gfn5ET0h_MDIvMTAvMjAyNiAxODowMH5LV0l_MDIvMTAvMjAyNiAxOToyNX5_#MH5Zfn5KOX5ZSEVMT1dRQX5MRTAwfn4wfjJ_flghMA--"
+        },
+        "brands": [
+            {
+                "brandId": "1",
+                "brandName": "LIGHT",
+                "ondID": 0,
+                "baseFare": 161863.0,
+                "tax": 15257.0,
+                "total": 177120.0,
+                "currency": "PKR",
+                "fareBreakup": [
+                    {
+                        "paxType": "ADT",
+                        "baseFare": "161863.00",
+                        "tax": "15257.0",
+                        "total": "177120.00"
+                    }
+                ],
+                "inclusions": {
+                    "Hand Baggage": "7 KG/1 PIECE",
+                    "CheckIn Baggage": "0 KG",
+                    "Purchase Baggage": "Only available at Check-in",
+                    "Meal": "Order from J CAFE",
+                    "Seat Selection": "Pay",
+                    "Change": "Pay to Change upto 8 hours of departure",
+                    "Cancellation": "Non Refundable",
+                    "loungeAccess": "Pay"
+                },
+                "supplierSpecific": {
+                    "fareKey": "Sjl_IDExNn4gfn5ET0h_MDIvMTAvMjAyNiAxODowMH5LV0l_MDIvMTAvMjAyNiAxOToyNX5_#MH5Zfn5KOX5ZSEVMT1dRQX5MRTAwfn4wfjJ_flghMA--"
+                }
+            }
+        ]
+    }
+}

@@ -9,9 +9,11 @@ except Exception:  # django-filters is optional in some environments
 from django.utils import timezone
 from .models import SystemLog
 from .serializers import SystemLogSerializer
+from drf_spectacular.openapi import AutoSchema
 
 
 class SystemLogCreateView(APIView):
+    schema = AutoSchema()
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
@@ -40,6 +42,7 @@ class SystemLogCreateView(APIView):
 
 
 class SystemLogListView(generics.ListAPIView):
+    schema = AutoSchema()
     serializer_class = SystemLogSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [b for b in (DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter) if b]

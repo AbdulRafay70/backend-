@@ -11,6 +11,12 @@ import pymysql
 # Allow pymysql to act as MySQLdb (required for Windows/MySQL Workbench)
 pymysql.install_as_MySQLdb()
 
+# Monkeypatch version to satisfy Django's requirement
+import MySQLdb
+if MySQLdb.version_info < (2, 2, 1):
+    MySQLdb.version_info = (2, 2, 1, 'final', 0)
+    MySQLdb.version = "2.2.1"
+
 # ----------------------------------------------------
 # BASE SETTINGS
 # ----------------------------------------------------
@@ -68,6 +74,7 @@ INSTALLED_APPS = [
     "customers",  # Customer Auto-Collection & Lead Management
     "forms",  # Dynamic Forms for Lead Generation
     "payments",  # KuickPay Payment Management
+    "flights",  # AIQS Flight Search & Booking
 ]
 
 # ----------------------------------------------------

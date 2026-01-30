@@ -85,4 +85,4 @@ class PromotionContact(models.Model):
         self.save(update_fields=["last_seen"])
 
     def __str__(self):
-        return f"{self.name or '—'} ({self.phone})"
+        return f"{self.name or '-'} ({self.phone})"

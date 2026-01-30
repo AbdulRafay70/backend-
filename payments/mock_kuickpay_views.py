@@ -12,11 +12,13 @@ from decimal import Decimal
 from django.utils import timezone
 import logging
 from .models import Consumer
+from drf_spectacular.openapi import AutoSchema
 
 logger = logging.getLogger(__name__)
 
 
 class MockKuickpayBillInquiryView(APIView):
+    schema = AutoSchema()
     """Mock Kuickpay Bill Inquiry endpoint - simulates /api/v1/BillInquiry"""
     permission_classes = [AllowAny]  # No auth needed for mock server
     
@@ -78,6 +80,7 @@ class MockKuickpayBillInquiryView(APIView):
 
 
 class MockKuickpayBillPaymentView(APIView):
+    schema = AutoSchema()
     """Mock Kuickpay Bill Payment endpoint - simulates /api/v1/BillPayment"""
     permission_classes = [AllowAny]  # No auth needed for mock server
     

@@ -19,6 +19,7 @@ from drf_spectacular.utils import extend_schema, OpenApiExample
 from django.db import transaction
 from datetime import date
 from users.permissions import PermissionByAction
+from drf_spectacular.openapi import AutoSchema
 
 
 
@@ -45,6 +46,7 @@ from users.permissions import PermissionByAction
     ],
 )
 class LeadCreateAPIView(generics.CreateAPIView):
+    schema = AutoSchema()
     permission_classes = [IsAuthenticated, IsBranchUser]
     serializer_class = LeadSerializer
 
@@ -71,6 +73,7 @@ class LeadCreateAPIView(generics.CreateAPIView):
 
 
 class LeadListAPIView(generics.ListAPIView):
+    schema = AutoSchema()
     permission_classes = [IsAuthenticated]
     serializer_class = LeadSerializer
     queryset = Lead.objects.all()
@@ -92,18 +95,21 @@ class LeadListAPIView(generics.ListAPIView):
 
 
 class LeadDetailAPIView(generics.RetrieveAPIView):
+    schema = AutoSchema()
     permission_classes = [IsAuthenticated]
     serializer_class = LeadSerializer
     queryset = Lead.objects.all()
 
 
 class LeadUpdateAPIView(generics.UpdateAPIView):
+    schema = AutoSchema()
     permission_classes = [IsAuthenticated, IsBranchUser]
     serializer_class = LeadSerializer
     queryset = Lead.objects.all()
 
 
 class LeadRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    schema = AutoSchema()
     """Support GET, PUT/PATCH and DELETE at `/api/leads/<id>/` to match frontend expectations."""
     permission_classes = [IsAuthenticated]
     serializer_class = LeadSerializer
@@ -122,6 +128,7 @@ class LeadRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class FollowUpCreateAPIView(generics.CreateAPIView):
+    schema = AutoSchema()
     permission_classes = [IsAuthenticated, IsBranchUser]
     serializer_class = FollowUpHistorySerializer
     def create(self, request, *args, **kwargs):
@@ -165,11 +172,13 @@ class FollowUpCreateAPIView(generics.CreateAPIView):
 
 
 class LoanPromiseAPIView(generics.CreateAPIView):
+    schema = AutoSchema()
     permission_classes = [IsAuthenticated, IsBranchUser]
     serializer_class = LoanCommitmentSerializer
 
 
 class LeadSearchAPIView(generics.GenericAPIView):
+    schema = AutoSchema()
     permission_classes = [IsAuthenticated]
     serializer_class = LeadSerializer
 
@@ -219,6 +228,7 @@ def mark_lost(request, pk):
 
 
 class TodayFollowupsView(generics.ListAPIView):
+    schema = AutoSchema()
     serializer_class = LeadSerializer
     permission_classes = [IsAuthenticated, IsBranchUser]
 
@@ -228,6 +238,7 @@ class TodayFollowupsView(generics.ListAPIView):
 
 
 class OverdueLoansView(generics.ListAPIView):
+    schema = AutoSchema()
     serializer_class = LoanCommitmentSerializer
     permission_classes = [IsAuthenticated, IsBranchUser]
 
@@ -237,6 +248,7 @@ class OverdueLoansView(generics.ListAPIView):
 
 
 class AdminFollowUpViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     """Admin-only CRUD for FollowUps with actions to close/reopen."""
     permission_classes = [IsAdminUser]
     serializer_class = FollowUpSerializer

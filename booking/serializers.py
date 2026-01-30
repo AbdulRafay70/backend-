@@ -410,6 +410,7 @@ class PublicPaymentCreateSerializer(serializers.Serializer):
 # Booking-level Food Details Serializer
 class BookingFoodDetailsSerializer(serializers.ModelSerializer):
     """Serializer for booking-level food details with per-passenger-type pricing"""
+    food_display = serializers.SerializerMethodField()
     
     class Meta:
         model = BookingFoodDetails
@@ -417,6 +418,8 @@ class BookingFoodDetailsSerializer(serializers.ModelSerializer):
             'id',
             'booking',
             'food',
+            'food_price',
+            'food_display',
             'adult_price',
             'child_price',
             'infant_price',
@@ -434,10 +437,24 @@ class BookingFoodDetailsSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id']
 
+    def get_food_display(self, obj):
+        if obj.food_price:
+            return obj.food_price.title
+        # Attempt to recover name if food is an ID (legacy fix)
+        if obj.food and str(obj.food).isdigit():
+            from packages.models import FoodPrice
+            try:
+                msg = FoodPrice.objects.get(id=int(obj.food)).title
+                return msg
+            except:
+                pass
+        return obj.food
+
 
 # Booking-level Ziarat Details Serializer
 class BookingZiyaratDetailsSerializer(serializers.ModelSerializer):
     """Serializer for booking-level ziarat details with per-passenger-type pricing"""
+    ziarat_display = serializers.SerializerMethodField()
     
     class Meta:
         model = BookingZiyaratDetails
@@ -445,6 +462,8 @@ class BookingZiyaratDetailsSerializer(serializers.ModelSerializer):
             'id',
             'booking',
             'ziarat',
+            'ziarat_price',
+            'ziarat_display',
             'city',
             'adult_price',
             'child_price',
@@ -463,6 +482,19 @@ class BookingZiyaratDetailsSerializer(serializers.ModelSerializer):
             'ziyarat_brn',
         ]
         read_only_fields = ['id']
+    
+    def get_ziarat_display(self, obj):
+        if obj.ziarat_price:
+            return obj.ziarat_price.ziarat_title
+        # Attempt to recover name if ziarat is an ID (legacy fix)
+        ziarat_text = obj.ziarat or obj.ziyarat  # handle alias if present
+        if ziarat_text and str(ziarat_text).isdigit():
+            from packages.models import ZiaratPrice
+            try:
+                return ZiaratPrice.objects.get(id=int(ziarat_text)).ziarat_title
+            except:
+                pass
+        return obj.ziarat
 
 
 
@@ -811,18 +843,36 @@ class BookingTransportSectorSerializer(serializers.ModelSerializer):
 #         fields = "__all__"
 #         extra_kwargs = {"booking": {"read_only": True}}
 class BookingTransportDetailsSerializer(serializers.ModelSerializer):
-    sector_details = BookingTransportSectorSerializer(many=True, required=False)
+    sector_details = serializers.SerializerMethodField()
     vehicle_type_display = serializers.SerializerMethodField()
+    sector_display = serializers.SerializerMethodField()
 
     class Meta:
         model = BookingTransportDetails
         fields = "__all__"
         extra_kwargs = {"booking": {"read_only": True}}
     
+    def get_sector_details(self, obj):
+        if obj.sector:
+            return [{
+                "id": obj.sector.id,
+                "departure_city": obj.sector.departure_city.name if obj.sector.departure_city else "",
+                "arrival_city": obj.sector.arrival_city.name if obj.sector.arrival_city else "",
+                "is_airport_pickup": obj.sector.is_airport_pickup,
+                "is_airport_drop": obj.sector.is_airport_drop,
+                "sector_type": obj.sector.sector_type
+            }]
+        return []
+
     def get_vehicle_type_display(self, obj):
         """Return vehicle name and type combined"""
         if obj.vehicle_type:
             return f"{obj.vehicle_type.vehicle_name} By {obj.vehicle_type.vehicle_type}"
+        return None
+
+    def get_sector_display(self, obj):
+        if obj.sector:
+            return str(obj.sector)
         return None
 
     def create(self, validated_data):
@@ -896,7 +946,16 @@ class BookingTicketDetailsSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = BookingTicketDetails
-        fields = '__all__'
+        exclude = [
+            'adult_purchase_price',
+            'child_purchase_price',
+            'infant_purchase_price',
+            'adult_selling_price',
+            'child_selling_price',
+            'infant_selling_price',
+            'profit',
+            'loss',
+        ]
         extra_kwargs = {"booking": {"read_only": True}}
     
     def get_history(self, obj):
@@ -1293,7 +1352,7 @@ class HotelOutsourcingSerializer(serializers.ModelSerializer):
 # --- Main Booking Serializer ---
 class BookingSerializer(serializers.ModelSerializer):
     organization_id = serializers.PrimaryKeyRelatedField(
-        queryset=Organization.objects.all(), source="organization", write_only=True
+        queryset=Organization.objects.all(), source="organization", write_only=True, required=False, allow_null=True
     )
     branch_id = serializers.PrimaryKeyRelatedField(
         queryset=Branch.objects.all(), source="branch", write_only=True, required=False, allow_null=True
@@ -1317,7 +1376,7 @@ class BookingSerializer(serializers.ModelSerializer):
         queryset=Agency.objects.all(), source="agency", required=False, allow_null=True
     )
     user_id = serializers.PrimaryKeyRelatedField(
-        queryset=User.objects.all(), source="user"
+        queryset=User.objects.all(), source="user", required=False, allow_null=True
     )
     internal_notes_id = serializers.PrimaryKeyRelatedField(
         source="internals",
@@ -1395,6 +1454,7 @@ class BookingSerializer(serializers.ModelSerializer):
             'booking_type',
             'payment_method',
             'status',
+            'voucher_status',
             'ledger_entry',
             'created_by_user_type',
             'created_at',
@@ -1796,6 +1856,10 @@ class BookingSerializer(serializers.ModelSerializer):
             is_price_pkr = hd.get("is_price_pkr", True)  # Default to PKR if not specified
             detail_riyal_rate = hd.get("riyal_rate", rate_obj.rate if rate_obj else 50)
             
+            # Remove keys that don't exist in BookingHotelDetails model to prevent crash
+            hd.pop("price_in_pkr", None)
+            hd.pop("price_in_sar", None)
+            
             if not is_price_pkr:
                 # Price is in SAR - convert to PKR using hotel detail's riyal_rate
                 hd["total_in_riyal_rate"] = total_price
@@ -1819,6 +1883,9 @@ class BookingSerializer(serializers.ModelSerializer):
                 except Hotels.DoesNotExist:
                     # Skip if hotel doesn't exist
                     pass
+                except Exception as e:
+                     print(f"❌ Error creating BookingHotelDetails object: {e}")
+
         if hotel_instances:
             BookingHotelDetails.objects.bulk_create(hotel_instances)
         booking.total_hotel_amount_pkr = total_pkr_sum
@@ -1891,6 +1958,9 @@ class BookingSerializer(serializers.ModelSerializer):
                 td.pop("transport_sector", None)  # This belongs to sector_details
                 td.pop("quantity", None)  # This field doesn't exist in the model
 
+                # Pop non-model fields
+                td.pop('vehicle_type_display', None)
+
                 # Convert vehicle_type ID to instance if it's an ID
                 vehicle_type_value = td.get("vehicle_type")
                 if vehicle_type_value:
@@ -1933,7 +2003,39 @@ class BookingSerializer(serializers.ModelSerializer):
         total_food_pkr = 0
         total_food_sar = 0
         for fd in food_data:
+            # Clean up fields not in model
+            fd.pop("description", None)
+            
+            # Handling Food Price FK
+            food_price_id = fd.pop("food_price", None)
+            if food_price_id:
+                # If it's an object/dict (though unlikely from frontend JSON), extract ID
+                if hasattr(food_price_id, 'id'):
+                     food_price_id = food_price_id.id
+                fd['food_price_id'] = food_price_id
+            
+            # Remove non-model fields
+            fd.pop('food_display', None)
+
             food_detail = BookingFoodDetails.objects.create(booking=booking, **fd)
+            
+            # Note: riyal_rate is already in fd if passed from frontend
+            # If we need to support old behavior of calculating it here:
+            # if is_price_pkr and not fd.get('riyal_rate'):
+            #     fd['riyal_rate'] = ... (logic from before)
+            # But currently frontend seems to send it.
+
+            # Append to list if we were doing bulk create, but here we do one by one?
+            # The original code was doing loop and create.
+            
+            # Re-verify logic flow:
+            # for fd in food_details_data:
+            #    ... processing ...
+            #    BookingFoodDetails.objects.create(...)
+            
+            # Previously:
+            # food_detail = BookingFoodDetails.objects.create(booking=booking, **fd)
+
             total_food_pkr += food_detail.total_price_pkr or 0
             total_food_sar += food_detail.total_price_sar or 0
 
@@ -1941,6 +2043,16 @@ class BookingSerializer(serializers.ModelSerializer):
         total_ziyarat_pkr = 0
         total_ziyarat_sar = 0
         for zd in ziarat_data:
+            # Handling Ziarat Price FK
+            ziarat_price_id = zd.pop("ziarat_price", None)
+            if ziarat_price_id:
+                if hasattr(ziarat_price_id, 'id'):
+                     ziarat_price_id = ziarat_price_id.id
+                zd['ziarat_price_id'] = ziarat_price_id
+            
+            # Remove non-model fields
+            zd.pop('ziarat_display', None)
+
             ziyarat_detail = BookingZiyaratDetails.objects.create(booking=booking, **zd)
             total_ziyarat_pkr += ziyarat_detail.total_price_pkr or 0
             total_ziyarat_sar += ziyarat_detail.total_price_sar or 0
@@ -1995,6 +2107,8 @@ class BookingSerializer(serializers.ModelSerializer):
         # else: Keep the total_amount sent from frontend (includes service charge)
         booking.save()
 
+        # Refresh from DB to ensure related objects (hotel_details) created via bulk_create are visible in response
+        booking.refresh_from_db()
         return booking
 
     @transaction.atomic
@@ -2008,6 +2122,7 @@ class BookingSerializer(serializers.ModelSerializer):
         person_data = validated_data.pop("person_details", None)
         food_data = validated_data.pop("food_details", None)
         ziarat_data = validated_data.pop("ziyarat_details", None)
+        internals_data = validated_data.pop("internals", None)
 
         # update booking fields
         for attr, value in validated_data.items():
@@ -2019,17 +2134,67 @@ class BookingSerializer(serializers.ModelSerializer):
         # None means "don't touch", empty list [] means "delete all"
         if isinstance(hotel_data, list):
             instance.hotel_details.all().delete()
-            BookingHotelDetails.objects.bulk_create(
-                [BookingHotelDetails(booking=instance, **hd) for hd in hotel_data]
-            )
+            # Convert hotel IDs to Hotels instances before creating
+            hotel_objects = []
+            # Get valid field names from the model
+            valid_fields = {f.name for f in BookingHotelDetails._meta.get_fields()}
+            
+            for hd in hotel_data:
+                # Map frontend field names to model field names
+                if 'brn_number' in hd:
+                    hd['hotel_brn'] = hd.pop('brn_number')
+                
+                # Extract hotel_id and convert to Hotels instance
+                hotel_id = hd.pop('hotel', None)
+                if hotel_id:
+                    try:
+                        from tickets.models import Hotels
+                        hd['hotel'] = Hotels.objects.get(id=hotel_id)
+                    except Hotels.DoesNotExist:
+                        # Skip if hotel doesn't exist
+                        continue
+                
+                # Filter out invalid fields that don't exist on the model
+                filtered_hd = {k: v for k, v in hd.items() if k in valid_fields}
+                hotel_objects.append(BookingHotelDetails(booking=instance, **filtered_hd))
+            
+            if hotel_objects:
+                BookingHotelDetails.objects.bulk_create(hotel_objects)
 
         # --- Transport ---
         # ONLY update if explicitly provided as a list (not None)
         if isinstance(transport_data, list):
             instance.transport_details.all().delete()
-            BookingTransportDetails.objects.bulk_create(
-                [BookingTransportDetails(booking=instance, **td) for td in transport_data]
-            )
+            # Get valid concrete field names from the model (excludes reverse relations)
+            valid_fields = {f.name for f in BookingTransportDetails._meta.get_fields() if f.concrete}
+            
+            transport_objects = []
+            for td in transport_data:
+                # Remove the booking field if it exists (we'll add it ourselves)
+                td.pop('booking', None)
+                
+                # Convert vehicle_type ID to VehicleType instance
+                vehicle_type_id = td.pop('vehicle_type', None)
+                if vehicle_type_id:
+                    try:
+                        td['vehicle_type'] = VehicleType.objects.get(id=vehicle_type_id)
+                    except VehicleType.DoesNotExist:
+                        pass  # Skip if not found
+                
+                # Convert sector ID to Sector instance
+                sector_id = td.pop('sector', None)
+                if sector_id:
+                    try:
+                        td['sector'] = Sector.objects.get(id=sector_id)
+                    except Sector.DoesNotExist:
+                        pass  # Skip if not found
+                
+                # Filter out invalid fields that don't exist on the model
+                filtered_td = {k: v for k, v in td.items() if k in valid_fields}
+                transport_objects.append(BookingTransportDetails(booking=instance, **filtered_td))
+            
+            if transport_objects:
+                BookingTransportDetails.objects.bulk_create(transport_objects)
 
         # --- Tickets ---
         # ONLY update if explicitly provided as a list (not None)
@@ -2055,6 +2220,29 @@ class BookingSerializer(serializers.ModelSerializer):
         if isinstance(food_data, list):
             instance.food_details.all().delete()
             for fd in food_data:
+                # Retrieve FoodPrice instance or ID handling
+                food_price_id = fd.pop("food_price", None)
+                if food_price_id:
+                    # check if it's already an object (if DRF converted it? no, we popped it from raw data)
+                    # frontend sends ID usually.
+                    if isinstance(food_price_id, dict):
+                         food_price_id = food_price_id.get('id')
+                    elif hasattr(food_price_id, 'pk'):
+                         food_price_id = food_price_id.pk
+                    
+                    fd['food_price_id'] = food_price_id
+                
+                # Map generic frontend fields to model fields
+                if 'brn_number' in fd:
+                    fd['food_brn'] = fd.pop('brn_number')
+                if 'voucher_number' in fd:
+                    fd['food_voucher_number'] = fd.pop('voucher_number')
+                    
+                # Remove invalid fields for BookingFoodDetails
+                fd.pop('city', None) # Food model has no city field
+                fd.pop('food_display', None)
+                fd.pop('booking', None)
+                
                 BookingFoodDetails.objects.create(booking=instance, **fd)
 
         # --- Ziarat Details ---
@@ -2062,7 +2250,35 @@ class BookingSerializer(serializers.ModelSerializer):
         if isinstance(ziarat_data, list):
             instance.ziyarat_details.all().delete()
             for zd in ziarat_data:
+                # Retrieve ZiaratPrice instance or ID handling
+                ziarat_price_id = zd.pop("ziarat_price", None)
+                if ziarat_price_id:
+                    if isinstance(ziarat_price_id, dict):
+                         ziarat_price_id = ziarat_price_id.get('id')
+                    elif hasattr(ziarat_price_id, 'pk'):
+                         ziarat_price_id = ziarat_price_id.pk
+                    
+                    zd['ziarat_price_id'] = ziarat_price_id
+                
+                # Map generic frontend fields to model fields
+                if 'brn_number' in zd:
+                    zd['ziyarat_brn'] = zd.pop('brn_number')
+                if 'voucher_number' in zd:
+                    zd['ziyarat_voucher_number'] = zd.pop('voucher_number')
+
+                # Fix potential frontend misnaming (ziarat vs ziyarat)
+                if 'ziarat_voucher_number' in zd:
+                    zd['ziyarat_voucher_number'] = zd.pop('ziarat_voucher_number')
+                if 'ziarat_brn' in zd:
+                    zd['ziyarat_brn'] = zd.pop('ziarat_brn')
+
+                zd.pop('ziarat_display', None)
+                zd.pop('booking', None)
                 BookingZiyaratDetails.objects.create(booking=instance, **zd)
+
+        # --- Internal Notes (M2M) ---
+        if internals_data is not None:
+            instance.internals.set(internals_data)
 
         return instance
 

@@ -200,7 +200,9 @@ class Booking(models.Model):
         ('credit', 'Credit'),
         ('other', 'Other'),
     ]
-    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, blank=True, null=True)
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES, default='cash')
+
+    voucher_status = models.CharField(max_length=20, default="Draft", blank=True, null=True)
     
     # Public booking flags and metadata
     is_public_booking = models.BooleanField(default=False)
@@ -577,7 +579,7 @@ class Booking(models.Model):
         # generate public_ref on first save if missing
         is_new = self.pk is None
         if is_new:
-            print(f"💰 FIRST SAVE - total_amount: {self.total_amount}, booking_type: {self.booking_type}")
+            print(f" FIRST SAVE - total_amount: {self.total_amount}, booking_type: {self.booking_type}")
         super().save(*args, **kwargs)
         
         # Auto-create ledger entry when status becomes 'Approved'
@@ -603,7 +605,7 @@ class Booking(models.Model):
                     booking_org = self.organization
                     
                     if package_owner_org.id != booking_org.id:
-                        print(f"📦 Inter-org PACKAGE booking detected: Org {booking_org.id} reselling Org {package_owner_org.id}'s package")
+                        print(f" Inter-org PACKAGE booking detected: Org {booking_org.id} reselling Org {package_owner_org.id}'s package")
                         
                         # Calculate total package amount
                         package_amount = Decimal(str(self.total_amount or 0))
@@ -838,6 +840,9 @@ class BookingHotelDetails(models.Model):
     # mark if this particular hotel detail row is from an outsourced/external hotel
     outsourced_hotel = models.BooleanField(default=False)
     
+    # Store family assignments for this room (e.g., [1, 2] for Family 1 and Family 2)
+    assigned_families = models.JSONField(default=list, blank=True, null=True)
+    
     # Organization tracking
     inventory_owner_organization_id = models.IntegerField(null=True, blank=True)
     booking_organization_id = models.IntegerField(null=True, blank=True)
@@ -926,6 +931,9 @@ class BookingTransportDetails(models.Model):
     vehicle_type = models.ForeignKey(
         "VehicleType", on_delete=models.SET_NULL, null=True, blank=True, related_name="transport_details"
     )
+    sector = models.ForeignKey(
+        "Sector", on_delete=models.SET_NULL, null=True, blank=True, related_name="transport_details"
+    )
     big_sector_id = models.IntegerField(blank=True, null=True)  # Reference to BigSector if used
     
     # Pricing fields
@@ -943,11 +951,19 @@ class BookingTransportDetails(models.Model):
     
     def save(self, *args, **kwargs):
         # Calculate price_in_pkr and price_in_sar based on is_price_pkr flag
-        # This ensures both values are always populated
+        # Only auto-calculate if the other currency is missing/zero
         if self.is_price_pkr:
-            # Price is in PKR, calculate SAR
-            if self.price_in_pkr and self.riyal_rate:
-                self.price_in_sar = self.price_in_pkr / self.riyal_rate
+            # Price is in PKR, calculate SAR ONLY if SAR is not set (is 0)
+            # User request: "if price is in PKR, SAR should show 0" -> Disable auto-calc if user prefers 0
+            # We assume if it's 0, it's intentional.
+            # But wait, default is 0. So we can't distinguish "intentional 0" from "new record 0".
+            # Compromise: Check if we have a rate but NO sar price.
+            # actually, standard behavior is to convert. 
+            # To strictly follow user: "if the price in pkr is true the price in sar should show 0"
+            pass  # DISABLED conversion to satisfy user request for strict 0 display
+            
+            # if self.price_in_pkr and self.riyal_rate and not self.price_in_sar:
+            #    self.price_in_sar = self.price_in_pkr / self.riyal_rate
         else:
             # Price is in SAR, calculate PKR
             if self.price_in_sar and self.riyal_rate:
@@ -2144,6 +2160,7 @@ class BookingPayment(models.Model):
 class BookingFoodDetails(models.Model):
     booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name='food_details')
     food = models.CharField(max_length=255)
+    food_price = models.ForeignKey("packages.FoodPrice", on_delete=models.SET_NULL, null=True, blank=True, related_name="booking_food_details")
     
     # Per-passenger-type prices
     adult_price = models.FloatField(default=0)
@@ -2180,6 +2197,7 @@ class BookingFoodDetails(models.Model):
 class BookingZiyaratDetails(models.Model):
     booking = models.ForeignKey(Booking, on_delete=models.CASCADE, related_name='ziyarat_details')
     ziarat = models.CharField(max_length=255)
+    ziarat_price = models.ForeignKey("packages.ZiaratPrice", on_delete=models.SET_NULL, null=True, blank=True, related_name="booking_ziyarat_details")
     city = models.CharField(max_length=255)
     
     # Per-passenger-type prices

@@ -42,9 +42,9 @@ urlpatterns = [
     # ✅ Include all app routes
     path("", include("users.urls")),
     path("", include("organization.urls")),
+    path("", include("booking.urls")),   # Moved up to prevent shadowing
     path("", include("packages.urls")),  
-    path("", include("tickets.urls")), 
-    path("", include("booking.urls")),
+    path("", include("tickets.urls")),
     path("", include("hr.urls")),  # HR App URLs
     path("", include("ledger.urls")),
     path("", include("finance.urls")),  # Finance & Reports Module

@@ -161,8 +161,8 @@ async function loadAdminPackages() {
 }
 '''
 
-print("✅ Public package API endpoints created!")
-print("🔧 Key Features:")
+print("[SUCCESS] Public package API endpoints created!")
+print("[INFO] Key Features:")
 print("1. Public endpoint only returns is_active=True packages")
 print("2. Admin endpoint returns all packages with filtering")
 print("3. Package status badges added to admin interface")

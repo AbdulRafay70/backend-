@@ -8,6 +8,7 @@ from django.utils import timezone
 from tickets.models import HotelRooms, RoomDetails
 from booking.models import BookingHotelDetails, Booking
 from rest_framework import serializers
+from drf_spectacular.openapi import AutoSchema
 
 
 class RoomAssignmentSerializer(serializers.Serializer):
@@ -59,6 +60,7 @@ class RoomAssignmentSerializer(serializers.Serializer):
 
 
 class RoomAssignmentAPIView(APIView):
+    schema = AutoSchema()
     """
     POST /api/hotels/assign-room
     {
@@ -157,6 +159,7 @@ class RoomAssignmentAPIView(APIView):
 
 
 class RoomUnassignmentAPIView(APIView):
+    schema = AutoSchema()
     """
     POST /api/hotels/unassign-room
     {

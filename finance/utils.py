@@ -39,6 +39,8 @@ def post_journal_to_ledger(journal: TransactionJournal, actor=None):
 
         ledger_entry = LedgerEntry.objects.create(
             booking_no=journal.reference,
+            organization=journal.organization,
+            branch=journal.branch,
             service_type="other",
             narration=journal.narration,
             created_by=journal.created_by,

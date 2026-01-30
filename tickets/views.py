@@ -23,6 +23,7 @@ from .serializers import (
 from django.utils import timezone
 from users.models import GroupExtension
 from users.permissions import PermissionByAction
+from drf_spectacular.openapi import AutoSchema
 
 
 
@@ -127,6 +128,7 @@ from users.permissions import PermissionByAction
     ),
 )
 class TicketViewSet(ModelViewSet):
+    schema = AutoSchema()
     # default serializer (used for create/retrieve/update)
     serializer_class = TicketSerializer
     permission_classes = [IsAuthenticated, PermissionByAction]
@@ -275,6 +277,7 @@ class TicketViewSet(ModelViewSet):
 
 
 class HotelsViewSet(ModelViewSet):
+    schema = AutoSchema()
     serializer_class = HotelsSerializer
     permission_classes = [IsAuthenticated]  # Remove PermissionByAction - allow all authenticated users
     
@@ -566,6 +569,7 @@ class HotelsViewSet(ModelViewSet):
 
 
 class HotelRoomsViewSet(ModelViewSet):
+    schema = AutoSchema()
     serializer_class = HotelRoomsSerializer
     permission_classes = [IsAuthenticated, PermissionByAction]
     
@@ -612,6 +616,7 @@ class HotelRoomsViewSet(ModelViewSet):
 
 
 class HotelCategoryViewSet(ModelViewSet):
+    schema = AutoSchema()
     """API to manage hotel categories (CRUD). Supports optional `owner_organization` query param to scope categories."""
     serializer_class = HotelCategorySerializer
     permission_classes = [IsAuthenticated]
@@ -644,6 +649,7 @@ class HotelCategoryViewSet(ModelViewSet):
 
 
 class BedTypeViewSet(ModelViewSet):
+    schema = AutoSchema()
     """API to manage bed types (CRUD). Supports optional `organization` query param to scope bed types."""
     serializer_class = BedTypeSerializer
     permission_classes = [IsAuthenticated]

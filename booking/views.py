@@ -234,6 +234,25 @@ class BookingViewSet(viewsets.ModelViewSet):
                 # No profile or other error - save normally
                 serializer.save(user=self.request.user)
     
+    def update(self, request, *args, **kwargs):
+        """Override update to handle partial PATCH requests without requiring user_id/organization_id"""
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        
+        # For PATCH requests, make it truly partial by not requiring user_id/organization_id
+        # The serializer will only update the fields that are actually provided
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        
+        # Re-serialize to include all nested relations in response
+        out_serializer = self.get_serializer(instance)
+        return Response(out_serializer.data)
+    
+    def perform_update(self, serializer):
+        """Save the update"""
+        serializer.save()
+    
     @action(detail=False, methods=["get"], url_path="unpaid/(?P<organization_id>[^/.]+)")
     def get_unpaid_orders(self, request, organization_id=None):
         """

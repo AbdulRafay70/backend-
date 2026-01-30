@@ -522,7 +522,7 @@ class OrganizationLink(models.Model):
         return linked_orgs
 
     def __str__(self):
-        return f"{self.main_organization} ↔ {self.link_organization} ({self.request_status})"
+        return f"{self.main_organization} <-> {self.link_organization} ({self.request_status})"
 
 
 class ResellRequest(models.Model):

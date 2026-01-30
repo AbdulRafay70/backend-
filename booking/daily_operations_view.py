@@ -8,8 +8,10 @@ from django.db.models.functions import Coalesce, Cast, Round
 from datetime import datetime, timedelta
 from .models import Booking, BookingHotelDetails, BookingTransportDetails, BookingTicketDetails, BookingPersonDetail
 from .serializers import BookingSerializer
+from drf_spectacular.openapi import AutoSchema
 
 class DailyOperationsAPIView(APIView):
+    schema = AutoSchema()
     """
     API endpoint for daily operations page.
     Returns bookings with 'Delivered' status for operational management.

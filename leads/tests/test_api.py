@@ -6,6 +6,7 @@ from booking.models import Booking
 from leads.models import Lead, LoanCommitment
 from django.utils import timezone
 import datetime
+from drf_spectacular.openapi import AutoSchema
 
 
 class LeadsAPITests(APITestCase):

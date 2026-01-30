@@ -36,13 +36,13 @@ def auto_post_payment(sender, instance: Payment, created, **kwargs):
     # Case 1: Deposit payment (no booking) - Agent depositing money
     # DISABLED: Now handled by Payment.save() method with correct RECEIVABLE account
     if not booking:
-        # print(f"🔵 Processing DEPOSIT payment {instance.id}")
+        # print(f"[DEBUG] Processing DEPOSIT payment {instance.id}")
         # Deposit ledger creation is now handled in Payment.save() method
         # which correctly uses RECEIVABLE account instead of SALES
         return
     
     # Case 2: Booking payment (existing logic)
-    print(f"🟢 Processing BOOKING payment {instance.id}")
+    print(f"[SUCCESS] Processing BOOKING payment {instance.id}")
     # Multi-org atomic posting: group booking items by inventory_owner_organization
     # Collect all booking items with inventory_owner_organization
     hotel_items = list(getattr(booking, "hotel_details", []).all())

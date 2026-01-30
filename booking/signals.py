@@ -48,7 +48,7 @@ def booking_pre_save(sender, instance, **kwargs):
         instance._old_booking = None
         # Set expiry_time for new bookings - ALWAYS override
         if instance.organization_id:
-            print(f"🔍 NEW BOOKING DETECTED - org_id: {instance.organization_id}, booking_type: {instance.booking_type}")
+            print(f"[DEBUG] NEW BOOKING DETECTED - org_id: {instance.organization_id}, booking_type: {instance.booking_type}")
             try:
                 from packages.models import BookingExpiry
                 from datetime import timedelta
@@ -58,7 +58,7 @@ def booking_pre_save(sender, instance, **kwargs):
                     organization_id=instance.organization_id
                 ).first()
                 
-                print(f"🔍 Expiry settings found: {expiry_settings}")
+                print(f"[DEBUG] Expiry settings found: {expiry_settings}")
                 
                 if expiry_settings:
                     # Determine which expiry time to use based on booking_type
@@ -79,22 +79,22 @@ def booking_pre_save(sender, instance, **kwargs):
                         # Default fallback
                         expiry_minutes = expiry_settings.ticket_expiry_time or 0
                     
-                    print(f"🔍 Calculated expiry_minutes: {expiry_minutes}")
+                    print(f"[DEBUG] Calculated expiry_minutes: {expiry_minutes}")
                     
                     # Calculate expiry_time - ALWAYS SET IT
                     if expiry_minutes > 0:
                         instance.expiry_time = timezone.now() + timedelta(minutes=expiry_minutes)
-                        print(f"✅ Set expiry_time for booking: {expiry_minutes} minutes from now = {instance.expiry_time}")
+                        print(f"[SUCCESS] Set expiry_time for booking: {expiry_minutes} minutes from now = {instance.expiry_time}")
                     else:
-                        print(f"⚠️ expiry_minutes is 0, not setting expiry_time")
+                        print(f"[WARNING] expiry_minutes is 0, not setting expiry_time")
                 else:
-                    print(f"⚠️ No expiry settings found for org {instance.organization_id}")
+                    print(f"[WARNING] No expiry settings found for org {instance.organization_id}")
             except Exception as e:
-                print(f"❌ ERROR setting expiry_time: {e}")
+                print(f"[ERROR] ERROR setting expiry_time: {e}")
                 import traceback
                 traceback.print_exc()
         else:
-            print(f"⚠️ No organization_id on booking")
+            print(f"[WARNING] No organization_id on booking")
         return
     try:
         old = Booking.objects.get(pk=instance.pk)
@@ -433,11 +433,11 @@ def update_booking_paid_status(sender, instance, created, **kwargs):
             booking.is_paid = has_completed_payment
             booking.save(update_fields=['is_paid'])
             
-            print(f"✅ Updated booking {booking.booking_number} is_paid to {has_completed_payment}")
+            print(f"[SUCCESS] Updated booking {booking.booking_number} is_paid to {has_completed_payment}")
     except Booking.DoesNotExist:
         pass
     except Exception as e:
-        print(f"❌ Error updating booking paid status: {e}")
+        print(f"[ERROR] Error updating booking paid status: {e}")
 
 
 @receiver(pre_save, sender=Booking)
@@ -480,7 +480,7 @@ def handle_credit_payment_approval(sender, instance, created, **kwargs):
         # Check if payment method is credit
         payment_method = getattr(instance, 'payment_method', '')
         if str(payment_method).lower() == 'credit':
-            print(f"💳 Processing credit deduction for booking {instance.booking_number}")
+            print(f"[CREDIT] Processing credit deduction for booking {instance.booking_number}")
             
             try:
                 from organization.models import Agency
@@ -489,7 +489,7 @@ def handle_credit_payment_approval(sender, instance, created, **kwargs):
                 
                 # Get agency
                 if not instance.agency_id:
-                    print(f"❌ No agency associated with booking {instance.booking_number}")
+                    print(f"[ERROR] No agency associated with booking {instance.booking_number}")
                     return
                 
                 agency = Agency.objects.get(id=instance.agency_id)
@@ -501,7 +501,7 @@ def handle_credit_payment_approval(sender, instance, created, **kwargs):
                 available_credit = credit_limit - credit_used
                 
                 if available_credit < booking_amount:
-                    print(f"❌ Insufficient credit for booking {instance.booking_number}. Available: {available_credit}, Required: {booking_amount}")
+                    print(f"[ERROR] Insufficient credit for booking {instance.booking_number}. Available: {available_credit}, Required: {booking_amount}")
                     return
                 
                 # Deduct from agency credit using atomic transaction
@@ -555,17 +555,17 @@ def handle_credit_payment_approval(sender, instance, created, **kwargs):
                         )
                         
                         if le:
-                            print(f"✅ Credit deducted and ledger entry created for booking {instance.booking_number}")
+                            print(f"[SUCCESS] Credit deducted and ledger entry created for booking {instance.booking_number}")
                             print(f"   Amount: PKR {booking_amount}")
                             print(f"   New credit used: PKR {credit_used + booking_amount}")
                             print(f"   Remaining credit: PKR {available_credit - booking_amount}")
                     else:
-                        print(f"⚠️ Could not find RECEIVABLE or SALES accounts for ledger entry")
+                        print(f"[WARNING] Could not find RECEIVABLE or SALES accounts for ledger entry")
                         
             except Agency.DoesNotExist:
-                print(f"❌ Agency not found for booking {instance.booking_number}")
+                print(f"[ERROR] Agency not found for booking {instance.booking_number}")
             except Exception as e:
-                print(f"❌ Error processing credit deduction: {e}")
+                print(f"[ERROR] Error processing credit deduction: {e}")
                 import traceback
                 traceback.print_exc()
 

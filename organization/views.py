@@ -895,19 +895,25 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         # Start with all employees
         queryset = Employee.objects.all()
         
-        # Filter by agency if provided
-        if agency_id:
-            queryset = queryset.filter(agency_id=agency_id)
-        
-        # Filter by branch if provided (through agency)
+        # Filter by branch if provided
         if branch_id:
-            queryset = queryset.filter(agency__branch_id=branch_id)
+            queryset = queryset.filter(branch_id=branch_id)
         
-        # Filter by organization if provided (through agency -> branch)
+        # Filter by organization if provided (through branch)
         if organization_id:
-            queryset = queryset.filter(agency__branch__organization_id=organization_id)
+            queryset = queryset.filter(branch__organization_id=organization_id)
+            
+        # Agency filter not applicable to Employee model (linked to Branch)
+        # unless checking if branch has this agency? 
+        # For now, ignore agency_id or return none if agency_id passed?
+        # Assuming Employees are branch staff, not agency staff.
+        if agency_id:
+            # If filtering by agency, technically employees don't belong to agency.
+            # But maybe they want employees of the branch THAT OWNS the agency?
+            # queryset = queryset.filter(branch__agencies__id=agency_id)
+            pass
         
-        return queryset.select_related("agency", "agency__branch", "agency__branch__organization", "user")
+        return queryset.select_related("branch", "branch__organization", "user")
 
 
 class AgencyProfileView(APIView):

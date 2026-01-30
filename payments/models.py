@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from organization.models import Organization
 
 User = get_user_model()
 
@@ -26,7 +27,9 @@ class Consumer(models.Model):
     created_by = models.CharField(max_length=255)
     created_by_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='consumers_created')
     created_at = models.DateTimeField(auto_now_add=True)
+
     updated_at = models.DateTimeField(auto_now=True)
+    organization = models.ForeignKey(Organization, on_delete=models.SET_NULL, null=True, blank=True, related_name='consumers')
     
     class Meta:
         db_table = 'kuickpay_consumers'

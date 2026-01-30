@@ -47,6 +47,7 @@ from rest_framework.views import APIView
 from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiResponse, OpenApiParameter, OpenApiTypes
 from booking.models import Booking, BookingPersonDetail, VehicleType
 from users.permissions import PermissionByAction
+from drf_spectacular.openapi import AutoSchema
 
 
 
@@ -82,6 +83,7 @@ from users.permissions import PermissionByAction
     ),
 )
 class RoomMapViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     @action(detail=False, methods=['get'], url_path='availability')
     def availability(self, request):
         hotel_id = request.query_params.get('hotel_id')
@@ -638,6 +640,7 @@ class RoomMapViewSet(viewsets.ModelViewSet):
 
 
 class HotelRoomMapAPIView(APIView):
+    schema = AutoSchema()
     """POST /api/hotels/room-map
 
     Accepts the nested payload to create/update floor map, rooms and beds.
@@ -800,6 +803,7 @@ class HotelRoomMapAPIView(APIView):
     ),
 )
 class HotelOperationViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     """
     ViewSet for managing daily hotel check-in/check-out operations.
     
@@ -1281,6 +1285,7 @@ class HotelOperationViewSet(viewsets.ModelViewSet):
     destroy=extend_schema(summary="Delete Transport Operation", description="Delete a transport operation"),
 )
 class TransportOperationViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     """
     ViewSet for managing daily transport operations (pickup/drop).
     
@@ -1744,6 +1749,7 @@ class TransportOperationViewSet(viewsets.ModelViewSet):
     destroy=extend_schema(summary="Delete Food Operation", description="Delete a food operation"),
 )
 class FoodOperationViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     """
     ViewSet for managing daily food operations (meal service).
     
@@ -2168,6 +2174,7 @@ class FoodOperationViewSet(viewsets.ModelViewSet):
     ),
 )
 class PaxDetailViewSet(viewsets.ReadOnlyModelViewSet):
+    schema = AutoSchema()
     """
     ViewSet for getting passenger (pax) details.
     Endpoint for clicking on a pax name to get full details.
@@ -2221,6 +2228,7 @@ class PaxDetailViewSet(viewsets.ReadOnlyModelViewSet):
     destroy=extend_schema(summary="Delete Airport Operation", description="Delete an airport operation"),
 )
 class AirportOperationViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     """
     ViewSet for managing airport pickup/drop operations.
     
@@ -2673,6 +2681,7 @@ class AirportOperationViewSet(viewsets.ModelViewSet):
     destroy=extend_schema(summary="Delete Ziyarat Operation", description="Delete a ziyarat operation"),
 )
 class ZiyaratOperationViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     """
     ViewSet for Ziyarat Operations.
     

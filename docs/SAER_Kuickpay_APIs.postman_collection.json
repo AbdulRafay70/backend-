@@ -1,7 +1,7 @@
 {
     "info": {
         "name": "SAER.PK - Kuickpay APIs",
-        "description": "Test SAER.PK's Kuickpay integration endpoints\n\nThese are YOUR Django APIs that your frontend calls.\nThey internally proxy requests to Kuickpay's service.\n\nBase URL: https://api.saer.pk (or http://localhost:8000 for local testing)",
+        "description": "Test SAER.PK's Kuickpay integration endpoints\n\nThese are YOUR Django APIs that your frontend calls.\nThey internally proxy requests to Kuickpay's service.\n\nBase URL: http://127.0.0.1:8000 (or http://localhost:8000 for local testing)",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
         "_postman_id": "saer-kuickpay-apis",
         "version": "1.0.0"
@@ -470,7 +470,7 @@
     "variable": [
         {
             "key": "base_url",
-            "value": "https://api.saer.pk",
+            "value": "http://127.0.0.1:8000",
             "type": "string",
             "description": "Base URL for SAER.PK API (use http://localhost:8000 for local testing)"
         },

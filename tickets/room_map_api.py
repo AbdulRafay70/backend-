@@ -10,6 +10,7 @@ from tickets.models import Hotels, HotelRooms, RoomDetails
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
 import os
+from drf_spectacular.openapi import AutoSchema
 
 
 class BedSerializer(serializers.Serializer):
@@ -64,6 +65,7 @@ class RoomMapSerializer(serializers.Serializer):
 
 
 class RoomMapManagementAPIView(APIView):
+    schema = AutoSchema()
     """
     API for managing hotel floor maps with room and bed layout configuration.
     Create/update complete floor layouts including rooms, beds, and floor map URLs.

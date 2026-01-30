@@ -1,0 +1,10 @@
+D:\Saerpk\backend\.venv\Lib\site-packages\rest_framework_simplejwt\__init__.py:1: UserWarning: pkg_resources is deprecated as an API. See https://setuptools.pypa.io/en/latest/pkg_resources.html. The pkg_resources package is slated for removal as early as 2025-11-30. Refrain from using this package or pin to Setuptools<81.
+  from pkg_resources import DistributionNotFound, get_distribution
+D:\Saerpk\backend\.venv\Lib\site-packages\django\db\models\base.py:366: RuntimeWarning: Model 'tickets.hotelcategory' was already registered. Reloading models is not advised as it can lead to inconsistencies, most notably with related models.
+  new_class._meta.apps.register_model(new_class._meta.app_label, new_class)
+Attempting to load commissions.signals...
+Successfully loaded commissions.signals
+Traceback (most recent call last):
+  File "D:\Saerpk\backend\inspect_booking_495.py", line 13, in <module>
+    from finance.utils import calculate_profit_loss, calculate_booking_revenue
+ImportError: cannot import name 'calculate_booking_revenue' from 'finance.utils' (D:\Saerpk\backend\finance\utils.py)

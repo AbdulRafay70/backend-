@@ -483,7 +483,7 @@ class TransportOperation(models.Model):
         verbose_name_plural = 'Transport Operations'
     
     def __str__(self):
-        return f"{self.booking_id_str} - {self.pax_first_name} {self.pax_last_name} - {self.pickup_location} → {self.drop_location} ({self.date})"
+        return f"{self.booking_id_str} - {self.pax_first_name} {self.pax_last_name} - {self.pickup_location} -> {self.drop_location} ({self.date})"
     
     def mark_departed(self, user=None):
         """Mark transport as departed"""

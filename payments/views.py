@@ -5,9 +5,11 @@ from rest_framework.permissions import IsAuthenticated
 from django.utils import timezone
 from .models import Consumer
 from .serializers import ConsumerSerializer
+from drf_spectacular.openapi import AutoSchema
 
 
 class ConsumerViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     """
     ViewSet for managing KuickPay Consumers
     """
@@ -41,10 +43,25 @@ class ConsumerViewSet(viewsets.ModelViewSet):
         
         if not created_by_name:
             created_by_name = user.username
+            
+        # Determine organization
+        organization = None
+        # 1. Check if user has active_organization (e.g. from middleware/session)
+        if hasattr(user, 'active_organization'):
+            organization = user.active_organization
+            
+        # 2. Check if user is an employee
+        if not organization and hasattr(user, 'employee_profile') and user.employee_profile.branch:
+            organization = user.employee_profile.branch.organization
+
+        # 3. Check direct organization links
+        if not organization and hasattr(user, 'organizations') and user.organizations.exists():
+            organization = user.organizations.first()
         
         serializer.save(
             created_by=created_by_name,
-            created_by_user=user
+            created_by_user=user,
+            organization=organization
         )
     
     @action(detail=False, methods=['get'])

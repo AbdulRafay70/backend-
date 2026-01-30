@@ -3,6 +3,7 @@ from rest_framework.test import APITestCase, APIClient
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from passport_leads.models import PassportLead, PaxProfile, FollowUpLog
+from drf_spectacular.openapi import AutoSchema
 
 User = get_user_model()
 

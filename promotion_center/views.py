@@ -10,10 +10,12 @@ from io import TextIOWrapper
 from .models import PromotionContact, normalize_phone
 from .serializers import PromotionContactSerializer, PromotionContactImportResultSerializer
 from users.permissions import PermissionByAction
+from drf_spectacular.openapi import AutoSchema
 
 
 
 class PromotionContactViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     queryset = PromotionContact.objects.all().order_by("-last_seen")
     serializer_class = PromotionContactSerializer
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
@@ -135,6 +137,7 @@ class PromotionContactViewSet(viewsets.ModelViewSet):
 
 
 class PromotionContactBulkSubscribeAPIView(APIView):
+    schema = AutoSchema()
     permission_classes = [permissions.IsAuthenticated, permissions.IsAdminUser]
 
     def post(self, request):

@@ -7,9 +7,11 @@ from tickets.models import Hotels, HotelRooms, HotelFloor
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+from drf_spectacular.openapi import AutoSchema
 
 
 class HotelFloorsListAPIView(APIView):
+    schema = AutoSchema()
     """
     API for listing hotels and their floors by organization.
     Used by admin panel for floor management interface.
@@ -223,6 +225,7 @@ class HotelFloorsListAPIView(APIView):
 
 
 class HotelFloorDetailAPIView(APIView):
+    schema = AutoSchema()
     """
     API for updating and deleting individual hotel floors.
     """

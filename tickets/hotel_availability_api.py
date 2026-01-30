@@ -9,6 +9,7 @@ from tickets.models import Hotels, HotelRooms, RoomDetails, HotelBooking
 from booking.models import BookingHotelDetails, BookingPersonDetail
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.openapi import AutoSchema
 
 
 @extend_schema(
@@ -172,6 +173,7 @@ from drf_spectacular.types import OpenApiTypes
     tags=['Hotels']
 )
 class HotelAvailabilityAPIView(APIView):
+    schema = AutoSchema()
     """
     GET /api/hotels/availability?hotel_id=123&date_from=YYYY-MM-DD&date_to=YYYY-MM-DD&owner_organization=10
     

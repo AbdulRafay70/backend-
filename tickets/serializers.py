@@ -12,7 +12,7 @@ from .models import (
     HotelRooms,
     RoomDetails,
 )
-from organization.pricing_utils import get_reseller_markup_group, apply_hotel_markup, apply_ticket_markup
+from organization.pricing_utils import calculate_final_price
 
 
 class TickerStopoverDetailsSerializer(serializers.ModelSerializer):
@@ -213,15 +213,9 @@ class TicketSerializer(serializers.ModelSerializer):
         for field in fields_to_remove:
             data.pop(field, None)
             
-        # Apply Markup
+        # Call Master Pipeline - obtain request from serializer context
         request = self.context.get('request')
-        # Use owner_organization_id or organization_id as semantic owner
-        owner_id = getattr(instance, 'owner_organization_id', None) or getattr(instance, 'organization_id', None)
-        
-        if request and owner_id:
-             markup_group = get_reseller_markup_group(request.user, owner_id)
-             if markup_group:
-                 data = apply_ticket_markup(data, markup_group)
+        data = calculate_final_price(request, data, 'ticket', instance)
 
         return data
 
@@ -897,13 +891,11 @@ class HotelsSerializer(serializers.ModelSerializer):
         """
         data = super().to_representation(instance)
         
-        # Apply Reseller Markup
+        # --- PRICING ENGINE PIPELINE ---
+        # Calculate Final Price (Markup - Discount)
+        # Note: pipeline expects 'prices' key in data for hotels
         request = self.context.get('request')
-        if request and instance.organization_id:
-            markup_group = get_reseller_markup_group(request.user, instance.organization_id)
-            if markup_group:
-                 if 'prices' in data and data['prices']:
-                     data['prices'] = apply_hotel_markup(instance.id, data['prices'], markup_group)
+        data = calculate_final_price(request, data, 'hotel', instance)
         
         # Handle owner organization ID
         try:
@@ -1151,15 +1143,9 @@ class TicketListSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         
-        # Apply Markup
+        # Call Master Pipeline
         request = self.context.get('request')
-        # Use owner_organization_id or organization_id as semantic owner
-        owner_id = getattr(instance, 'owner_organization_id', None) or getattr(instance, 'organization_id', None)
-        
-        if request and owner_id:
-             markup_group = get_reseller_markup_group(request.user, owner_id)
-             if markup_group:
-                 data = apply_ticket_markup(data, markup_group)
+        data = calculate_final_price(request, data, 'ticket', instance)
 
         return data
 

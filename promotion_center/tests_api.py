@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.contrib.auth.models import User
 from rest_framework.test import APIClient
 from io import BytesIO
+from drf_spectacular.openapi import AutoSchema
 
 
 class PromotionCenterAPITest(TestCase):

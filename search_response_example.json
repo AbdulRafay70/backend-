@@ -1,0 +1,328 @@
+{
+  "flights": [
+    {
+      "id": "1",
+      "refundable": false,
+      "instantTicketing": true,
+      "bookOnHold": true,
+      "brandedFareSupported": true,
+      "brandedFareSeparate": false,
+      "fareRuleOffered": true,
+      "fare": {
+        "baseFare": 161863.0,
+        "tax": 15257.0,
+        "total": 177120.0,
+        "currency": "QAR"
+      },
+      "fareDetails": {
+        "fareBreakup": [
+          {
+            "paxType": "ADT",
+            "baseFare": "161863.00",
+            "tax": "15257.00"
+          }
+        ]
+      },
+      "segments": [
+        {
+          "ond": {
+            "duration": "0125",
+            "issuingAirline": "J9",
+            "ondID": 0
+          },
+          "flights": [
+            {
+              "departureDate": "07-02-2026",
+              "departureTime": "1800",
+              "arrivalDate": "07-02-2026",
+              "arrivalTime": "1925",
+              "departureLocation": "DOH",
+              "departureTerminal": null,
+              "arrivalLocation": "KWI",
+              "arrivalTerminal": "5",
+              "airlineCode": "J9",
+              "operatingAirline": "J9",
+              "flightNo": "116",
+              "equipmentType": "320",
+              "duration": "0125",
+              "cabin": "Y",
+              "stops": 0,
+              "seatsAvailable": "9",
+              "baggage": [
+                {
+                  "paxType": "ADT",
+                  "value": "0",
+                  "unit": "KG"
+                }
+              ],
+              "segID": 0
+            }
+          ]
+        }
+      ],
+      "supplierCode": 11,
+      "supplierSpecific": null,
+      "brands": [
+        {
+          "brandId": "1",
+          "brandName": "LIGHT",
+          "ondID": 0,
+          "baseFare": 161863.0,
+          "tax": 15257.0,
+          "total": 177120.0,
+          "currency": "PKR",
+          "fareBreakup": [
+            {
+              "paxType": "ADT",
+              "baseFare": "161863.00",
+              "tax": "15257.0",
+              "total": "177120.00"
+            }
+          ],
+          "inclusions": {
+            "Hand Baggage": "7 KG/1 PIECE",
+            "CheckIn Baggage": "0 KG",
+            "Purchase Baggage": "Only available at Check-in",
+            "Meal": "Order from J CAFE",
+            "Seat Selection": "Pay",
+            "Change": "Pay to Change upto 8 hours of departure",
+            "Cancellation": "Non Refundable",
+            "loungeAccess": "Pay"
+          },
+          "supplierSpecific": {
+            "fareKey": "Sjl_IDExNn4gfn5ET0h_MDIvMDcvMjAyNiAxODowMH5LV0l_MDIvMDcvMjAyNiAxOToyNX5_#MH5Zfn5KOX5ZSEVMT1dRQX5MRTAwfn4wfjJ_flghMA--"
+          }
+        },
+        {
+          "brandId": "2",
+          "brandName": "VALUE",
+          "ondID": 0,
+          "baseFare": 163728.0,
+          "tax": 15257.0,
+          "total": 178985.0,
+          "currency": "PKR",
+          "fareBreakup": [
+            {
+              "paxType": "ADT",
+              "baseFare": "163728.00",
+              "tax": "15257.0",
+              "total": "178985.00"
+            }
+          ],
+          "inclusions": {
+            "Hand Baggage": "7 KG/1 PIECE",
+            "CheckIn Baggage": "20 KG/1 PIECE",
+            "Purchase Baggage": "Pre-purchase 10KG online",
+            "Meal": "Order from J CAFE",
+            "Seat Selection": "Pay",
+            "Change": "Pay to Change upto 8 hours of departure",
+            "Cancellation": "Pay to Cancel upto 24 hours prior to departure",
+            "Lounge Access": "Pay"
+          },
+          "supplierSpecific": {
+            "fareKey": "Sjl_IDExNn4gfn5ET0h_MDIvMDcvMjAyNiAxODowMH5LV0l_MDIvMDcvMjAyNiAxOToyNX5_#MH5Zfn5KOX5ZSEVWT1dRQX5WRTIwfn4wfjF_flghMQ--"
+          }
+        },
+        {
+          "brandId": "3",
+          "brandName": "EXTRA",
+          "ondID": 0,
+          "baseFare": 168390.0,
+          "tax": 15257.0,
+          "total": 183647.0,
+          "currency": "PKR",
+          "fareBreakup": [
+            {
+              "paxType": "ADT",
+              "baseFare": "168390.00",
+              "tax": "15257.0",
+              "total": "183647.00"
+            }
+          ],
+          "inclusions": {
+            "Hand Baggage": "7 KG/1 PIECE",
+            "CheckIn Baggage": "30 KG/2 PIECE",
+            "Purchase Baggage": "Pre-purchase 10KG online",
+            "Meal": "Order from J CAFE",
+            "Seat Selection": "Pay",
+            "Change": "Pay to Change upto 8 hours of departure",
+            "Cancellation": "Pay to Cancel upto 24 hours prior to departure",
+            "Lounge Access": "Pay"
+          },
+          "supplierSpecific": {
+            "fareKey": "Sjl_IDExNn4gfn5ET0h_MDIvMDcvMjAyNiAxODowMH5LV0l_MDIvMDcvMjAyNiAxOToyNX5_#MH5Zfn5KOX5ZSEVFT1dRQX5YRTMwfn4wfjJ_flghMg--"
+          }
+        }
+      ],
+      "rawData": {
+        "refundable": false,
+        "instantTicketing": true,
+        "bookOnHold": true,
+        "brandedFareSupported": true,
+        "brandedFareSeparate": false,
+        "fareRuleOffered": true,
+        "resultCount": {
+          "id": "1"
+        },
+        "fare": {
+          "baseFare": "161863.0",
+          "tax": "15257.0",
+          "total": 177120.0,
+          "currency": "QAR"
+        },
+        "fareDetails": {
+          "fareBreakup": [
+            {
+              "paxType": "ADT",
+              "baseFare": "161863.00",
+              "tax": "15257.00"
+            }
+          ]
+        },
+        "ondPairs": [
+          {
+            "ond": {
+              "ondID": 0,
+              "duration": "0125",
+              "issuingAirline": "J9"
+            },
+            "flightDetails": [
+              {
+                "segID": 0,
+                "flifo": {
+                  "dateTime": {
+                    "depDate": "07-02-2026",
+                    "depTime": "1800",
+                    "arrDate": "07-02-2026",
+                    "arrTime": "1925"
+                  },
+                  "location": {
+                    "depAirport": "DOH",
+                    "arrAirport": "KWI",
+                    "arrTerminal": "5"
+                  },
+                  "companyId": {
+                    "mktgAirline": "J9",
+                    "operAirline": "J9"
+                  },
+                  "flightNo": "116",
+                  "eqpType": "320",
+                  "rbd": null,
+                  "duration": "0125",
+                  "cabin": "Y",
+                  "baggageAllowance": [
+                    {
+                      "paxType": "ADT",
+                      "value": "0",
+                      "unit": "KG"
+                    }
+                  ],
+                  "stops": 0,
+                  "seatsAvlbl": "9",
+                  "eTicketing": null
+                }
+              }
+            ]
+          }
+        ],
+        "brands": [
+          {
+            "ondID": 0,
+            "brandId": "1",
+            "brandName": "LIGHT",
+            "baseFare": "161863.00",
+            "tax": "15257.00",
+            "total": "177120.00",
+            "currency": "PKR",
+            "fareBreakup": [
+              {
+                "paxType": "ADT",
+                "baseFare": "161863.00",
+                "tax": "15257.0",
+                "total": "177120.00"
+              }
+            ],
+            "inclusions": {
+              "Hand Baggage": "7 KG/1 PIECE",
+              "CheckIn Baggage": "0 KG",
+              "Purchase Baggage": "Only available at Check-in",
+              "Meal": "Order from J CAFE",
+              "Seat Selection": "Pay",
+              "Change": "Pay to Change upto 8 hours of departure",
+              "Cancellation": "Non Refundable",
+              "loungeAccess": "Pay"
+            },
+            "extraVariables": [],
+            "supplierSpecific": {
+              "fareKey": "Sjl_IDExNn4gfn5ET0h_MDIvMDcvMjAyNiAxODowMH5LV0l_MDIvMDcvMjAyNiAxOToyNX5_#MH5Zfn5KOX5ZSEVMT1dRQX5MRTAwfn4wfjJ_flghMA--"
+            }
+          },
+          {
+            "ondID": 0,
+            "brandId": "2",
+            "brandName": "VALUE",
+            "baseFare": "163728.00",
+            "tax": "15257.00",
+            "total": "178985.00",
+            "currency": "PKR",
+            "fareBreakup": [
+              {
+                "paxType": "ADT",
+                "baseFare": "163728.00",
+                "tax": "15257.0",
+                "total": "178985.00"
+              }
+            ],
+            "inclusions": {
+              "Hand Baggage": "7 KG/1 PIECE",
+              "CheckIn Baggage": "20 KG/1 PIECE",
+              "Purchase Baggage": "Pre-purchase 10KG online",
+              "Meal": "Order from J CAFE",
+              "Seat Selection": "Pay",
+              "Change": "Pay to Change upto 8 hours of departure",
+              "Cancellation": "Pay to Cancel upto 24 hours prior to departure",
+              "Lounge Access": "Pay"
+            },
+            "extraVariables": [],
+            "supplierSpecific": {
+              "fareKey": "Sjl_IDExNn4gfn5ET0h_MDIvMDcvMjAyNiAxODowMH5LV0l_MDIvMDcvMjAyNiAxOToyNX5_#MH5Zfn5KOX5ZSEVWT1dRQX5WRTIwfn4wfjF_flghMQ--"
+            }
+          },
+          {
+            "ondID": 0,
+            "brandId": "3",
+            "brandName": "EXTRA",
+            "baseFare": "168390.00",
+            "tax": "15257.00",
+            "total": "183647.00",
+            "currency": "PKR",
+            "fareBreakup": [
+              {
+                "paxType": "ADT",
+                "baseFare": "168390.00",
+                "tax": "15257.0",
+                "total": "183647.00"
+              }
+            ],
+            "inclusions": {
+              "Hand Baggage": "7 KG/1 PIECE",
+              "CheckIn Baggage": "30 KG/2 PIECE",
+              "Purchase Baggage": "Pre-purchase 10KG online",
+              "Meal": "Order from J CAFE",
+              "Seat Selection": "Pay",
+              "Change": "Pay to Change upto 8 hours of departure",
+              "Cancellation": "Pay to Cancel upto 24 hours prior to departure",
+              "Lounge Access": "Pay"
+            },
+            "extraVariables": [],
+            "supplierSpecific": {
+              "fareKey": "Sjl_IDExNn4gfn5ET0h_MDIvMDcvMjAyNiAxODowMH5LV0l_MDIvMDcvMjAyNiAxOToyNX5_#MH5Zfn5KOX5ZSEVFT1dRQX5YRTMwfn4wfjJ_flghMg--"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "total_count": 34,
+  "request_count": 3
+}

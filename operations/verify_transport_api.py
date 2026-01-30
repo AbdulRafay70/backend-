@@ -11,6 +11,7 @@ django.setup()
 
 from operations.models import TransportOperation
 from booking.models import Booking, BookingPersonDetail, VehicleType
+from drf_spectacular.openapi import AutoSchema
 
 print("=" * 60)
 print("TRANSPORT API - VERIFICATION CHECK")

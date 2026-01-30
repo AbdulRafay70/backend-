@@ -13,8 +13,10 @@ from .models import (
     PassengerActivityStatus
 )
 from django.contrib.contenttypes.models import ContentType
+from drf_spectacular.openapi import AutoSchema
 
 class UpdateOperationStatusView(APIView):
+    schema = AutoSchema()
     permission_classes = [IsAuthenticated]
     
     def patch(self, request):

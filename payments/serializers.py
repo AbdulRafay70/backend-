@@ -20,8 +20,9 @@ class ConsumerSerializer(serializers.ModelSerializer):
             'created_by',
             'created_at',
             'updated_at',
+            'organization',
         ]
-        read_only_fields = ['id', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'created_at', 'updated_at', 'organization', 'created_by']
     
     def validate_consumer_number(self, value):
         """Ensure consumer number is unique"""

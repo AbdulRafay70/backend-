@@ -7,9 +7,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from organization.models import Organization, Branch
+from drf_spectacular.openapi import AutoSchema
 
 
 class ParentOptionsView(APIView):
+    schema = AutoSchema()
     """
     GET /api/parent-options/?type=<entity_type>
     

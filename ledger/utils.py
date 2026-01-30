@@ -5,7 +5,7 @@ Handles dual ledger entry creation for reseller bookings.
 
 from decimal import Decimal
 from django.db import transaction
-from django.utils import timezone, datetime_safe
+from django.utils import timezone
 from organization.models import Organization
 from ledger.models import LedgerEntry, LedgerLine, Account
 

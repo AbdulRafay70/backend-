@@ -15,8 +15,10 @@ from organization.models import Organization, Branch, Agency
 from .models import Account
 from django.db import models
 from django.conf import settings
+from drf_spectacular.openapi import AutoSchema
 
 class LedgerCreateAPIView(APIView):
+    schema = AutoSchema()
     """Create a simple two-line ledger entry (debit & credit)."""
 
     def post(self, request):
@@ -201,6 +203,7 @@ def final_balance(request):
     return Response({"final_balance": total})
 
 class LedgerListAPIView(APIView):
+    schema = AutoSchema()
     def get(self, request):
         qs = LedgerEntry.objects.all().order_by("-creation_datetime")
         # simple pagination could be added later
@@ -209,6 +212,7 @@ class LedgerListAPIView(APIView):
 
 
 class LedgerReverseAPIView(APIView):
+    schema = AutoSchema()
     def post(self, request, pk):
         entry = get_object_or_404(LedgerEntry, pk=pk)
         if entry.reversed:
@@ -268,6 +272,7 @@ class LedgerReverseAPIView(APIView):
 
 
 class LedgerDetailAPIView(APIView):
+    schema = AutoSchema()
     """Retrieve a single ledger entry with all its lines."""
     
     def get(self, request, pk):
@@ -277,6 +282,7 @@ class LedgerDetailAPIView(APIView):
 
 
 class LedgerAccountsAPIView(APIView):
+    schema = AutoSchema()
     """List all accounts and their balances."""
     
     def get(self, request):
@@ -324,6 +330,7 @@ class LedgerAccountsAPIView(APIView):
 
 
 class LedgerSummaryAPIView(APIView):
+    schema = AutoSchema()
     """Get organization-wide ledger summary with totals and counts."""
     
     def get(self, request):

@@ -34,6 +34,11 @@ class Account(models.Model):
         ("SALES", "Sales"),
         ("COMMISSION", "Commission"),
         ("SUSPENSE", "Suspense"),
+        ("EXPENSE", "Expense"),
+        ("INCOME", "Income"),
+        ("EQUITY", "Equity"),
+        ("ASSET", "Asset"),
+        ("LIABILITY", "Liability"),
     ]
 
     organization = models.ForeignKey(
@@ -48,6 +53,12 @@ class Account(models.Model):
     name = models.CharField(max_length=255)
     account_type = models.CharField(max_length=50, choices=ACCOUNT_TYPE_CHOICES, default="CASH")
     balance = models.DecimalField(max_digits=18, decimal_places=2, default=Decimal("0.00"))
+    
+    # Bank Account Specific Fields
+    bank_name = models.CharField(max_length=100, blank=True, null=True, help_text="For Bank Accounts only")
+    account_number = models.CharField(max_length=100, blank=True, null=True, help_text="For Bank Accounts only")
+    iban = models.CharField(max_length=100, blank=True, null=True, help_text="For Bank Accounts only")
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -91,6 +102,22 @@ class LedgerEntry(models.Model):
         ("payment", "Payment"),
         ("refund", "Refund"),
         ("commission", "Commission"),
+        ("expense", "Expense (Manual)"),
+        ("income", "Income (Manual)"),
+        ("cash_transfer", "Cash Transfer"),
+        ("bank_transfer", "Bank Transfer"),
+        ("capital_in", "Capital Injection"),
+        ("capital_out", "Capital Withdrawal"),
+        ("salary", "Salary Payment"),
+        ("adjustment", "Adjustment Entry"),
+        ("opening_balance", "Opening Balance"),
+        ("ledger_adjustment", "Ledger Adjustment"),
+        ("credit_purchase", "Credit Purchase"),
+        ("vendor_payment", "Vendor Payment"),
+        ("vendor_advance", "Vendor Advance"),
+        ("advance_adjustment", "Advance Adjustment"),
+        ("bank_to_cash", "Bank to Cash"),
+        ("cash_to_bank", "Cash to Bank"),
         ("other", "Other"),
     ]
 
@@ -268,6 +295,28 @@ class LedgerEntry(models.Model):
         null=True,
         help_text="User who initiated this transaction",
         db_constraint=False
+    )
+    
+    # Manual Posting & Audit Trail Fields
+    is_manual = models.BooleanField(
+        default=False,
+        help_text="True if this is a manual posting entry"
+    )
+
+    locked = models.BooleanField(
+        default=False,
+        help_text="Locked entries cannot be edited/deleted, only reversed"
+    )
+    reference_type = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        help_text="Type of reference (e.g., vendor, employee, owner)"
+    )
+    reference_id = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="ID of the referenced entity"
     )
     
     # Timestamps
@@ -564,7 +613,7 @@ class InterOrgPayment(models.Model):
         ]
     
     def __str__(self):
-        return f"{self.payment_number}: {self.from_organization} → {self.to_organization} ({self.amount} {self.currency})"
+        return f"{self.payment_number}: {self.from_organization} -> {self.to_organization} ({self.amount} {self.currency})"
     
     def save(self, *args, **kwargs):
         # Auto-generate payment number if not set

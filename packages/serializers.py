@@ -1,4 +1,5 @@
 from rest_framework.serializers import ModelSerializer
+from decimal import Decimal
 from organization.serializers import OrganizationSerializer
 from .models import City
 from booking.models import VehicleType, Sector
@@ -35,7 +36,7 @@ from rest_framework import serializers
 from tickets.serializers import HotelsSerializer, TicketSerializer
 from tickets.models import Hotels
 from django.db import models
-from organization.pricing_utils import get_reseller_markup_group, apply_package_markup, apply_breakdown_markup
+from organization.pricing_utils import calculate_final_price
 
 
 class VisaSerializer(serializers.ModelSerializer):
@@ -564,18 +565,50 @@ class UmrahPackageSerializer(ModelSerializer):
         else:
             agency = user.agencies.first()
             if agency:
-                # Area Agency gets service charges, Full Agency does NOT
-                if agency.agency_type == 'Area Agency':
+                # Area Agency (and others by default) gets service charges.
+                # Full Agency does NOT.
+                # Aligning with Frontend logic: Defaults to application unless explicit exemption.
+                if agency.agency_type != 'Full Agency':
                     return agency.branch
             return None
 
-    def _calculate_total_with_service_charge(self, request, base_price):
+    def _calculate_total_with_service_charge(self, request, base_price, room_type=None):
         """Calculate final price by applying branch service charges if applicable."""
         branch = self._get_branch_for_service_charge(request)
         if branch:
-            from service_charges.utils import calculate_package_service_charge
-            result = calculate_package_service_charge(branch.id, base_price)
-            return float(result['final_price'])
+            from service_charges.utils import calculate_package_service_charge, calculate_hotel_service_charge
+            
+            # 1. Base Package Charge (Fixed)
+            res_pkg = calculate_package_service_charge(branch.id, base_price)
+            # We take the service charge amount, not the final price yet, to avoid double counting if logic changes
+            # calculate_package_service_charge returns {base, service_charge, final}
+            pkg_charge = res_pkg['service_charge']
+            
+            # 2. Hotel Charges (Per Night * Nights)
+            hotel_total_charge = Decimal('0.00')
+            if room_type and self.instance:
+                # Iterate over package hotels
+                try:
+                    for h_detail in self.instance.hotel_details.all():
+                        if not h_detail.hotel:
+                            continue
+                            
+                        # calculate_hotel_service_charge(branch_id, hotel_id, room_type, base_price=0, nights)
+                        # We pass base_price=0 because we only want the *extra* service charge amount to add to our existing total
+                        res_hotel = calculate_hotel_service_charge(
+                            branch_id=branch.id, 
+                            hotel_id=h_detail.hotel.id, 
+                            room_type=room_type, 
+                            base_price_per_night=0, 
+                            nights=h_detail.number_of_nights
+                        )
+                        hotel_total_charge += res_hotel['total_service_charge']
+                except Exception as e:
+                    # Fail safe if hotel details not preloaded or error
+                    pass
+
+            return float(Decimal(str(base_price)) + pkg_charge + hotel_total_charge)
+            
         return base_price
 
     def get_final_price(self, obj):
@@ -585,22 +618,25 @@ class UmrahPackageSerializer(ModelSerializer):
              base_price = obj.adult_cost()
         except:
              pass
-        return self._calculate_total_with_service_charge(self.context.get('request'), base_price)
+        # Final price usually assumes sharing/lowest? Or just base? 
+        # Usually 'final_price' is a summary field. Let's assume sharing logic or no room type if it's just visa+transport?
+        # If it represents the "Starting From" price, it's usually Sharing.
+        return self._calculate_total_with_service_charge(self.context.get('request'), base_price, room_type='sharing')
 
     def get_sharing_price(self, obj):
-        return self._calculate_total_with_service_charge(self.context.get('request'), obj.sharing_cost())
+        return self._calculate_total_with_service_charge(self.context.get('request'), obj.sharing_cost(), room_type='sharing')
 
     def get_quint_price(self, obj):
-        return self._calculate_total_with_service_charge(self.context.get('request'), obj.quint_cost())
+        return self._calculate_total_with_service_charge(self.context.get('request'), obj.quint_cost(), room_type='quint')
 
     def get_quad_price(self, obj):
-        return self._calculate_total_with_service_charge(self.context.get('request'), obj.quad_cost())
+        return self._calculate_total_with_service_charge(self.context.get('request'), obj.quad_cost(), room_type='quad')
 
     def get_triple_price(self, obj):
-        return self._calculate_total_with_service_charge(self.context.get('request'), obj.triple_cost())
+        return self._calculate_total_with_service_charge(self.context.get('request'), obj.triple_cost(), room_type='triple')
 
     def get_double_price(self, obj):
-        return self._calculate_total_with_service_charge(self.context.get('request'), obj.double_cost())
+        return self._calculate_total_with_service_charge(self.context.get('request'), obj.double_cost(), room_type='double')
 
 
     class Meta:
@@ -668,12 +704,8 @@ class UmrahPackageSerializer(ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         
-        # Determine markup
-        markup_group = None
         request = self.context.get('request')
-        if request and instance.organization_id:
-             markup_group = get_reseller_markup_group(request.user, instance.organization_id)
-
+        
         # remove legacy top-level numeric organization FK if present
         if 'organization' in data:
             data.pop('organization', None)
@@ -718,17 +750,30 @@ class UmrahPackageSerializer(ModelSerializer):
             "infant": instance.infant_package_purchase_price,
         }
 
+        # --- PRICING ENGINE PIPELINE ---
+        # Calculate Final Price (Markup - Discount)
+        data = calculate_final_price(request, data, 'package', instance)
+
+        # --- SERVICE CHARGES (Agent/User Context) ---
+        # Apply service charges to the final calculated selling prices
         if 'package_selling_prices' in data:
-            data['package_selling_prices'] = apply_package_markup(
-                data['package_selling_prices'], 
-                markup_group
-            )
+            selling_prices = data['package_selling_prices']
             
-        if 'total_price_breakdown' in data:
-            data['total_price_breakdown'] = apply_breakdown_markup(
-                data['total_price_breakdown'],
-                markup_group
-            )
+            def apply_sc_recursive(price_data):
+                result = {}
+                for key, value in price_data.items():
+                    if isinstance(value, dict):
+                        result[key] = apply_sc_recursive(value)
+                    elif isinstance(value, (int, float, Decimal)):
+                        # Apply service charge to the price
+                        # We pass 'key' as room_type (sharing, quint, etc.)
+                        # For keys like 'infant', 'child_without_bed', logic returns 0 hotel charge which is correct.
+                        result[key] = self._calculate_total_with_service_charge(request, value, room_type=key)
+                    else:
+                        result[key] = value
+                return result
+
+            data['package_selling_prices'] = apply_sc_recursive(selling_prices)
 
         return data
 

@@ -28,6 +28,7 @@ from django.http import JsonResponse
 
 # Admin endpoint to approve public payments
 class AdminApprovePaymentAPIView(APIView):
+    schema = AutoSchema()
     permission_classes = [IsAuthenticated, IsAdminUser]
 
     def post(self, request, payment_id=None):
@@ -178,6 +179,7 @@ from universal.scope import apply_user_scope
 
 import json
 class BookingViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     @action(detail=False, methods=["get"], url_path="unpaid/(?P<organization_id>[^/.]+)")
     def get_unpaid_orders(self, request, organization_id=None):
         from django.utils import timezone
@@ -326,6 +328,7 @@ class BookingViewSet(viewsets.ModelViewSet):
 
 
 class PublicBookingCreateAPIView(generics.CreateAPIView):
+    schema = AutoSchema()
     """Create a public booking for an Umrah package.
 
     Expected payload (JSON):
@@ -501,6 +504,7 @@ class PublicBookingCreateAPIView(generics.CreateAPIView):
 
 
 class PublicBookingPaymentCreateAPIView(generics.CreateAPIView):
+    schema = AutoSchema()
     """Create a public payment for a booking (public_mode=True).
 
     Admin will later approve/verify these payments via admin endpoints.
@@ -994,6 +998,7 @@ class PublicBookingPaymentCreateAPIView(generics.CreateAPIView):
 
 
 class AdminPublicBookingViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     """Admin endpoints for public bookings: list, retrieve and actions: confirm, cancel, verify_payment."""
     permission_classes = [IsAuthenticated, IsAdminUser]
     serializer_class = PublicBookingSerializer
@@ -1246,6 +1251,7 @@ class PublicBookingRateThrottle(SimpleRateThrottle):
 
 
 class PublicBookingStatusAPIView(APIView):
+    schema = AutoSchema()
     permission_classes = [AllowAny]
     throttle_classes = [PublicBookingRateThrottle]
 
@@ -1289,6 +1295,7 @@ class PublicBookingStatusAPIView(APIView):
 
 
 class PaxSummaryAPIView(APIView):
+    schema = AutoSchema()
     """Simple Pax summary aggregator.
 
     Query params:
@@ -1357,6 +1364,7 @@ class PaxSummaryAPIView(APIView):
 
 
 class HotelPaxSummaryAPIView(APIView):
+    schema = AutoSchema()
     """Return aggregated bookings/pax per hotel."""
     permission_classes = []
 
@@ -1397,6 +1405,7 @@ class HotelPaxSummaryAPIView(APIView):
 
 
 class TransportPaxSummaryAPIView(APIView):
+    schema = AutoSchema()
     """Return aggregated bookings/pax per transport vehicle and route."""
     permission_classes = []
 
@@ -1442,6 +1451,7 @@ class TransportPaxSummaryAPIView(APIView):
 
 
 class FlightPaxSummaryAPIView(APIView):
+    schema = AutoSchema()
     """Return aggregated bookings/pax per airline and sector (departure → arrival)."""
     permission_classes = []
 
@@ -1521,6 +1531,7 @@ class FlightPaxSummaryAPIView(APIView):
     ),
 )
 class PaymentViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     serializer_class = PaymentSerializer
     queryset = Payment.objects.all()
     permission_classes = [IsAuthenticated]
@@ -1661,6 +1672,7 @@ from .models import HotelOutsourcing
     )
 )
 class HotelOutsourcingViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     """API for managing external hotel outsourcing records.
 
     POST /api/hotel-outsourcing/
@@ -1812,6 +1824,7 @@ class HotelOutsourcingViewSet(viewsets.ModelViewSet):
 
     # PaymentViewSet methods intentionally implemented in PaymentViewSet class above.
 class SectorViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     queryset = Sector.objects.all()
     serializer_class = SectorSerializer
 
@@ -1836,6 +1849,7 @@ class SectorViewSet(viewsets.ModelViewSet):
             status=status.HTTP_204_NO_CONTENT
         )
 class BigSectorViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     queryset = BigSector.objects.all()
     serializer_class = BigSectorSerializer
 
@@ -1860,6 +1874,7 @@ class BigSectorViewSet(viewsets.ModelViewSet):
             status=status.HTTP_204_NO_CONTENT
         )
 class VehicleTypeViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     queryset = VehicleType.objects.all()
     serializer_class = VehicleTypeSerializer
 
@@ -1884,9 +1899,11 @@ class VehicleTypeViewSet(viewsets.ModelViewSet):
             status=status.HTTP_204_NO_CONTENT
         )
 class InternalNoteViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     queryset = InternalNote.objects.all().order_by("-date_time")
     serializer_class = InternalNoteSerializer
 class BankAccountViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     queryset = BankAccount.objects.all().order_by("-id")
     serializer_class = BankAccountSerializer
 
@@ -2007,6 +2024,7 @@ class BankAccountViewSet(viewsets.ModelViewSet):
         serializer = AgencySerializer(agencies, many=True, context={"request": request})
         return Response(serializer.data)
 class OrganizationLinkViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     queryset = OrganizationLink.objects.all()
     serializer_class = OrganizationLinkSerializer
 
@@ -2019,14 +2037,17 @@ class OrganizationLinkViewSet(viewsets.ModelViewSet):
 
         headers = self.get_success_headers(serializer.data)
 class AllowedResellerViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     queryset = AllowedReseller.objects.all()
     serializer_class = AllowedResellerSerializer
     permission_classes = [IsAdminUser]
 
 class DiscountGroupViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     queryset = DiscountGroup.objects.all().prefetch_related("discounts")
     serializer_class = DiscountGroupSerializer
 class MarkupViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     queryset = Markup.objects.all().order_by("-created_at")
     serializer_class = MarkupSerializer
 
@@ -2036,6 +2057,7 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_GET
 from django.contrib.admin.views.decorators import staff_member_required
 from tickets.models import Ticket
+from drf_spectacular.openapi import AutoSchema
 
 @staff_member_required
 @require_GET

@@ -41,13 +41,13 @@ class EmployeeViewSet(viewsets.ModelViewSet):
                     if profile.commission_id != new_commission_id:
                         profile.commission_id = new_commission_id
                         profile.save()
-                        print(f"✅ [HR SYNC] Synced Employee {instance.first_name} commission group to User {user.email} profile. Commission ID: {new_commission_id}")
+                        print(f"[SUCCESS] [HR SYNC] Synced Employee {instance.first_name} commission group to User {user.email} profile. Commission ID: {new_commission_id}")
                     else:
-                         print(f"ℹ️ [HR SYNC] User {user.email} profile already has correct commission ID: {new_commission_id}")
+                         print(f"[INFO] [HR SYNC] User {user.email} profile already has correct commission ID: {new_commission_id}")
                 else:
-                    print(f"⚠️ [HR SYNC] No User found with email {instance.email} to sync commission group")
+                    print(f"[WARNING] [HR SYNC] No User found with email {instance.email} to sync commission group")
         except Exception as e:
-            print(f"❌ [HR SYNC] Failed to sync commission group to UserProfile: {e}")
+            print(f"[ERROR] [HR SYNC] Failed to sync commission group to UserProfile: {e}")
             import traceback
             traceback.print_exc()
 

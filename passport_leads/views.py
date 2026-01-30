@@ -16,6 +16,7 @@ from django.db.models import Q
 # drf-spectacular helpers (add OpenAPI meta for custom endpoints)
 from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiParameter
 from users.permissions import PermissionByAction
+from drf_spectacular.openapi import AutoSchema
 
 
 # ledger models (optional integration)
@@ -26,6 +27,7 @@ except Exception:
 
 
 class PassportLeadViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     queryset = PassportLead.objects.filter(is_deleted=False).order_by('-created_at')
     permission_classes = [IsAuthenticated]
 
@@ -235,12 +237,14 @@ class PassportLeadViewSet(viewsets.ModelViewSet):
 
 
 class PaxProfileViewSet(viewsets.ModelViewSet):
+    schema = AutoSchema()
     queryset = PaxProfile.objects.all().order_by('-created_at')
     serializer_class = PaxProfileSerializer
     permission_classes = [IsAuthenticated]
 
 
 class TodayFollowUpsView(generics.ListAPIView):
+    schema = AutoSchema()
     serializer_class = PassportLeadSerializer
     permission_classes = [IsAuthenticated]
 
@@ -285,6 +289,7 @@ class LeadListItemSerializer(serializers.Serializer):
 
 
 class PassportLeadListView(APIView):
+    schema = AutoSchema()
     """
     GET /passport-leads/list
     Query params: branch_id, status, date_from (YYYY-MM-DD), date_to (YYYY-MM-DD)
@@ -344,6 +349,7 @@ class PassportLeadListView(APIView):
 
 
 class PaxUpdateView(APIView):
+    schema = AutoSchema()
     """POST/PUT/PATCH /pax/update/{pax_id}/ - update a pax profile"""
     permission_classes = [IsAuthenticated]
 
@@ -401,6 +407,7 @@ class PaxUpdateView(APIView):
 
 
 class PaxListView(APIView):
+    schema = AutoSchema()
     """GET /pax/list?branch_id=&organization_id=&search=..."""
     permission_classes = [IsAuthenticated]
 
@@ -430,6 +437,7 @@ class PaxListView(APIView):
 
 
 class UpdatePassportLeadView(APIView):
+    schema = AutoSchema()
     """PUT /passport-leads/update/{lead_id}/
 
     Update lead status, remarks, follow-up date, or pending balance.

@@ -1,0 +1,10 @@
+--- Starting Realistic Seeding ---
+Using Organization: HBL (ID: 8)
+Posted: Initial Capital Injection
+Posted: Cash Service Sale
+Posted: Ticket Sale (Revenue)
+Posted: Ticket Purchase (COGS)
+Posted: Rent Payment
+Posted: Utility Bill
+Posted: Customer Payment (Ticket)
+--- Seeding Complete ---

@@ -56,9 +56,11 @@ from .serializers import PublicUmrahPackageListSerializer, PublicUmrahPackageDet
 from django.utils.text import slugify
 from decimal import Decimal
 from users.permissions import PermissionByAction
+from drf_spectacular.openapi import AutoSchema
 
 
 class VisaViewSet(ModelViewSet):
+# schema = AutoSchema()
     """
     ViewSet for Visa CRUD operations.
     
@@ -485,6 +487,7 @@ class VisaViewSet(ModelViewSet):
     ),
 )
 class PackageViewSet(ModelViewSet):
+# schema = AutoSchema()
     """
     Enhanced ViewSet for UmrahPackage with complete package details.
     
@@ -717,6 +720,7 @@ class PackageViewSet(ModelViewSet):
 
 
 class RiyalRateViewSet(ModelViewSet):
+# schema = AutoSchema()
     serializer_class = RiyalRateSerializer
 
     def get_queryset(self):
@@ -727,6 +731,7 @@ class RiyalRateViewSet(ModelViewSet):
 
 
 class ShirkaViewSet(ModelViewSet):
+# schema = AutoSchema()
     serializer_class = ShirkaSerializer
 
     def get_queryset(self):
@@ -737,6 +742,7 @@ class ShirkaViewSet(ModelViewSet):
 
 
 class UmrahVisaPriceViewSet(ModelViewSet):
+# schema = AutoSchema()
     serializer_class = UmrahVisaPriceSerializer
 
     def get_queryset(self):
@@ -747,6 +753,7 @@ class UmrahVisaPriceViewSet(ModelViewSet):
 
 
 class UmrahVisaPriceTwoViewSet(ModelViewSet):
+# schema = AutoSchema()
     serializer_class = UmrahVisaPriceTwoSerializer
 
     def get_queryset(self):
@@ -771,6 +778,7 @@ class UmrahVisaPriceTwoViewSet(ModelViewSet):
 
 
 class OnlyVisaPriceViewSet(ModelViewSet):
+# schema = AutoSchema()
     serializer_class = OnlyVisaPriceSerializer
 
     def get_queryset(self):
@@ -878,6 +886,7 @@ class OnlyVisaPriceViewSet(ModelViewSet):
         return Response(data)
 
 class TransportSectorPriceViewSet(ModelViewSet):
+# schema = AutoSchema()
     serializer_class = TransportSectorPriceSerializer
 
     def get_queryset(self):
@@ -893,6 +902,7 @@ class TransportSectorPriceViewSet(ModelViewSet):
 
 
 class AirlinesViewSet(ModelViewSet):
+# schema = AutoSchema()
     serializer_class = AirlinesSerializer
 
     def get_queryset(self):
@@ -988,6 +998,7 @@ class AirlinesViewSet(ModelViewSet):
 
 
 class CityViewSet(ModelViewSet):
+# schema = AutoSchema()
     serializer_class = CitySerializer
 
     def get_queryset(self):
@@ -1005,6 +1016,7 @@ class CityViewSet(ModelViewSet):
         return City.objects.all().order_by('name')
 
 class FoodPriceViewSet(ModelViewSet):
+# schema = AutoSchema()
     serializer_class = FoodPriceSerializer
 
     def get_queryset(self):
@@ -1013,6 +1025,7 @@ class FoodPriceViewSet(ModelViewSet):
             raise PermissionDenied("Missing 'organization' query parameter.")
         return FoodPrice.objects.filter(organization_id=organization_id)
 class ZiaratPriceViewSet(ModelViewSet):
+# schema = AutoSchema()
     serializer_class = ZiaratPriceSerializer
 
     def get_queryset(self):
@@ -1022,6 +1035,7 @@ class ZiaratPriceViewSet(ModelViewSet):
         return ZiaratPrice.objects.filter(organization_id=organization_id)
 
 class BookingExpiryViewSet(ModelViewSet):
+# schema = AutoSchema()
     serializer_class = BookingExpirySerializer
 
     @extend_schema(
@@ -1092,6 +1106,7 @@ class BookingExpiryViewSet(ModelViewSet):
 )
 @extend_schema(exclude=True)
 class UmrahPackageViewSet(ModelViewSet):
+# schema = AutoSchema()
     serializer_class = UmrahPackageSerializer
     permission_classes = [IsAuthenticated, PermissionByAction]
     
@@ -1436,6 +1451,7 @@ class UmrahPackageViewSet(ModelViewSet):
 
 @extend_schema(exclude=True)
 class CustomUmrahPackageViewSet(ModelViewSet):
+# schema = AutoSchema()
     serializer_class = CustomUmrahPackageSerializer
 
     def get_queryset(self):
@@ -1453,6 +1469,7 @@ class CustomUmrahPackageViewSet(ModelViewSet):
         return queryset
 
 class SetVisaTypeViewSet(ModelViewSet):
+# schema = AutoSchema()
     serializer_class = SetVisaTypeSerializer
 
     def get_queryset(self):
@@ -1464,6 +1481,7 @@ class SetVisaTypeViewSet(ModelViewSet):
 
 
 class AllPricesAPIView(APIView):
+# schema = AutoSchema()
     def _gather_for_org(self, organization_id):
         # return a dict of all price-like resources for a single organization id
         return {
@@ -1526,6 +1544,7 @@ class AllPricesAPIView(APIView):
 
 @extend_schema(exclude=True)
 class PublicUmrahPackageListAPIView(generics.ListAPIView):
+# schema = AutoSchema()
     """Public list of Umrah packages (read-only)."""
     permission_classes = [AllowAny]
     serializer_class = PublicUmrahPackageListSerializer
@@ -1580,6 +1599,7 @@ class PublicUmrahPackageListAPIView(generics.ListAPIView):
 
 @extend_schema(exclude=True)
 class PublicUmrahPackageDetailAPIView(APIView):
+# schema = AutoSchema()
     """Public package detail view. Lookup by id or slug (slugified title)."""
     permission_classes = [AllowAny]
 
@@ -1622,6 +1642,7 @@ class PublicUmrahPackageDetailAPIView(APIView):
     responses=OpenApiTypes.OBJECT,
 )
 class AllPricesByOrgAPIView(APIView):
+# schema = AutoSchema()
     def get(self, request, organization_id):
         try:
             org_id = int(organization_id)
